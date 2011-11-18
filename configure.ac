@@ -325,7 +325,7 @@ dnl pinktrace-easy
 AC_ARG_ENABLE([easy],
 	      [AS_HELP_STRING([--disable-easy], [Do not build pinktrace_easy library (availability: Linux)])],
 	      [WANT_EASY="$enableval"],
-	      [if test x"$opsys" = "linux";
+	      [if test x"$opsys" = x"linux";
 	       then WANT_EASY="yes"
 	       else AC_MSG_ERROR([pinktrace_easy is only available on Linux])
 	       fi])
