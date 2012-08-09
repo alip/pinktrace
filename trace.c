@@ -169,6 +169,14 @@ bool pink_trace_setup(pid_t tid, int options)
 #endif
 	}
 
+	if (options & PINK_TRACE_OPTION_SECCOMP) {
+#if PINK_HAVE_OPTION_SECCOMP
+		ptrace_options |= PTRACE_O_TRACESECCOMP;
+#else
+		goto invalid;
+#endif
+	}
+
 	return pink_ptrace(PTRACE_SETOPTIONS, tid, NULL, (void *)(long)ptrace_options) != -1;
 invalid:
 	errno = EINVAL;
