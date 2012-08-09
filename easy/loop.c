@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/internal.h> /* TODO: Fix pink_event_decide() */
+#include <pinktrace/internal.h> /* FIXME: _pink_assert_not_reached() */
 #include <pinktrace/easy/internal.h>
 #include <pinktrace/pink.h>
 #include <pinktrace/easy/pink.h>
@@ -78,7 +78,7 @@ static bool handle_startup(struct pink_easy_context *ctx, struct pink_easy_proce
 	return true;
 }
 
-int pink_easy_loop(struct pink_easy_context *ctx)
+int pink_easy_loop(struct pink_easy_context *ctx, enum pink_easy_step step_method)
 {
 	/* Enter the event loop */
 	while (ctx->nprocs != 0) {
@@ -241,6 +241,21 @@ dont_switch_procs:
 				PINK_EASY_REMOVE_PROCESS(ctx, current);
 				continue;
 			}
+		} else if (event == PINK_EVENT_SECCOMP && ctx->callback_table.seccomp) {
+			unsigned long ret_data;
+			if (!pink_trace_geteventmsg(current->tid, &ret_data)) {
+				handle_ptrace_error(ctx, current, "geteventmsg");
+				continue;
+			}
+			r = ctx->callback_table.seccomp(ctx, current, (long)ret_data);
+			if (r & PINK_EASY_CFLAG_ABORT) {
+				ctx->error = PINK_EASY_ERROR_CALLBACK_ABORT;
+				goto cleanup;
+			}
+			if (r & PINK_EASY_CFLAG_DROP) {
+				PINK_EASY_REMOVE_PROCESS(ctx, current);
+				continue;
+			}
 		}
 
 		sig = WSTOPSIG(status);
@@ -296,7 +311,17 @@ dont_switch_procs:
 restart_tracee_with_sig_0:
 		sig = 0;
 restart_tracee:
-		if (!pink_trace_syscall(current->tid, sig))
+		switch (step_method) {
+		case PINK_EASY_STEP_SYSCALL:
+			r = pink_trace_syscall(current->tid, sig);
+			break;
+		case PINK_EASY_STEP_RESUME:
+			r = pink_trace_resume(current->tid, sig);
+			break;
+		default:
+			_pink_assert_not_reached();
+		}
+		if (!r)
 			handle_ptrace_error(ctx, current, "syscall");
 	}
 
