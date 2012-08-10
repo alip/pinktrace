@@ -85,8 +85,8 @@ static void do_step(struct pink_easy_context *ctx,
 	int r;
 	enum pink_easy_step step;
 
-	step = current->ptrace_step == PINK_EASY_STEP_NIL
-		? ctx->ptrace_default_step
+	step = current->ptrace_step == PINK_EASY_STEP_NOT_SET
+		? ctx->ptrace_step
 		: current->ptrace_step;
 
 	switch (step) {
@@ -116,7 +116,22 @@ int pink_easy_loop(struct pink_easy_context *ctx)
 		pink_regs_t regs;
 		struct pink_easy_process *current;
 
+		if (pink_easy_interrupted) {
+			int fatal_sig;
+
+			if (!ctx->callback_table.interrupt)
+				return 0;
+
+			fatal_sig = pink_easy_interrupted;
+			return ctx->callback_table.interrupt(ctx, fatal_sig);
+		}
+
+		if (pink_easy_interactive)
+			sigprocmask(SIG_SETMASK, &pink_easy_empty_set, NULL);
 		tid = waitpid(-1, &status, __WALL);
+		if (pink_easy_interactive)
+			sigprocmask(SIG_SETMASK, &pink_easy_blocked_set, NULL);
+
 		if (tid < 0) {
 			switch (errno) {
 			case EINTR:
@@ -202,7 +217,6 @@ dont_switch_procs:
 			 * the association between parent and child.
 			 */
 			current = pink_easy_process_new(ctx, tid, -1,
-					PINK_EASY_STEP_NIL,
 					PINK_EASY_PROCESS_SUSPENDED);
 			continue;
 		}
@@ -239,7 +253,6 @@ dont_switch_procs:
 			if (new_thread == NULL) {
 				/* Not attached to the thread yet, nor is it alive... */
 				new_thread = pink_easy_process_new(ctx, new_tid, current->tid,
-						PINK_EASY_STEP_NIL,
 						PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
 			} else {
 				/* Thread is waiting for Pink to let her go on... */

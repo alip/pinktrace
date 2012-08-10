@@ -51,7 +51,7 @@ bool pink_easy_call(struct pink_easy_context *ctx, pink_easy_child_func_t func, 
 		_exit(func(userdata));
 	}
 	/* parent */
-	current = pink_easy_process_new(ctx, tid, -1, PINK_EASY_STEP_NIL, PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
+	current = pink_easy_process_new(ctx, tid, -1, PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
 	if (current == NULL) {
 		kill(tid, SIGKILL);
 		return false;

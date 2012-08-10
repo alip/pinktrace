@@ -80,7 +80,7 @@ static bool pink_easy_exec_helper(struct pink_easy_context *ctx, int type,
 		_exit(ctx->callback_table.cerror(PINK_EASY_CHILD_ERROR_EXEC));
 	}
 	/* parent */
-	current = pink_easy_process_new(ctx, tid, -1, PINK_EASY_STEP_NIL, PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
+	current = pink_easy_process_new(ctx, tid, -1, PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
 	if (current == NULL) {
 		kill(tid, SIGKILL);
 		return false;

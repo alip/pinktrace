@@ -40,7 +40,6 @@
 
 struct pink_easy_process *pink_easy_process_new(struct pink_easy_context *ctx,
 		pid_t tid, pid_t tgid,
-		enum pink_easy_step ptrace_step,
 		short flags)
 {
 	struct pink_easy_process *current;
@@ -52,7 +51,7 @@ struct pink_easy_process *pink_easy_process_new(struct pink_easy_context *ctx,
 
 	current->tid = tid;
 	current->tgid = tgid;
-	current->ptrace_step = ptrace_step;
+	current->ptrace_step = PINK_EASY_STEP_NOT_SET;
 
 	current->flags = flags;
 	current->flags |= PINK_EASY_PROCESS_STARTUP;

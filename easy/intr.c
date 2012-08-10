@@ -34,53 +34,50 @@
 #include <pinktrace/easy/pink.h>
 
 #include <stdbool.h>
-#include <signal.h>
-#include <sys/utsname.h>
 
-unsigned pink_easy_os_release;
+volatile sig_atomic_t pink_easy_interrupted;
+sigset_t pink_easy_empty_set;
+sigset_t pink_easy_blocked_set;
 
-/* FIXME: Weird function that returns 0 on error */
-static unsigned get_os_release(void)
+bool pink_easy_interactive = false;
+
+static void pink_easy_interrupt_handler(int sig)
 {
-	unsigned rel;
-	const char *p;
-	struct utsname u;
-	if (uname(&u) < 0) {
-		/* perror_msg_and_die("uname"); */
-		return 0;
-	}
-	/* u.release has this form: "3.2.9[-some-garbage]" */
-	rel = 0;
-	p = u.release;
-	for (;;) {
-		if (!(*p >= '0' && *p <= '9')) {
-			/* error_msg_and_die("Bad OS release string: '%s'", u.release); */
-			return 0;
-		}
-		/* Note: this open-codes KERNEL_VERSION(): */
-		rel = (rel << 8) | atoi(p);
-		if (rel >= KERNEL_VERSION(1,0,0))
-			break;
-		while (*p >= '0' && *p <= '9')
-			p++;
-		if (*p != '.') {
-			if (rel >= KERNEL_VERSION(0,1,0)) {
-				/* "X.Y-something" means "X.Y.0" */
-				rel <<= 8;
-				break;
-			}
-			/* error_msg_and_die("Bad OS release string: '%s'", u.release); */
-			return 0;
-		}
-		p++;
-	}
-	return rel;
+	pink_easy_interrupted = sig;
 }
 
-bool pink_easy_init(void)
+void pink_easy_interrupt_init(enum pink_easy_intr intr)
 {
-	pink_easy_os_release = get_os_release();
-	if (pink_easy_os_release == 0)
-		return false;
-	return true;
+	struct sigaction sa;
+
+	sigemptyset(&pink_easy_empty_set);
+	sigemptyset(&pink_easy_blocked_set);
+
+	sa.sa_handler = SIG_IGN;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+
+	sigaction(SIGTTOU, &sa, NULL); /* SIG_IGN */
+	sigaction(SIGTTIN, &sa, NULL); /* SIG_IGN */
+
+	if (intr != PINK_EASY_INTR_ANYWHERE) {
+		if (intr == PINK_EASY_INTR_BLOCK_TSTP_TOO)
+			sigaction(SIGTSTP, &sa, NULL); /* SIG_IGN */
+
+		if (intr == PINK_EASY_INTR_WHILE_WAIT) {
+			sigaddset(&pink_easy_blocked_set, SIGHUP);
+			sigaddset(&pink_easy_blocked_set, SIGINT);
+			sigaddset(&pink_easy_blocked_set, SIGQUIT);
+			sigaddset(&pink_easy_blocked_set, SIGPIPE);
+			sigaddset(&pink_easy_blocked_set, SIGTERM);
+			sa.sa_handler = pink_easy_interrupt_handler;
+			pink_easy_interactive = true;
+		}
+		/* SIG_IGN, or set handler for these */
+		sigaction(SIGHUP, &sa, NULL);
+		sigaction(SIGINT, &sa, NULL);
+		sigaction(SIGQUIT, &sa, NULL);
+		sigaction(SIGPIPE, &sa, NULL);
+		sigaction(SIGTERM, &sa, NULL);
+	}
 }

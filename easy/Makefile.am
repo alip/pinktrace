@@ -14,6 +14,7 @@ easy_SRCS= \
 	   exec.c \
 	   error.c \
 	   init.c \
+	   intr.c \
 	   loop.c \
 	   process.c
 EXTRA_DIST= $(easy_SRCS)

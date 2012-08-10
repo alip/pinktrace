@@ -54,7 +54,7 @@ bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
 	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
 	if (tgid > 0)
 		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current = pink_easy_process_new(ctx, tid, tgid, PINK_EASY_STEP_NIL, flags);
+	current = pink_easy_process_new(ctx, tid, tgid, flags);
 	if (current == NULL) {
 		pink_trace_kill(tid, tgid, SIGCONT);
 		return false;
