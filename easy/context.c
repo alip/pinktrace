@@ -35,6 +35,7 @@
 #include <pinktrace/easy/pink.h>
 
 struct pink_easy_context *pink_easy_context_new(int ptrace_options,
+		enum pink_easy_step ptrace_default_step,
 		const struct pink_easy_callback_table *callback_table,
 		void *userdata, pink_easy_free_func_t userdata_destroy)
 {
@@ -47,6 +48,7 @@ struct pink_easy_context *pink_easy_context_new(int ptrace_options,
 	/* Properties */
 	ctx->nprocs = 0;
 	ctx->ptrace_options = ptrace_options;
+	ctx->ptrace_default_step = ptrace_default_step;
 	ctx->error = PINK_EASY_ERROR_SUCCESS;
 
 	/* Callbacks */
@@ -66,20 +68,7 @@ struct pink_easy_context *pink_easy_context_new(int ptrace_options,
 	return ctx;
 }
 
-enum pink_easy_error
-pink_easy_context_get_error(const struct pink_easy_context *ctx)
-{
-	return ctx->error;
-}
-
-void
-pink_easy_context_clear_error(struct pink_easy_context *ctx)
-{
-	ctx->error = PINK_EASY_ERROR_SUCCESS;
-}
-
-void
-pink_easy_context_destroy(struct pink_easy_context *ctx)
+void pink_easy_context_destroy(struct pink_easy_context *ctx)
 {
 	struct pink_easy_process *current;
 
@@ -95,21 +84,38 @@ pink_easy_context_destroy(struct pink_easy_context *ctx)
 	free(ctx);
 }
 
-void
-pink_easy_context_set_userdata(struct pink_easy_context *ctx, void *userdata, pink_easy_free_func_t userdata_destroy)
+enum pink_easy_error pink_easy_context_get_error(const struct pink_easy_context *ctx)
+{
+	return ctx->error;
+}
+
+void pink_easy_context_clear_error(struct pink_easy_context *ctx)
+{
+	ctx->error = PINK_EASY_ERROR_SUCCESS;
+}
+
+void pink_easy_context_set_default_step(struct pink_easy_context *ctx, enum pink_easy_step ptrace_default_step)
+{
+	ctx->ptrace_default_step = ptrace_default_step;
+}
+
+enum pink_easy_step pink_easy_context_get_default_step(const struct pink_easy_context *ctx)
+{
+	return ctx->ptrace_default_step;
+}
+
+void pink_easy_context_set_userdata(struct pink_easy_context *ctx, void *userdata, pink_easy_free_func_t userdata_destroy)
 {
 	ctx->userdata = userdata;
 	ctx->userdata_destroy = userdata_destroy;
 }
 
-void *
-pink_easy_context_get_userdata(const struct pink_easy_context *ctx)
+void *pink_easy_context_get_userdata(const struct pink_easy_context *ctx)
 {
 	return ctx->userdata;
 }
 
-struct pink_easy_process_list *
-pink_easy_context_get_process_list(struct pink_easy_context *ctx)
+struct pink_easy_process_list *pink_easy_context_get_process_list(struct pink_easy_context *ctx)
 {
 	return &ctx->process_list;
 }

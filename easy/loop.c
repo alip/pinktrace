@@ -49,7 +49,7 @@ static void handle_ptrace_error(struct pink_easy_context *ctx,
 	} else {
 		ctx->callback_table.error(ctx, PINK_EASY_ERROR_TRACE, current, errctx);
 	}
-	PINK_EASY_REMOVE_PROCESS(ctx, current);
+	pink_easy_process_free(ctx, current);
 }
 
 static bool handle_startup(struct pink_easy_context *ctx, struct pink_easy_process *current)
@@ -67,7 +67,6 @@ static bool handle_startup(struct pink_easy_context *ctx, struct pink_easy_proce
 		current->flags |= PINK_EASY_PROCESS_FOLLOWFORK;
 
 	/* Happy birthday! */
-	current->flags &= ~PINK_EASY_PROCESS_STARTUP;
 	if (ctx->callback_table.startup) {
 		struct pink_easy_process *parent = NULL;
 		if (current->tgid != -1)
@@ -75,10 +74,39 @@ static bool handle_startup(struct pink_easy_context *ctx, struct pink_easy_proce
 		ctx->callback_table.startup(ctx, current, parent);
 	}
 
+	current->flags &= ~PINK_EASY_PROCESS_STARTUP;
 	return true;
 }
 
-int pink_easy_loop(struct pink_easy_context *ctx, enum pink_easy_step step_method)
+static void do_step(struct pink_easy_context *ctx,
+		struct pink_easy_process *current,
+		int sig)
+{
+	int r;
+	enum pink_easy_step step;
+
+	step = current->ptrace_step == PINK_EASY_STEP_NIL
+		? ctx->ptrace_default_step
+		: current->ptrace_step;
+
+	switch (step) {
+	case PINK_EASY_STEP_SINGLESTEP:
+		r = pink_trace_singlestep(current->tid, sig);
+		break;
+	case PINK_EASY_STEP_SYSCALL:
+		r = pink_trace_syscall(current->tid, sig);
+		break;
+	case PINK_EASY_STEP_RESUME:
+		r = pink_trace_resume(current->tid, sig);
+		break;
+	default:
+		_pink_assert_not_reached();
+	}
+	if (!r)
+		handle_ptrace_error(ctx, current, "step");
+}
+
+int pink_easy_loop(struct pink_easy_context *ctx)
 {
 	/* Enter the event loop */
 	while (ctx->nprocs != 0) {
@@ -136,7 +164,7 @@ int pink_easy_loop(struct pink_easy_context *ctx, enum pink_easy_step step_metho
 				goto dont_switch_procs;
 
 			/* Drop leader, switch to the thread, reusing leader's tid */
-			PINK_EASY_REMOVE_PROCESS(ctx, current);
+			pink_easy_process_free(ctx, current);
 			current = execve_thread;
 			current->tid = tid;
 dont_switch_procs:
@@ -161,7 +189,7 @@ dont_switch_procs:
 					goto cleanup;
 				}
 				if (r & PINK_EASY_CFLAG_DROP) {
-					PINK_EASY_REMOVE_PROCESS(ctx, current);
+					pink_easy_process_free(ctx, current);
 					continue;
 				}
 			}
@@ -173,14 +201,14 @@ dont_switch_procs:
 			 * the parent returns from its system call. Only then we will have
 			 * the association between parent and child.
 			 */
-			PINK_EASY_INSERT_PROCESS(ctx, current);
-			current->tid = tid;
-			current->flags = PINK_EASY_PROCESS_STARTUP | PINK_EASY_PROCESS_SUSPENDED;
+			current = pink_easy_process_new(ctx, tid, -1,
+					PINK_EASY_STEP_NIL,
+					PINK_EASY_PROCESS_SUSPENDED);
 			continue;
 		}
 
 		if (WIFSIGNALED(status) || WIFEXITED(status)) {
-			PINK_EASY_REMOVE_PROCESS(ctx, current);
+			pink_easy_process_free(ctx, current);
 			if (ctx->callback_table.exit) {
 				r = ctx->callback_table.exit(ctx, tid, status);
 				if (r & PINK_EASY_CFLAG_ABORT) {
@@ -192,15 +220,13 @@ dont_switch_procs:
 		}
 		if (!WIFSTOPPED(status)) {
 			ctx->callback_table.error(ctx, PINK_EASY_ERROR_PROCESS, current, "WIFSTOPPED");
-			PINK_EASY_REMOVE_PROCESS(ctx, current);
+			pink_easy_process_free(ctx, current);
 			continue;
 		}
 
 		/* Is this the very first time we see this tracee stopped? */
-		if (current->flags & PINK_EASY_PROCESS_STARTUP) {
-			if (!handle_startup(ctx, current))
+		if (current->flags & PINK_EASY_PROCESS_STARTUP && !handle_startup(ctx, current))
 				continue;
-		}
 
 		if (event == PINK_EVENT_FORK || event == PINK_EVENT_VFORK || event == PINK_EVENT_CLONE) {
 			struct pink_easy_process *new_thread;
@@ -212,19 +238,16 @@ dont_switch_procs:
 			new_thread = pink_easy_process_list_lookup(&(ctx->process_list), new_tid);
 			if (new_thread == NULL) {
 				/* Not attached to the thread yet, nor is it alive... */
-				PINK_EASY_INSERT_PROCESS(ctx, new_thread);
-				new_thread->tid = new_tid;
-				new_thread->flags = PINK_EASY_PROCESS_STARTUP | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-				new_thread->tgid = current->tgid;
+				new_thread = pink_easy_process_new(ctx, new_tid, current->tid,
+						PINK_EASY_STEP_NIL,
+						PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
 			} else {
 				/* Thread is waiting for Pink to let her go on... */
 				new_thread->tgid = current->tid;
 				new_thread->abi = current->abi;
 				new_thread->flags &= ~PINK_EASY_PROCESS_SUSPENDED;
-				/* Happy birthday! */
 				handle_startup(ctx, new_thread);
-				if (!pink_trace_syscall(new_thread->tid, 0))
-					handle_ptrace_error(ctx, current, "syscall");
+				do_step(ctx, new_thread, 0);
 			}
 		} else if (event == PINK_EVENT_EXIT && ctx->callback_table.pre_exit) {
 			unsigned long status;
@@ -238,7 +261,7 @@ dont_switch_procs:
 				goto cleanup;
 			}
 			if (r & PINK_EASY_CFLAG_DROP) {
-				PINK_EASY_REMOVE_PROCESS(ctx, current);
+				pink_easy_process_free(ctx, current);
 				continue;
 			}
 		} else if (event == PINK_EVENT_SECCOMP && ctx->callback_table.seccomp) {
@@ -253,7 +276,7 @@ dont_switch_procs:
 				goto cleanup;
 			}
 			if (r & PINK_EASY_CFLAG_DROP) {
-				PINK_EASY_REMOVE_PROCESS(ctx, current);
+				pink_easy_process_free(ctx, current);
 				continue;
 			}
 		}
@@ -276,7 +299,7 @@ dont_switch_procs:
 					goto cleanup;
 				}
 				if (r & PINK_EASY_CFLAG_DROP) {
-					PINK_EASY_REMOVE_PROCESS(ctx, current);
+					pink_easy_process_free(ctx, current);
 					continue;
 				}
 				if (r & PINK_EASY_CFLAG_SIGIGN)
@@ -303,7 +326,7 @@ dont_switch_procs:
 				goto cleanup;
 			}
 			if (r & PINK_EASY_CFLAG_DROP) {
-				PINK_EASY_REMOVE_PROCESS(ctx, current);
+				pink_easy_process_free(ctx, current);
 				continue;
 			}
 		}
@@ -311,18 +334,7 @@ dont_switch_procs:
 restart_tracee_with_sig_0:
 		sig = 0;
 restart_tracee:
-		switch (step_method) {
-		case PINK_EASY_STEP_SYSCALL:
-			r = pink_trace_syscall(current->tid, sig);
-			break;
-		case PINK_EASY_STEP_RESUME:
-			r = pink_trace_resume(current->tid, sig);
-			break;
-		default:
-			_pink_assert_not_reached();
-		}
-		if (!r)
-			handle_ptrace_error(ctx, current, "syscall");
+		do_step(ctx, current, sig);
 	}
 
 cleanup:

@@ -38,6 +38,41 @@
 #include <sys/syscall.h>
 #include <asm/unistd.h>
 
+struct pink_easy_process *pink_easy_process_new(struct pink_easy_context *ctx,
+		pid_t tid, pid_t tgid,
+		enum pink_easy_step ptrace_step,
+		short flags)
+{
+	struct pink_easy_process *current;
+
+	current = calloc(1, sizeof(struct pink_easy_process));
+	if (current == NULL)
+		return NULL;
+	SLIST_INSERT_HEAD(&ctx->process_list, current, entries);
+
+	current->tid = tid;
+	current->tgid = tgid;
+	current->ptrace_step = ptrace_step;
+
+	current->flags = flags;
+	current->flags |= PINK_EASY_PROCESS_STARTUP;
+	current->flags &= ~PINK_EASY_PROCESS_SUSPENDED;
+	current->flags &= ~PINK_EASY_PROCESS_INSYSCALL;
+
+	ctx->nprocs++;
+
+	return current;
+}
+
+void pink_easy_process_free(struct pink_easy_context *ctx, struct pink_easy_process *proc)
+{
+	SLIST_REMOVE(&ctx->process_list, proc, pink_easy_process, entries);
+	if (proc->userdata_destroy && proc->userdata)
+		proc->userdata_destroy(proc->userdata);
+	free(proc);
+	ctx->nprocs--;
+}
+
 int pink_easy_process_kill(const struct pink_easy_process *proc, int sig)
 {
 	if (proc->flags & PINK_EASY_PROCESS_CLONE_THREAD)
@@ -68,19 +103,19 @@ int pink_easy_process_get_abi(const struct pink_easy_process *proc)
 	return proc->abi;
 }
 
-bool pink_easy_process_is_attached(const struct pink_easy_process *proc)
+void pink_easy_process_set_step(struct pink_easy_process *proc, enum pink_easy_step ptrace_step)
 {
-	return !!(proc->flags & PINK_EASY_PROCESS_ATTACHED);
+	proc->ptrace_step = ptrace_step;
 }
 
-bool pink_easy_process_is_clone(const struct pink_easy_process *proc)
+enum pink_easy_step pink_easy_process_get_step(const struct pink_easy_process *proc)
 {
-	return !!(proc->flags & PINK_EASY_PROCESS_CLONE_THREAD);
+	return proc->ptrace_step;
 }
 
-bool pink_easy_process_is_suspended(const struct pink_easy_process *proc)
+short pink_easy_process_get_flags(const struct pink_easy_process *proc)
 {
-	return !!(proc->flags & PINK_EASY_PROCESS_SUSPENDED);
+	return proc->flags;
 }
 
 void *pink_easy_process_get_userdata(const struct pink_easy_process *proc)

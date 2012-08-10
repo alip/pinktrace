@@ -80,14 +80,11 @@ static bool pink_easy_exec_helper(struct pink_easy_context *ctx, int type,
 		_exit(ctx->callback_table.cerror(PINK_EASY_CHILD_ERROR_EXEC));
 	}
 	/* parent */
-	PINK_EASY_INSERT_PROCESS(ctx, current);
+	current = pink_easy_process_new(ctx, tid, -1, PINK_EASY_STEP_NIL, PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
 	if (current == NULL) {
 		kill(tid, SIGKILL);
 		return false;
 	}
-	current->tid = tid;
-	current->tgid = -1;
-	current->flags = PINK_EASY_PROCESS_STARTUP | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
 	return true;
 }
 

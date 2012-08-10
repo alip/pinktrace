@@ -39,6 +39,7 @@
 
 bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
 {
+	short flags;
 	struct pink_easy_process *current;
 
 	current = pink_easy_process_list_lookup(&ctx->process_list, tid);
@@ -50,17 +51,14 @@ bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
 		return false;
 	}
 
-	PINK_EASY_INSERT_PROCESS(ctx, current);
+	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
+	if (tgid > 0)
+		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
+	current = pink_easy_process_new(ctx, tid, tgid, PINK_EASY_STEP_NIL, flags);
 	if (current == NULL) {
 		pink_trace_kill(tid, tgid, SIGCONT);
 		return false;
 	}
 
-	current->flags |= PINK_EASY_PROCESS_ATTACHED |
-		PINK_EASY_PROCESS_STARTUP |
-		PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-	if (tgid > 0) /* clone */
-		current->flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current->tgid = tgid;
 	return true;
 }
