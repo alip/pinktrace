@@ -56,7 +56,7 @@ pinktrace_check_LDADD= $(CHECK_LIBS)
 
 TESTS= $(check_PROGRAMS)
 
-bin_PROGRAMS= pinktrace-check
+#bin_PROGRAMS= pinktrace-check
 
 endif # HAVE_CHECK
 SPARSE=sparse
