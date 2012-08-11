@@ -164,7 +164,7 @@ void dump_regs_struct(const pink_regs_t *regs)
 	/* TODO */;
 #elif PINK_ARCH_POWERPC
 	debug("\t\tregs = TODO\n");
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	debug("\t\tregs->ebx = %#lx\n", regs->ebx);
 	debug("\t\tregs->ecx = %#lx\n", regs->ecx);
 	debug("\t\tregs->edx = %#lx\n", regs->edx);

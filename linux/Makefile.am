@@ -1,1 +1,1 @@
-SUBDIRS= x32 x86 x86_64 ia64 powerpc arm .
+SUBDIRS= x32 i386 x86_64 ia64 powerpc arm .

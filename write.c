@@ -155,7 +155,7 @@ bool pink_write_syscall(pid_t tid, enum pink_abi abi, long sysnum)
 #elif PINK_ARCH_POWERPC
 	if (!pink_write_word_user(tid, sizeof(unsigned long)*PT_R0, sysnum))
 		return false;
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	if (!pink_write_word_user(tid, 4 * ORIG_EAX, sysnum))
 		return false;
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
@@ -200,7 +200,7 @@ bool pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 
 	return pink_write_word_user(tid, sizeof(unsigned long) * PT_R3, retval) &&
 		pink_write_word_user(tid, sizeof(unsigned long) * PT_CCR, flags);
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	if (error)
 		retval = (long)-error;
 	return pink_write_word_user(tid, 4 * EAX, retval);
@@ -235,7 +235,7 @@ bool pink_write_argument(pid_t tid, enum pink_abi abi, unsigned arg_index, long 
 				? (sizeof(unsigned long) * PT_ORIG_R3)
 				: ((arg_index + PT_R3) * sizeof(unsigned long)),
 				argval);
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	switch (arg_index) {
 	case 0: return pink_write_word_user(tid, 4 * EBX, argval);
 	case 1: return pink_write_word_user(tid, 4 * ECX, argval);

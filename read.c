@@ -376,7 +376,7 @@ bool pink_read_syscall(pid_t tid, enum pink_abi abi, const pink_regs_t *regs, lo
 	}
 #elif PINK_ARCH_POWERPC
 	sysval = regs->gpr[0];
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	sysval = regs->orig_eax;
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
 # ifndef __X32_SYSCALL_BIT
@@ -471,7 +471,7 @@ bool pink_read_retval(pid_t tid, enum pink_abi abi,
 	} else {
 		myrval = ppc_result;
 	}
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	if (is_negated_errno(regs->eax, wsize)) {
 		myrval = -1;
 		myerror = -regs->eax;
@@ -551,7 +551,7 @@ bool pink_read_argument(pid_t tid, enum pink_abi abi,
 		myval = regs->orig_gpr3;
 	else
 		myval = regs->gpr[arg_index + 3];
-#elif PINK_ARCH_X86
+#elif PINK_ARCH_I386
 	switch (arg_index) {
 	case 0: myval = regs->ebx; break;
 	case 1: myval = regs->ecx; break;
@@ -572,7 +572,7 @@ bool pink_read_argument(pid_t tid, enum pink_abi abi,
 		case 5: myval = regs->r9;  break;
 		default: _pink_assert_not_reached();
 		}
-	} else { /* X86 ABI */
+	} else { /* i386 ABI */
 		/* (long)(int) is to sign-extend lower 32 bits */
 		switch (arg_index) {
 		case 0: myval = (long)(int)regs->rbx; break;
