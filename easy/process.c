@@ -111,6 +111,11 @@ enum pink_easy_step pink_easy_process_get_step(const struct pink_easy_process *p
 	return proc->ptrace_step;
 }
 
+void pink_easy_process_set_flags(struct pink_easy_process *proc, short flags)
+{
+	proc->flags = flags;
+}
+
 short pink_easy_process_get_flags(const struct pink_easy_process *proc)
 {
 	return proc->flags;
