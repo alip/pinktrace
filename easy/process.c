@@ -55,7 +55,6 @@ struct pink_easy_process *pink_easy_process_new(struct pink_easy_context *ctx,
 
 	current->flags = flags;
 	current->flags |= PINK_EASY_PROCESS_STARTUP;
-	current->flags &= ~PINK_EASY_PROCESS_SUSPENDED;
 	current->flags &= ~PINK_EASY_PROCESS_INSYSCALL;
 
 	ctx->nprocs++;
