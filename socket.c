@@ -36,7 +36,7 @@
 #include <pinktrace/internal.h>
 #include <pinktrace/pink.h>
 
-const char *pink_name_socket_subcall(enum pink_socket_subcall subcall)
+const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
 {
 	switch (subcall) {
 	case PINK_SOCKET_SUBCALL_SOCKET:
