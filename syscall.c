@@ -31,20 +31,20 @@
 #include <stdio.h>
 #include <string.h>
 
-static const char *sysnames0[] = {
+static const char *const sysnames0[] = {
 #include "syscallent.h"
 };
 static int nsys0 = ARRAY_SIZE(sysnames0);
 
 #if PINK_ABIS_SUPPORTED >= 2
-static const char *sysnames1[] = {
+static const char *const sysnames1[] = {
 #include "syscallent1.h"
 };
 static int nsys1 = ARRAY_SIZE(sysnames1);
 #endif
 
 #if PINK_ABIS_SUPPORTED >= 3
-static const char *sysnames2[] = {
+static const char *const sysnames2[] = {
 #include "syscallent2.h"
 };
 static int nsys2 = ARRAY_SIZE(sysnames2);
@@ -53,7 +53,7 @@ static int nsys2 = ARRAY_SIZE(sysnames2);
 const char *pink_syscall_name(long scno, enum pink_abi abi)
 {
 	int nsys;
-	const char **names;
+	const char *const *names;
 
 	switch (abi) {
 	case 0:
@@ -80,16 +80,15 @@ const char *pink_syscall_name(long scno, enum pink_abi abi)
 	scno -= SYSCALL_OFFSET;
 #endif
 
-	if (scno < 0 || scno >= nsys) {
+	if (scno < 0 || scno >= nsys)
 		return NULL;
-	}
 	return names[scno];
 }
 
 long pink_syscall_lookup(const char *name, enum pink_abi abi)
 {
 	int nsys;
-	const char **names;
+	const char *const *names;
 	long scno;
 
 	if (!name || *name == '\0')
