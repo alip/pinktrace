@@ -44,6 +44,7 @@
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #define ANSI_NORMAL		"[00;00m"
 #define ANSI_DARK_MAGENTA	"[01;35m"
@@ -139,7 +140,7 @@ void dump_basic_hex(const void *addr, size_t len)
 void dump_regs_struct(const pink_regs_t *regs)
 {
 	debug("\t --8< REGDUMP %p >8--\n", regs);
-#if !PINK_HAVE_REGS_STRUCT
+#if !PINK_HAVE_REGS_T
 	debug("\t\tregs = %p (not supported)\n", regs);
 #elif PINK_ARCH_ARM
 	debug("\t\tregs->ARM_cpsr = %#lx\n", regs->ARM_cpsr);
@@ -183,39 +184,33 @@ void dump_regs_struct(const pink_regs_t *regs)
 	debug("\t\tregs->esp = %#lx\n", regs->esp);
 	debug("\t\tregs->xss = %#lx\n", regs->xss);
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-#if PINK_ARCH_X32
-#define RF "%#llx"
-#else
-#define RF "%#lx"
-#endif
-	debug("\t\tregs->r15 = "RF"\n", regs->r15);
-	debug("\t\tregs->r14 = "RF"\n", regs->r14);
-	debug("\t\tregs->r13 = "RF"\n", regs->r13);
-	debug("\t\tregs->r12 = "RF"\n", regs->r12);
-	debug("\t\tregs->rbp = "RF"\n", regs->rbp);
-	debug("\t\tregs->rbx = "RF"\n", regs->rbx);
-	debug("\t\tregs->r11 = "RF"\n", regs->r11);
-	debug("\t\tregs->r10 = "RF"\n", regs->r10);
-	debug("\t\tregs->r9 = "RF"\n", regs->r9);
-	debug("\t\tregs->r8 = "RF"\n", regs->r8);
-	debug("\t\tregs->rax = "RF"\n", regs->rax);
-	debug("\t\tregs->rcx = "RF"\n", regs->rcx);
-	debug("\t\tregs->rdx = "RF"\n", regs->rdx);
-	debug("\t\tregs->rsi = "RF"\n", regs->rsi);
-	debug("\t\tregs->rdi = "RF"\n", regs->rdi);
-	debug("\t\tregs->orig_rax = "RF"\n", regs->orig_rax);
-	debug("\t\tregs->rip = "RF"\n", regs->rip);
-	debug("\t\tregs->cs = "RF"\n", regs->cs);
-	debug("\t\tregs->eflags = "RF"\n", regs->eflags);
-	debug("\t\tregs->rsp = "RF"\n", regs->rsp);
-	debug("\t\tregs->ss = "RF"\n", regs->ss);
-	debug("\t\tregs->fs_base = "RF"\n", regs->fs_base);
-	debug("\t\tregs->gs_base = "RF"\n", regs->gs_base);
-	debug("\t\tregs->ds = "RF"\n", regs->ds);
-	debug("\t\tregs->es = "RF"\n", regs->es);
-	debug("\t\tregs->fs = "RF"\n", regs->fs);
-	debug("\t\tregs->gs = "RF"\n", regs->gs);
-#undef RF
+	debug("\t\tregs->r15 = %llx\n", regs->r15);
+	debug("\t\tregs->r14 = %llx\n", regs->r14);
+	debug("\t\tregs->r13 = %llx\n", regs->r13);
+	debug("\t\tregs->r12 = %llx\n", regs->r12);
+	debug("\t\tregs->rbp = %llx\n", regs->rbp);
+	debug("\t\tregs->rbx = %llx\n", regs->rbx);
+	debug("\t\tregs->r11 = %llx\n", regs->r11);
+	debug("\t\tregs->r10 = %llx\n", regs->r10);
+	debug("\t\tregs->r9 = %llx\n", regs->r9);
+	debug("\t\tregs->r8 = %llx\n", regs->r8);
+	debug("\t\tregs->rax = %llx\n", regs->rax);
+	debug("\t\tregs->rcx = %llx\n", regs->rcx);
+	debug("\t\tregs->rdx = %llx\n", regs->rdx);
+	debug("\t\tregs->rsi = %llx\n", regs->rsi);
+	debug("\t\tregs->rdi = %llx\n", regs->rdi);
+	debug("\t\tregs->orig_rax = %llx\n", regs->orig_rax);
+	debug("\t\tregs->rip = %llx\n", regs->rip);
+	debug("\t\tregs->cs = %llx\n", regs->cs);
+	debug("\t\tregs->eflags = %llx\n", regs->eflags);
+	debug("\t\tregs->rsp = %llx\n", regs->rsp);
+	debug("\t\tregs->ss = %llx\n", regs->ss);
+	debug("\t\tregs->fs_base = %llx\n", regs->fs_base);
+	debug("\t\tregs->gs_base = %llx\n", regs->gs_base);
+	debug("\t\tregs->ds = %llx\n", regs->ds);
+	debug("\t\tregs->es = %llx\n", regs->es);
+	debug("\t\tregs->fs = %llx\n", regs->fs);
+	debug("\t\tregs->gs = %llx\n", regs->gs);
 #else
 #error unsupported architecture
 #endif
@@ -230,7 +225,6 @@ void dump_socket_address(const struct pink_sockaddr *sockaddr)
 	debug("\t --8< SOCKADDRDUMP %p >8--\n", sockaddr);
 
 	debug("\t\tfamily:%d\n", sockaddr->family);
-	debug("\t\tlength:%u\n", sockaddr->length);
 
 	switch (sockaddr->family) {
 	case AF_UNIX:
@@ -477,6 +471,40 @@ void check_string_equal_or_kill(pid_t pid,
 			str_expected, str_expected);
 	abort();
 }
+
+void check_addr_loopback_or_kill(pid_t pid, in_addr_t addr)
+{
+	char ip[64];
+
+	if (htonl(addr) == INADDR_LOOPBACK)
+		return;
+
+	inet_ntop(AF_INET, &addr, ip, sizeof(ip));
+	warning("in_addr %#x (ip: `%s') not identical with INADDR_LOOPBACK:%#x",
+		(u_int32_t)addr, ip,
+		(u_int32_t)INADDR_LOOPBACK);
+	fail_verbose("in_addr %#x (ip: `%s') not identical with INADDR_LOOPBACK:%#x",
+		     (u_int32_t)addr, ip,
+		     (u_int32_t)INADDR_LOOPBACK);
+	abort();
+}
+
+#if PINK_HAVE_IPV6
+void check_addr6_loopback_or_kill(pid_t pid, struct in6_addr *addr6)
+{
+	char ip[64];
+
+	if (IN6_IS_ADDR_LOOPBACK(addr6))
+		return;
+
+	inet_ntop(AF_INET6, addr6, ip, sizeof(ip));
+	warning("in6_addr: `%s' not identical to in6addr_loopback: `::1'", ip);
+
+	fail_verbose("in6_addr: `%s' not identical to in6addr_loopback: `::1'",
+		     ip);
+	abort();
+}
+#endif
 
 void trace_me_and_stop(void)
 {
@@ -854,6 +882,50 @@ void read_string_array_or_kill(pid_t pid, enum pink_abi abi,
 	}
 
 	dump_basic_hex(dest, dest_len);
+}
+
+void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
+				 const pink_regs_t *regs,
+				 bool decode_socketcall,
+				 long *subcall)
+{
+	bool r;
+	int saved_errno;
+
+	r = pink_read_socket_subcall(pid, abi,
+			regs,
+			decode_socketcall,
+			subcall);
+
+	saved_errno = errno;
+	info("\tread_socket_subcall "
+			"(%u, %d,"
+			" %p,"
+			" %s,"
+			" %p)"
+			" = %s (errno:%d %s)\n",
+			pid, abi,
+			regs,
+			decode_socketcall ? "true" : "false",
+			subcall,
+			r ? "true" : "false",
+			errno, strerror(errno));
+	errno = saved_errno;
+
+	if (!r) {
+		kill_save_errno(pid, SIGKILL);
+		fail_verbose("pink_read_socket_subcall "
+				"(pid:%u abi:%d"
+				" regs:%p"
+				" decode_socketcall:%s"
+				" subcall:%p"
+				" errno:%d %s)",
+				pid, abi,
+				regs,
+				decode_socketcall ? "true" : "false",
+				subcall,
+				errno, strerror(errno));
+	}
 }
 
 void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi,

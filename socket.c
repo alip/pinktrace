@@ -134,7 +134,7 @@ bool pink_read_socket_address(pid_t tid, enum pink_abi abi,
 			return false;
 		if (wsize == sizeof(int)) {
 			unsigned int iaddr, iaddrlen;
-			args += arg_index + wsize;
+			args += arg_index * wsize;
 			if (!pink_read_vm_object(tid, abi, args, &iaddr))
 				return false;
 			args += wsize;
@@ -144,7 +144,7 @@ bool pink_read_socket_address(pid_t tid, enum pink_abi abi,
 			addrlen = iaddrlen;
 		} else if (wsize == sizeof(long)) {
 			unsigned long laddr, laddrlen;
-			args += arg_index + wsize;
+			args += arg_index * wsize;
 			if (!pink_read_vm_object(tid, abi, args, &laddr))
 				return false;
 			args += wsize;

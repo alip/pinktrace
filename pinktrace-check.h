@@ -56,13 +56,6 @@
 #include <sys/un.h>
 #include <arpa/inet.h>
 
-#define IS_LOOPBACK(sa)	((sa) == INADDR_LOOPBACK)
-#define IS_LOOPBACK6(sa6) \
-	(((const u_int32_t *) (sa6))[0] == 0		\
-	&& ((const u_int32_t *) (sa6))[1] == 0		\
-	 && ((const u_int32_t *) (sa6))[2] == 0		\
-	 && ((const u_int32_t *) (sa6))[3] == htonl(1))
-
 #define DEBUG	0
 #define INFO	1
 #define MESSAGE	2
@@ -134,6 +127,10 @@ void check_string_equal_or_kill(pid_t pid,
 		const char *str,
 		const char *str_expected,
 		size_t len);
+void check_addr_loopback_or_kill(pid_t pid, in_addr_t addr);
+#if PINK_HAVE_IPV6
+void check_addr6_loopback_or_kill(pid_t pid, struct in6_addr *addr6);
+#endif
 
 void trace_me_and_stop(void);
 void trace_syscall_or_kill(pid_t pid, int sig);
@@ -160,6 +157,10 @@ void read_string_array_or_kill(pid_t pid, enum pink_abi abi,
 		long arg, unsigned arr_index,
 		char *dest, size_t dest_len,
 		bool *nullptr);
+void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
+				 const pink_regs_t *regs,
+				 bool decode_socketcall,
+				 long *subcall);
 void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi,
 		const pink_regs_t *regs,
 		bool decode_socketcall,
