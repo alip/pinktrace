@@ -1,5 +1,10 @@
 /*
  * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Based in part upon strace which is:
+ *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
+ *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
+ *   Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
+ *   Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,10 +37,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/syscall.h>
+#include <sys/wait.h>
 #include <asm/unistd.h>
 
 struct pink_easy_process *pink_easy_process_new(struct pink_easy_context *ctx,
@@ -78,12 +85,95 @@ int pink_easy_process_kill(const struct pink_easy_process *proc, int sig)
 	return pink_trace_kill(proc->tid, proc->tid, sig);
 }
 
-bool pink_easy_process_resume(const struct pink_easy_process *proc, int sig)
+bool pink_easy_process_detach(const struct pink_easy_process *proc)
 {
-	if (proc->flags & PINK_EASY_PROCESS_ATTACHED)
-		return pink_trace_detach(proc->tid, sig);
-	else
-		return pink_trace_resume(proc->tid, sig);
+	bool retval, sigstop_expected;
+	int status;
+
+	/*
+	 * Linux wrongly insists the child be stopped
+	 * before detaching.  Arghh.  We go through hoops
+	 * to make a clean break of things.
+	 */
+
+	retval = true;
+	sigstop_expected = false;
+	if (proc->flags & PINK_EASY_PROCESS_ATTACHED) {
+		/*
+		 * We attached but possibly didn't see the expected SIGSTOP.
+		 * We must catch exactly one as otherwise the detached process
+		 * would be left stopped (process state T).
+		 */
+		sigstop_expected = !!(proc->flags & PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP);
+		retval = pink_trace_detach(proc->tid, 0);
+		if (retval) {
+			/* On a clear day, you can see forever. */
+		} else if (errno != ESRCH) {
+			/* Shouldn't happen. */
+			return false;
+		} else if (!pink_trace_kill(proc->tid, proc->tgid, 0)) {
+			if (errno != ESRCH) {
+				/* detach: checking sanity. */
+				return false;
+			}
+		} else if (!sigstop_expected && !pink_trace_kill(proc->tid, proc->tgid, SIGSTOP)) {
+			if (errno != ESRCH) {
+				/* detach: stopping child. */
+				return false;
+			}
+		} else {
+			sigstop_expected = true;
+		}
+	}
+
+	if (sigstop_expected) {
+		for (;;) {
+#ifdef __WALL
+			if (waitpid(proc->tid, &status, __WALL) < 0) {
+				if (errno == ECHILD) {
+					/* Already gone! */
+					break;
+				}
+				if (errno != EINVAL) {
+					/* detach: waiting */
+					break;
+				}
+#endif /* __WALL */
+				/* No __WALL here */
+				if (waitpid(proc->tid, &status, 0) < 0) {
+					if (errno != ECHILD) {
+						/* detach: waiting */
+						break;
+					}
+#ifdef __WCLONE
+					/* If no processes, try clones. */
+					if (waitpid(proc->tid, &status, __WCLONE) < 0) {
+						if (errno != ECHILD) {
+							/* detach: waiting */
+							break;
+						}
+					}
+#endif /* __WCLONE */
+				}
+#ifdef __WALL
+			}
+#endif
+			if (!WIFSTOPPED(status)) {
+				/* Au revoir, mon ami. */
+				break;
+			}
+			if (WSTOPSIG(status) == SIGSTOP) {
+				pink_trace_detach(proc->tid, 0);
+				break;
+			}
+			retval = pink_trace_resume(proc->tid,
+						   WSTOPSIG(status) == (SIGTRAP|0x80) ? 0 : WSTOPSIG(status));
+			if (!retval)
+				break;
+		}
+	}
+
+	return retval;
 }
 
 pid_t pink_easy_process_get_tid(const struct pink_easy_process *proc)
