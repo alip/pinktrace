@@ -124,6 +124,9 @@ bool pink_easy_process_detach(const struct pink_easy_process *proc)
 		} else {
 			sigstop_expected = true;
 		}
+	} else {
+		/* Expect the child is in stopped state */
+		return pink_trace_detach(proc->tid, 0);
 	}
 
 	if (sigstop_expected) {
