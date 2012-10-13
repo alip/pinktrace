@@ -107,6 +107,14 @@ static ssize_t _pink_write_vm_data_ptrace(pid_t tid, long addr, const char *src,
 	return count_written;
 }
 
+#if PINK_HAVE_PROCESS_VM_WRITEV
+static bool _pink_process_vm_writev_not_supported = false;
+#define process_vm_writev _pink_process_vm_writev
+#else
+static bool _pink_process_vm_writev_not_supported = true;
+#define process_vm_writev(...) (errno = ENOSYS, -1)
+#endif
+
 ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
 		const char *src, size_t len)
 {
@@ -120,20 +128,26 @@ ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
 		addr &= (1ul << 8 * wsize) - 1;
 #endif
 
-#if PINK_HAVE_PROCESS_VM_WRITEV
-	struct iovec local[1], remote[1];
-	local[0].iov_base = (void *)src;
-	remote[0].iov_base = (void *)addr;
-	local[0].iov_len = remote[0].iov_len = len;
+	if (!_pink_process_vm_writev_not_supported) {
+		int r;
+		struct iovec local[1], remote[1];
 
-	return _pink_process_vm_writev(tid,
-			local, 1,
-			remote, 1,
-			/*flags:*/ 0
-	);
-#else
+		local[0].iov_base = (void *)src;
+		remote[0].iov_base = (void *)addr;
+		local[0].iov_len = remote[0].iov_len = len;
+
+		r = process_vm_writev(tid,
+				      local, 1,
+				      remote, 1,
+				      /*flags:*/ 0);
+		if (r < 0 && errno == ENOSYS) {
+			_pink_process_vm_writev_not_supported = true;
+			goto vm_writev_didnt_work;
+		}
+		return r;
+	}
+vm_writev_didnt_work:
 	return _pink_write_vm_data_ptrace(tid, addr, src, len);
-#endif
 }
 
 bool pink_write_syscall(pid_t tid, enum pink_abi abi, long sysnum)

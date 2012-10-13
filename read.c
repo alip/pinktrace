@@ -179,8 +179,17 @@ static ssize_t _pink_read_vm_data_ptrace(pid_t tid, long addr, char *dest, size_
 	return count_read;
 }
 
+#if PINK_HAVE_PROCESS_VM_READV
+static bool _pink_process_vm_readv_not_supported = false;
+#define process_vm_readv _pink_process_vm_readv
+#else
+static bool _pink_process_vm_readv_not_supported = true;
+#define process_vm_readv(...) (errno = ENOSYS, -1)
+#endif
+
 PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr, char *dest, size_t len)
+ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr,
+			  char *dest, size_t len)
 {
 #if PINK_ABIS_SUPPORTED > 1
 	size_t wsize;
@@ -192,20 +201,26 @@ ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr, char *dest, s
 		addr &= (1ul << 8 * wsize) - 1;
 #endif
 
-#if PINK_HAVE_PROCESS_VM_READV
-	struct iovec local[1], remote[1];
-	local[0].iov_base = dest;
-	remote[0].iov_base = (void *)addr;
-	local[0].iov_len = remote[0].iov_len = len;
+	if (!_pink_process_vm_readv_not_supported) {
+		int r;
+		struct iovec local[1], remote[1];
 
-	return _pink_process_vm_readv(tid,
-			local, 1,
-			remote, 1,
-			/*flags:*/ 0
-	);
-#else
+		local[0].iov_base = dest;
+		remote[0].iov_base = (void *)addr;
+		local[0].iov_len = remote[0].iov_len = len;
+
+		r = process_vm_readv(tid,
+				     local, 1,
+				     remote, 1,
+				     /*flags:*/0);
+		if (r < 0 && errno == ENOSYS) {
+			_pink_process_vm_readv_not_supported = true;
+			goto vm_readv_didnt_work;
+		}
+		return r;
+	}
+vm_readv_didnt_work:
 	return _pink_read_vm_data_ptrace(tid, addr, dest, len);
-#endif
 }
 
 static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr, char *dest, size_t len)
