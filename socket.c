@@ -89,13 +89,16 @@ bool pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 	size_t wsize;
 	long args;
 
-	if (!pink_read_argument(tid, abi, regs, arg_index, &args))
-		return false;
-	if (!decode_socketcall) {
-		*argval = args;
-		return true;
-	}
+	if (!decode_socketcall)
+		return pink_read_argument(tid, abi, regs, arg_index, argval);
 
+	/*
+	 * Decoding the second argument of:
+	 * int socketcall(int call, unsigned long *args);
+	 */
+
+	if (!pink_read_argument(tid, abi, regs, 1, &args))
+		return false;
 	if (!pink_abi_wordsize(abi, &wsize))
 		return false;
 	if (wsize == sizeof(int))
