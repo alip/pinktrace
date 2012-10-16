@@ -121,44 +121,15 @@ bool pink_read_socket_address(pid_t tid, enum pink_abi abi,
 	long addr, addrlen, args;
 	size_t wsize;
 
-	if (!decode_socketcall) {
-		if (fd && !pink_read_argument(tid, abi, regs, 0, fd))
-			return false;
-		if (!pink_read_argument(tid, abi, regs, arg_index, &addr))
-			return false;
-		if (!pink_read_argument(tid, abi, regs, arg_index + 1, &addrlen))
-			return false;
-	} else {
-		if (!pink_abi_wordsize(abi, &wsize))
-			return false;
-		if (!pink_read_argument(tid, abi, regs, 1, &args))
-			return false;
-		if (fd && !pink_read_vm_object(tid, abi, args, fd))
-			return false;
-		if (wsize == sizeof(int)) {
-			unsigned int iaddr, iaddrlen;
-			args += arg_index * wsize;
-			if (!pink_read_vm_object(tid, abi, args, &iaddr))
-				return false;
-			args += wsize;
-			if (!pink_read_vm_object(tid, abi, args, &iaddrlen))
-				return false;
-			addr = iaddr;
-			addrlen = iaddrlen;
-		} else if (wsize == sizeof(long)) {
-			unsigned long laddr, laddrlen;
-			args += arg_index * wsize;
-			if (!pink_read_vm_object(tid, abi, args, &laddr))
-				return false;
-			args += wsize;
-			if (!pink_read_vm_object(tid, abi, args, &laddrlen))
-				return false;
-			addr = laddr;
-			addrlen = laddrlen;
-		} else {
-			_pink_assert_not_reached();
-		}
-	}
+	if (fd && !pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+					     0, fd))
+		return false;
+	if (!pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+				       arg_index, &addr))
+		return false;
+	if (!pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+				       arg_index + 1, &addrlen))
+		return false;
 
 	if (addr == 0) {
 		sockaddr->family = -1;
