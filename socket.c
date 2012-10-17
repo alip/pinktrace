@@ -87,7 +87,7 @@ bool pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 		unsigned arg_index, long *argval)
 {
 	size_t wsize;
-	long args;
+	long addr;
 
 	if (!decode_socketcall)
 		return pink_read_argument(tid, abi, regs, arg_index, argval);
@@ -97,18 +97,24 @@ bool pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 	 * int socketcall(int call, unsigned long *args);
 	 */
 
-	if (!pink_read_argument(tid, abi, regs, 1, &args))
+	if (!pink_read_argument(tid, abi, regs, 1, &addr))
 		return false;
 	if (!pink_abi_wordsize(abi, &wsize))
 		return false;
-	if (wsize == sizeof(int))
-		args += arg_index * sizeof(unsigned int);
-	else if (wsize == sizeof(long))
-		args += arg_index * sizeof(unsigned long);
-	else
-		_pink_assert_not_reached();
+	addr += arg_index * wsize;
+	if (wsize == sizeof(int)) {
+		unsigned int arg;
+		if (!pink_read_vm_object(tid, abi, addr, &arg))
+			return false;
+		*argval = arg;
+	} else {
+		unsigned long arg;
+		if (!pink_read_vm_object(tid, abi, addr, &arg))
+			return false;
+		*argval = arg;
+	}
 
-	return pink_read_vm_object(tid, abi, args, argval);
+	return true;
 }
 
 PINK_GCC_ATTR((nonnull(7)))
