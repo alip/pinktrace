@@ -61,6 +61,7 @@ TESTS= $(check_PROGRAMS)
 endif # HAVE_CHECK
 SPARSE=sparse
 SPARSE_CPPFLAGS= $(DEFAULT_INCLUDES) \
+		 -D__STDC_VERSION__=199901L \
 		 -I$(shell $(CC) -print-file-name=include) \
 		 -I$(shell $(CC) -print-file-name=include-fixed)
 # Fix this flag for your architecture!
