@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LpIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
@@ -25,40 +25,44 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/private.h>
-#include <pinktrace/pink.h>
-#include <pinktrace/easy/pink.h>
+#ifndef PINK_EASY_INIT_H
+#define PINK_EASY_INIT_H
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
+/**
+ * @file pinktrace/easy/init.h
+ * @brief Pink's easy initialization
+ *
+ * Do not include this file directly. Use pinktrace/easy/pink.h directly.
+ *
+ * @defgroup pink_easy_init Pink's easy initialization
+ * @ingroup pinktrace-easy
+ * @{
+ **/
+
+#include <stdbool.h>
 #include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
-bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
-{
-	short flags;
-	struct pink_easy_process *current;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-	current = pink_easy_process_list_lookup(&ctx->process_list, tid);
-	if (current != NULL && current->flags & PINK_EASY_PROCESS_ATTACHED)
-		return true;
+/**
+ * Kernel release which pinktrace uses to make certain decisions on how
+ * ptrace() works.
+ **/
+extern unsigned pink_easy_os_release;
 
-	if (pink_trace_attach(tid) < 0) {
-		ctx->callback_table.error(ctx, PINK_EASY_ERROR_ATTACH, tid);
-		return false;
-	}
+/**
+ * Initialize pinktrace-easy's internal variables.
+ *
+ * @warning This function @b must be called before any library interaction!
+ *
+ * @return true on success, false on failure and sets errno accordingly
+ **/
+bool pink_easy_init(void);
 
-	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-	if (tgid > 0)
-		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current = pink_easy_process_new(ctx, tid, tgid, flags);
-	if (current == NULL) {
-		pink_trace_kill(tid, tgid, SIGCONT);
-		return false;
-	}
-
-	return true;
+#ifdef __cplusplus
 }
+#endif
+/** @} */
+#endif

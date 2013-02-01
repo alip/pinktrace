@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -35,34 +35,41 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/internal.h>
+#include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-bool pink_write_word_user(pid_t tid, long off, long val)
+int pink_write_word_user(pid_t tid, long off, long val)
 {
-	return pink_ptrace(PTRACE_POKEUSER, tid, (void *)off, (void *)val) != -1;
+	if (pink_ptrace(PTRACE_POKEUSER, tid, (void *)off, (void *)val) < 0)
+		return -errno;
+	return 0;
 }
 
-bool pink_write_word_data(pid_t tid, long off, long val)
+int pink_write_word_data(pid_t tid, long off, long val)
 {
-	return pink_ptrace(PTRACE_POKEDATA, tid, (void *)off, (void *)val) != -1;
+	if (pink_ptrace(PTRACE_POKEDATA, tid, (void *)off, (void *)val) < 0)
+		return -errno;
+	return 0;
 }
 
 static ssize_t _pink_process_vm_writev(pid_t tid,
-		const struct iovec *local_iov,
-		unsigned long liovcnt,
-		const struct iovec *remote_iov,
-		unsigned long riovcnt,
-		unsigned long flags)
+				       const struct iovec *local_iov,
+				       unsigned long liovcnt,
+				       const struct iovec *remote_iov,
+				       unsigned long riovcnt,
+				       unsigned long flags)
 {
 	ssize_t r;
 #ifdef HAVE_PROCESS_VM_WRITEV
 	r = process_vm_writev(tid,
-			local_iov, liovcnt,
-			remote_iov, riovcnt,
-			flags);
+			      local_iov, liovcnt,
+			      remote_iov, riovcnt,
+			      flags);
 #elif defined(__NR_process_vm_writev)
-	r = syscall(__NR_process_vm_writev, (long)tid, local_iov, liovcnt, remote_iov, riovcnt, flags);
+	r = syscall(__NR_process_vm_writev, (long)tid,
+		    local_iov, liovcnt,
+		    remote_iov, riovcnt,
+		    flags);
 #else
 	errno = ENOSYS;
 	return -1;
@@ -70,7 +77,8 @@ static ssize_t _pink_process_vm_writev(pid_t tid,
 	return r;
 }
 
-static ssize_t _pink_write_vm_data_ptrace(pid_t tid, long addr, const char *src, size_t len)
+static ssize_t _pink_write_vm_data_ptrace(pid_t tid, long addr,
+					  const char *src, size_t len)
 {
 	bool started;
 	int n, m;
@@ -88,7 +96,7 @@ static ssize_t _pink_write_vm_data_ptrace(pid_t tid, long addr, const char *src,
 		addr &= -sizeof(long); /* residue */
 		m = MIN(sizeof(long) - n, len);
 		memcpy(u.x, &src[n], m);
-		if (!pink_write_word_data(tid, addr, u.val)) {
+		if (pink_write_word_data(tid, addr, u.val) < 0) {
 			/* Not started yet, thus we had a bogus address. */
 			return -1;
 		}
@@ -98,7 +106,7 @@ static ssize_t _pink_write_vm_data_ptrace(pid_t tid, long addr, const char *src,
 	while (len > 0) {
 		m = MIN(sizeof(long), len);
 		memcpy(u.x, src, m);
-		if (!pink_write_word_data(tid, addr, u.val))
+		if (pink_write_word_data(tid, addr, u.val) < 0)
 			return started ? count_written : -1;
 		started = true;
 		addr += sizeof(long), src += m, len -= m, count_written += m;
@@ -116,13 +124,17 @@ static bool _pink_process_vm_writev_not_supported = true;
 #endif
 
 ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
-		const char *src, size_t len)
+			   const char *src, size_t len)
 {
 #if PINK_ABIS_SUPPORTED > 1
+	int errcond;
 	size_t wsize;
 
-	if (!pink_abi_wordsize(abi, &wsize))
-		return false;
+	errcond = pink_abi_wordsize(abi, &wsize);
+	if (errcond < 0) {
+		errno = -errcond;
+		return -1;
+	}
 
 	if (wsize < sizeof(addr))
 		addr &= (1ul << 8 * wsize) - 1;
@@ -150,39 +162,37 @@ vm_writev_didnt_work:
 	return _pink_write_vm_data_ptrace(tid, addr, src, len);
 }
 
-bool pink_write_syscall(pid_t tid, enum pink_abi abi, long sysnum)
+int pink_write_syscall(pid_t tid, enum pink_abi abi, long sysnum)
 {
+	int r;
 #if PINK_ARCH_ARM
 # ifndef PTRACE_SET_SYSCALL
 #  define PTRACE_SET_SYSCALL 23
 # endif
-	if (!pink_ptrace(PTRACE_SET_SYSCALL, tid, NULL, (void *)(long)(sysnum & 0xffff)))
-		return false;
+	r = pink_ptrace(PTRACE_SET_SYSCALL, tid,
+			NULL, (void *)(long)(sysnum & 0xffff));
+	if (r < 0)
+		r = -errno;
 #elif PINK_ARCH_IA64
-	if (abi == 1) { /* ia32 */
-		if (!pink_write_word_user(tid, PT_R1, &sysnum))
-			return false;
-	} else {
-		if (!pink_write_word_user(tid, PT_R15, sysnum))
-			return false;
-	}
+	if (abi == 1) /* ia32 */
+		r = pink_write_word_user(tid, PT_R1, &sysnum);
+	else
+		r = pink_write_word_user(tid, PT_R15, sysnum);
 #elif PINK_ARCH_POWERPC
-	if (!pink_write_word_user(tid, sizeof(unsigned long)*PT_R0, sysnum))
-		return false;
+	r = pink_write_word_user(tid, sizeof(unsigned long)*PT_R0, sysnum);
 #elif PINK_ARCH_I386
-	if (!pink_write_word_user(tid, 4 * ORIG_EAX, sysnum))
-		return false;
+	r = pink_write_word_user(tid, 4 * ORIG_EAX, sysnum);
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-	if (!pink_write_word_user(tid, 8 * ORIG_RAX, sysnum))
-		return false;
+	r = pink_write_word_user(tid, 8 * ORIG_RAX, sysnum);
 #else
 #error unsupported architecture
 #endif
-	return true;
+	return r;
 }
 
-bool pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
+int pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 {
+	int r;
 #if PINK_ARCH_ARM
 	return pink_write_word_user(tid, 0, retval);
 #elif PINK_ARCH_IA64
@@ -196,14 +206,19 @@ bool pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 		r10 = 0;
 	}
 
-	return pink_write_word_user(tid, PT_R8, r8)
-		&& pink_write_word_user(tid, PT_R10, r10);
+	r = pink_write_word_user(tid, PT_R8, r8);
+	if (r < 0)
+		return r;
+	r = pink_write_word_user(tid, PT_R10, r10);
+	if (r < 0)
+		return r;
 #elif PINK_ARCH_POWERPC
 #define SO_MASK 0x10000000
 	long flags;
 
-	if (!pink_read_word_user(tid, sizeof(unsigned long) * PT_CCR, &flags))
-		return false;
+	r = pink_read_word_user(tid, sizeof(unsigned long) * PT_CCR, &flags);
+	if (r < 0)
+		return r;
 
 	if (error) {
 		retval = error;
@@ -212,8 +227,12 @@ bool pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 		flags &= ~SO_MASK;
 	}
 
-	return pink_write_word_user(tid, sizeof(unsigned long) * PT_R3, retval) &&
-		pink_write_word_user(tid, sizeof(unsigned long) * PT_CCR, flags);
+	r = pink_write_word_user(tid, sizeof(unsigned long) * PT_R3, retval);
+	if (r < 0)
+		return r;
+	r = pink_write_word_user(tid, sizeof(unsigned long) * PT_CCR, flags);
+	if (r < 0)
+		return r;
 #elif PINK_ARCH_I386
 	if (error)
 		retval = (long)-error;
@@ -227,7 +246,8 @@ bool pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 #endif
 }
 
-bool pink_write_argument(pid_t tid, enum pink_abi abi, unsigned arg_index, long argval)
+int pink_write_argument(pid_t tid, enum pink_abi abi, unsigned arg_index,
+			long argval)
 {
 	if (arg_index >= PINK_MAX_ARGS) {
 		errno = EINVAL;
@@ -235,15 +255,14 @@ bool pink_write_argument(pid_t tid, enum pink_abi abi, unsigned arg_index, long 
 	}
 #if PINK_ARCH_ARM
 	if (arg_index < 5)
-		return pink_write_word_user(tid, sizeof(long) * arg_index, argval);
+		return pink_write_word_user(tid, sizeof(long) * arg_index,
+					    argval);
 
 	/* TODO: how to write arg_index=5? on ARM? */
-	errno = ENOTSUP;
-	return false;
+	return -ENOTSUP;
 #elif PINK_ARCH_IA64
 	/* TODO: Implement pink_write_argument() on IA64 */
-	errno = ENOTSUP;
-	return false;
+	return -ENOTSUP;
 #elif PINK_ARCH_POWERPC
 	return pink_write_word_user(tid, (arg_index == 0)
 				? (sizeof(unsigned long) * PT_ORIG_R3)
@@ -287,8 +306,7 @@ bool pink_write_argument(pid_t tid, enum pink_abi abi, unsigned arg_index, long 
 		}
 		break;
 	default:
-		errno = EINVAL;
-		return false;
+		return -EINVAL;
 	}
 #else
 #error unsupported architecture

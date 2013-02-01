@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/internal.h>
+#include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
 inline enum pink_event pink_event_decide(int status)

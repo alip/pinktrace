@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,32 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/private.h>
-#include <pinktrace/pink.h>
-#include <pinktrace/easy/pink.h>
+#ifndef PINK_COMPILER_H
+#define PINK_COMPILER_H
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+/**
+ * @file pinktrace/compiler.h
+ * @brief Pink's compiler specific definitions
+ *
+ * Do not include this file directly. Use pinktrace/pink.h instead.
+ *
+ * @defgroup pink_compiler Pink's compiler specific definitions
+ * @ingroup pinktrace
+ * @{
+ **/
 
-bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
-{
-	short flags;
-	struct pink_easy_process *current;
+#if !defined(SPARSE) && defined(__GNUC__) && __GNUC__ >= 3
+#define PINK_GCC_ATTR(x)     __attribute__(x)
+#define PINK_GCC_LIKELY(x)   __builtin_expect(!!(x), 1)
+#define PINK_GCC_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+/** Macro for GCC attributes */
+#define PINK_GCC_ATTR(x) /* empty */
+/** GCC builtin_expect macro */
+#define PINK_GCC_LIKELY(x)   (x)
+/** GCC builtin_expect macro */
+#define PINK_GCC_UNLIKELY(x) (x)
+#endif
 
-	current = pink_easy_process_list_lookup(&ctx->process_list, tid);
-	if (current != NULL && current->flags & PINK_EASY_PROCESS_ATTACHED)
-		return true;
-
-	if (pink_trace_attach(tid) < 0) {
-		ctx->callback_table.error(ctx, PINK_EASY_ERROR_ATTACH, tid);
-		return false;
-	}
-
-	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-	if (tgid > 0)
-		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current = pink_easy_process_new(ctx, tid, tgid, flags);
-	if (current == NULL) {
-		pink_trace_kill(tid, tgid, SIGCONT);
-		return false;
-	}
-
-	return true;
-}
+/** @} */
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -30,7 +30,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/internal.h>
+#include <pinktrace/easy/private.h>
 #include <pinktrace/pink.h>
 #include <pinktrace/easy/pink.h>
 
@@ -111,12 +111,14 @@ bool pink_easy_process_detach(const struct pink_easy_process *proc)
 		} else if (errno != ESRCH) {
 			/* Shouldn't happen. */
 			return false;
-		} else if (!pink_trace_kill(proc->tid, proc->tgid, 0)) {
+		} else if (pink_trace_kill(proc->tid, proc->tgid, 0) < 0) {
 			if (errno != ESRCH) {
 				/* detach: checking sanity. */
 				return false;
 			}
-		} else if (!sigstop_expected && !pink_trace_kill(proc->tid, proc->tgid, SIGSTOP)) {
+		} else if (!sigstop_expected && pink_trace_kill(proc->tid,
+								proc->tgid,
+								SIGSTOP) < 0) {
 			if (errno != ESRCH) {
 				/* detach: stopping child. */
 				return false;

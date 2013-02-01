@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/internal.h> /* FIXME: _pink_assert_not_reached() */
-#include <pinktrace/easy/internal.h>
+#include <pinktrace/private.h> /* FIXME: _pink_assert_not_reached() */
+#include <pinktrace/easy/private.h>
 #include <pinktrace/pink.h>
 #include <pinktrace/easy/pink.h>
 
@@ -40,14 +40,15 @@
 #include <sys/utsname.h>
 
 static void handle_ptrace_error(struct pink_easy_context *ctx,
-		struct pink_easy_process *current,
-		const char *errctx)
+				struct pink_easy_process *current,
+				const char *errctx)
 {
 	if (errno == ESRCH) {
 		if (ctx->callback_table.teardown)
 			ctx->callback_table.teardown(ctx, current);
 	} else {
-		ctx->callback_table.error(ctx, PINK_EASY_ERROR_TRACE, current, errctx);
+		ctx->callback_table.error(ctx, PINK_EASY_ERROR_TRACE,
+					  current, errctx);
 	}
 	pink_easy_process_free(ctx, current);
 }
@@ -55,7 +56,7 @@ static void handle_ptrace_error(struct pink_easy_context *ctx,
 static bool handle_startup(struct pink_easy_context *ctx, struct pink_easy_process *current)
 {
 	/* Set up tracing options */
-	if (!pink_trace_setup(current->tid, ctx->ptrace_options)) {
+	if (pink_trace_setup(current->tid, ctx->ptrace_options) < 0) {
 		handle_ptrace_error(ctx, current, "setup");
 		return false;
 	}
@@ -102,7 +103,7 @@ static void do_step(struct pink_easy_context *ctx,
 	default:
 		_pink_assert_not_reached();
 	}
-	if (!r)
+	if (r < 0)
 		handle_ptrace_error(ctx, current, "step");
 }
 
@@ -170,7 +171,7 @@ int pink_easy_loop(struct pink_easy_context *ctx)
 
 			if (pink_easy_os_release < KERNEL_VERSION(3,0,0))
 				goto dont_switch_procs;
-			if (!pink_trace_geteventmsg(tid, (unsigned long *)&old_tid))
+			if (pink_trace_geteventmsg(tid, (unsigned long *)&old_tid) < 0)
 				goto dont_switch_procs;
 			if (old_tid <= 0 || old_tid == tid)
 				goto dont_switch_procs;
@@ -185,7 +186,7 @@ int pink_easy_loop(struct pink_easy_context *ctx)
 dont_switch_procs:
 			/* Update abi */
 #if PINK_HAVE_REGS_T
-			if (!pink_trace_get_regs(current->tid, &regs)) {
+			if (pink_trace_get_regs(current->tid, &regs) < 0) {
 				handle_ptrace_error(ctx, current, "getregs");
 				continue;
 			}
@@ -193,7 +194,7 @@ dont_switch_procs:
 			regs = 0;
 #endif
 
-			if (!pink_read_abi(current->tid, &regs, &current->abi)) {
+			if (pink_read_abi(current->tid, &regs, &current->abi) < 0) {
 				handle_ptrace_error(ctx, current, "abi");
 				continue;
 			}
@@ -245,7 +246,7 @@ dont_switch_procs:
 		if (event == PINK_EVENT_FORK || event == PINK_EVENT_VFORK || event == PINK_EVENT_CLONE) {
 			struct pink_easy_process *new_thread;
 			long new_tid;
-			if (!pink_trace_geteventmsg(current->tid, (unsigned long *)&new_tid)) {
+			if (pink_trace_geteventmsg(current->tid, (unsigned long *)&new_tid) < 0) {
 				handle_ptrace_error(ctx, current, "geteventmsg");
 				continue;
 			}
@@ -264,7 +265,7 @@ dont_switch_procs:
 			}
 		} else if (event == PINK_EVENT_EXIT && ctx->callback_table.pre_exit) {
 			unsigned long status;
-			if (!pink_trace_geteventmsg(current->tid, &status)) {
+			if (pink_trace_geteventmsg(current->tid, &status) < 0) {
 				handle_ptrace_error(ctx, current, "geteventmsg");
 				continue;
 			}
@@ -279,7 +280,7 @@ dont_switch_procs:
 			}
 		} else if (event == PINK_EVENT_SECCOMP && ctx->callback_table.seccomp) {
 			unsigned long ret_data;
-			if (!pink_trace_geteventmsg(current->tid, &ret_data)) {
+			if (pink_trace_geteventmsg(current->tid, &ret_data) < 0) {
 				handle_ptrace_error(ctx, current, "geteventmsg");
 				continue;
 			}
@@ -326,7 +327,7 @@ dont_switch_procs:
 		if (ctx->callback_table.syscall) {
 			bool entering = current->flags & PINK_EASY_PROCESS_INSYSCALL;
 #if PINK_HAVE_REGS_T
-			if (!pink_trace_get_regs(current->tid, &regs)) {
+			if (pink_trace_get_regs(current->tid, &regs) < 0) {
 				handle_ptrace_error(ctx, current, "getregs");
 				continue;
 			}

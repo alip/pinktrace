@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,48 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/private.h>
-#include <pinktrace/pink.h>
-#include <pinktrace/easy/pink.h>
+#ifndef PINK_PINK_H
+#define PINK_PINK_H
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+/**
+ * @mainpage pinktrace
+ *
+ * pinktrace - Pink's Tracing Library
+ *
+ * @section overview Overview
+ *
+ * pinktrace is a wrapper around @c ptrace(2) system call.
+ * It provides a robust API for tracing processes.
+ *
+ * @attention This is a work in progress and the API is @b not stable.
+ *
+ * @section parts Parts
+ *
+ * This library is divided into two parts:
+ * - @ref pinktrace      "Core library (pinktrace)"
+ * - @ref pinktrace-easy "Easy library (pinktrace-easy)"
+ *
+ * @author Ali Polatel <alip@exherbo.org>
+ **/
 
-bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
-{
-	short flags;
-	struct pink_easy_process *current;
+/**
+ * @file pinktrace/pink.h
+ * @brief A header file including all other header files part of pinktrace
+ * @defgroup pinktrace Pink's Tracing Library
+ **/
 
-	current = pink_easy_process_list_lookup(&ctx->process_list, tid);
-	if (current != NULL && current->flags & PINK_EASY_PROCESS_ATTACHED)
-		return true;
+#include <pinktrace/about.h>
+#include <pinktrace/compat.h>
+#include <pinktrace/compiler.h>
+#include <pinktrace/system.h>
+#include <pinktrace/abi.h>
+#include <pinktrace/regs.h>
+#include <pinktrace/event.h>
+#include <pinktrace/syscall.h>
+#include <pinktrace/trace.h>
+#include <pinktrace/read.h>
+#include <pinktrace/write.h>
+#include <pinktrace/socket.h>
+#include <pinktrace/pipe.h>
 
-	if (pink_trace_attach(tid) < 0) {
-		ctx->callback_table.error(ctx, PINK_EASY_ERROR_ATTACH, tid);
-		return false;
-	}
-
-	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-	if (tgid > 0)
-		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current = pink_easy_process_new(ctx, tid, tgid, flags);
-	if (current == NULL) {
-		pink_trace_kill(tid, tgid, SIGCONT);
-		return false;
-	}
-
-	return true;
-}
+#endif

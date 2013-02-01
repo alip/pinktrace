@@ -1,0 +1,245 @@
+@GENERATED_FILE@
+
+/*
+ * Copyright (c) 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifndef PINK_SYSTEM_H
+#define PINK_SYSTEM_H
+
+/**
+ * @file pinktrace/system.h
+ * @brief Pink's system specific definitions
+ *
+ * Do not include this file directly. Use pinktrace/pink.h directly.
+ *
+ * @defgroup pink_system Pink's system specific definitions
+ * @ingroup pinktrace
+ * @{
+ **/
+
+/** Define to 1 if the architecture is x86, 0 otherwise */
+#define PINK_ARCH_I386			@PINK_ARCH_I386@
+/** Define to 1 if the architecture is x86_64, 0 otherwise */
+#define PINK_ARCH_X86_64		@PINK_ARCH_X86_64@
+/** Define to 1 if the architecture is 32bit x86_64, 0 otherwise */
+#define PINK_ARCH_X32			@PINK_ARCH_X32@
+/** Define to 1 if the architecture is powerpc, 0 otherwise */
+#define PINK_ARCH_POWERPC		@PINK_ARCH_POWERPC@
+/** Define to 1 if the architecture is powerpc64, 0 otherwise */
+#define PINK_ARCH_POWERPC64		@PINK_ARCH_POWERPC64@
+/** Define to 1 if the architecture is ia64, 0 otherwise */
+#define PINK_ARCH_IA64			@PINK_ARCH_IA64@
+/** Define to 1 if the architecture is arm, 0 otherwise */
+#define PINK_ARCH_ARM			@PINK_ARCH_ARM@
+
+/** Maximum number of arguments to a system call */
+#define PINK_MAX_ARGS			6
+
+/** A "valid" invalid system call number */
+#define PINK_SYSCALL_INVALID		@PINK_SYSCALL_INVALID@
+
+/** Define to 1 if pinktrace supports IPV6, 0 otherwise */
+#define PINK_HAVE_IPV6			@PINK_HAVE_IPV6@
+/** Define to 1 if pinktrace supports Netlink, 0 otherwise */
+#define PINK_HAVE_NETLINK		@PINK_HAVE_NETLINK@
+
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_SYSGOOD is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.4.6 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_SYSGOOD	@PINK_HAVE_OPTION_SYSGOOD@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_FORK is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.5.46 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_FORK		@PINK_HAVE_OPTION_FORK@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_VFORK is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.5.46 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_VFORK		@PINK_HAVE_OPTION_VFORK@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_CLONE is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.5.46 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_CLONE		@PINK_HAVE_OPTION_CLONE@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_EXEC is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.5.46 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_EXEC		@PINK_HAVE_OPTION_EXEC@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_VFORKDONE is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.5.60 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_VFORKDONE	@PINK_HAVE_OPTION_VFORKDONE@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_EXIT is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-2.5.60 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_EXIT		@PINK_HAVE_OPTION_EXIT@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_SECCOMP is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-3.5 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_SECCOMP	@PINK_HAVE_OPTION_SECCOMP@
+
+/**
+ * Define to 1 if pink_trace_setup() is supported, 0 otherwise
+ *
+ * @note This function is supported on Linux-2.4.6 and newer.
+ * @attention If this is 0, pink_trace_setup() always returns false and
+ *            sets errno to @c ENOSYS
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_SETUP			@PINK_HAVE_SETUP@
+
+/**
+ * Define to 1 if pink_trace_geteventmsg() is supported, 0 otherwise
+ *
+ * @attention If this is 0, pink_trace_geteventmsg() always returns false and
+ *            sets errno to @c ENOSYS.
+ * @note This function is supported on Linux-2.5.46 and newer.
+ * @see pink_trace_geteventmsg()
+ **/
+#define PINK_HAVE_GETEVENTMSG		@PINK_HAVE_GETEVENTMSG@
+
+/**
+ * Define to 1 if pink_trace_sysemu() is supported, 0 otherwise
+ *
+ * @attention If this is 0, pink_trace_sysemu() always returns false and
+ *            sets errno to @c ENOSYS
+ * @note This function is supported on Linux-2.6.14 and newer.
+ * @see pink_trace_sysemu()
+ **/
+#define PINK_HAVE_SYSEMU		@PINK_HAVE_SYSEMU@
+/**
+ * Define to 1 if pink_trace_sysemu_singlestep() is supported, 0 otherwise
+ *
+ * @attention If this is 0, pink_trace_sysemu_singlestep() always returns false and
+ *            sets errno to @c ENOSYS
+ * @note This function is supported on Linux-2.6.14 and newer.
+ * @see pink_trace_sysemu_singlestep()
+ **/
+#define PINK_HAVE_SYSEMU_SINGLESTEP	@PINK_HAVE_SYSEMU_SINGLESTEP@
+
+/**
+ * Define to 1 if #PINK_EVENT_FORK is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-2.5.46 and newer.
+ **/
+#define PINK_HAVE_EVENT_FORK		@PINK_HAVE_EVENT_FORK@
+/**
+ * Define to 1 if #PINK_EVENT_VFORK is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-2.5.46 and newer.
+ **/
+#define PINK_HAVE_EVENT_VFORK		@PINK_HAVE_EVENT_VFORK@
+/**
+ * Define to 1 if #PINK_EVENT_CLONE is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-2.5.46 and newer.
+ **/
+#define PINK_HAVE_EVENT_CLONE		@PINK_HAVE_EVENT_CLONE@
+/**
+ * Define to 1 if #PINK_EVENT_EXEC is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-2.5.46 and newer.
+ **/
+#define PINK_HAVE_EVENT_EXEC		@PINK_HAVE_EVENT_EXEC@
+/**
+ * Define to 1 if #PINK_EVENT_VFORK_DONE is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-2.5.60 and newer.
+ * @see pink_event_decide()
+ **/
+#define PINK_HAVE_EVENT_VFORK_DONE	@PINK_HAVE_EVENT_VFORK_DONE@
+/**
+ * Define to 1 if #PINK_EVENT_EXIT is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-2.5.60 and newer.
+ **/
+#define PINK_HAVE_EVENT_EXIT		@PINK_HAVE_EVENT_EXIT@
+/**
+ * Define to 1 if #PINK_EVENT_SECCOMP is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-3.5 and newer.
+ **/
+#define PINK_HAVE_EVENT_SECCOMP		@PINK_HAVE_EVENT_SECCOMP@
+
+/**
+ * Define to 1 if @e tkill(2) system call is available, 0 otherwise
+ *
+ * @note This system call is supported on Linux-2.5.4 and newer.
+ * @see pink_trace_kill()
+ **/
+#define PINK_HAVE_TKILL			@PINK_HAVE_TKILL@
+/**
+ * Define to 1 if @e tgkill(2) system call is available, 0 otherwise
+ *
+ * @note This system call is supported on Linux-2.5.75 and newer.
+ * @see pink_trace_kill()
+ **/
+#define PINK_HAVE_TGKILL		@PINK_HAVE_TGKILL@
+
+/**
+ * Define to 1 if @e process_vm_readv(2) system call is available, 0 otherwise
+ *
+ * @note This system call is supported on Linux-3.2 and newer.
+ * @note The kernel option @e CONFIG_CROSS_MEMORY_ATTACH must be enabled for
+ *       this system call to work.
+ * @see pink_read_vm_data()
+ **/
+#define PINK_HAVE_PROCESS_VM_READV	@PINK_HAVE_PROCESS_VM_READV@
+/**
+ * Define to 1 if @e process_vm_writev(2) system call is available, 0 otherwise
+ *
+ * @note This system call is supported on Linux-3.2 and newer.
+ * @note The kernel option @e CONFIG_CROSS_MEMORY_ATTACH must be enabled for
+ *       this system call to work.
+ * @see pink_write_vm_data()
+ **/
+#define PINK_HAVE_PROCESS_VM_WRITEV	@PINK_HAVE_PROCESS_VM_WRITEV@
+
+/** @} */
+#endif

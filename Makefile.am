@@ -2,30 +2,47 @@ SUBDIRS= linux . easy
 
 CLEANFILES=
 EXTRA_DIST=
+MAINTAINERCLEANFILES=
 
 OS	= linux
 # ARCH is `arm', `i386', 'x86_64', etc.
 ARCH	= @arch@
 
 AM_CFLAGS= @PINKTRACE_CFLAGS@ \
-	   -I$(top_builddir)/include -I$(top_srcdir)/include \
+	   -I$(top_builddir) -I$(top_srcdir) \
 	   -I$(srcdir)/$(OS)/$(ARCH) -I$(srcdir)/$(OS)
 
-noinst_LTLIBRARIES = libpinktrace_@PINKTRACE_PC_SLOT@.la
-#lib_LTLIBRARIES = libpinktrace_@PINKTRACE_PC_SLOT@.la
+lib_LTLIBRARIES = libpinktrace_@PINKTRACE_PC_SLOT@.la
 
-libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= trace.c \
+libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= \
+					     trace.c \
 					     abi.c \
 					     event.c \
 					     syscall.c \
 					     read.c \
 					     write.c \
 					     socket.c
-#libpinktrace_@PINKTRACE_PC_SLOT@_la_LDFLAGS= \
-#					     -version-info @PINK_VERSION_LIB_CURRENT@:@PINK_VERSION_LIB_REVISION@:0 \
-#					     -export-symbols-regex '^pink_'
 libpinktrace_@PINKTRACE_PC_SLOT@_la_LDFLAGS= \
+					     -version-info @PINK_VERSION_LIB_CURRENT@:@PINK_VERSION_LIB_REVISION@:0 \
 					     -export-symbols-regex '^pink_'
+
+pinktrace_includedir= $(includedir)/pinktrace-$(PINKTRACE_PC_SLOT)/pinktrace/
+pinktrace_include_HEADERS= \
+			   about.h \
+			   system.h \
+			   abi.h \
+			   compat.h \
+			   compiler.h \
+			   event.h \
+			   read.h \
+			   regs.h \
+			   socket.h \
+			   syscall.h \
+			   trace.h \
+			   write.h \
+			   pink.h
+noinst_HEADERS= \
+		private.h
 
 IF_CHECK_SRCS= \
 	       trace-TEST.c \
@@ -34,18 +51,19 @@ IF_CHECK_SRCS= \
 	       socket-TEST.c \
 	       pinktrace-check.c
 
-noinst_HEADERS= pinktrace-check.h
+noinst_HEADERS+= pinktrace-check.h
 EXTRA_DIST+= $(IF_CHECK_SRCS)
 
 if HAVE_CHECK
 CHECK_CFLAGS= \
-	      -I$(top_builddir)/include \
-	      -I$(top_srcdir)/include \
-	      -L$(top_builddir)/pinktrace/.libs \
+	      -I$(top_builddir) \
+	      -I$(top_srcdir) \
 	      $(check_CFLAGS) \
 	      @PINKTRACE_CFLAGS@
 CHECK_LIBS= \
 	    $(top_builddir)/pinktrace/libpinktrace_@PINKTRACE_PC_SLOT@.la \
+	    -L$(top_builddir)/pinktrace/.libs \
+	    -lpinktrace_@PINKTRACE_PC_SLOT@ \
 	    $(check_LIBS)
 
 check_PROGRAMS= pinktrace-check
@@ -56,9 +74,10 @@ pinktrace_check_LDADD= $(CHECK_LIBS)
 
 TESTS= $(check_PROGRAMS)
 
-#bin_PROGRAMS= pinktrace-check
+bin_PROGRAMS= pinktrace-check
 
 endif # HAVE_CHECK
+
 SPARSE=sparse
 SPARSE_CPPFLAGS= $(DEFAULT_INCLUDES) \
 		 -D__STDC_VERSION__=199901L \

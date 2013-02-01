@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -19,7 +19,7 @@
  *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LpIMITED TO, THE IMPLIED WARRANTIES
  * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
  * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
@@ -30,17 +30,43 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/private.h>
-#include <pinktrace/pink.h>
-#include <pinktrace/easy/pink.h>
+#ifndef PINK_EASY_INTR_H
+#define PINK_EASY_INTR_H
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <sys/queue.h>
-#include <sys/utsname.h>
+/**
+ * @file pinktrace/easy/intr.h
+ * @brief Pink's easy interrupt handling
+ *
+ * Do not include this file directly. Use pinktrace/easy/pink.h directly.
+ *
+ * @defgroup pink_easy_intr Pink's easy interrupt handling
+ * @ingroup pinktrace-easy
+ * @{
+ **/
 
+#include <signal.h>
 
+/** Interrupt states */
+enum pink_easy_intr {
+	PINK_EASY_INTR_ANYWHERE       = 1, /**< don't block/ignore any signals */
+	PINK_EASY_INTR_WHILE_WAIT     = 2, /**< block fatal signals while decoding syscall. default */
+	PINK_EASY_INTR_NEVER          = 3, /**< block fatal signals */
+	PINK_EASY_INTR_BLOCK_TSTP_TOO = 4, /**< block fatal signals and SIGTSTP (^Z) */
+};
+
+/** Interrupt state tracker */
+extern volatile sig_atomic_t pink_easy_interrupted;
+/** Empty signal set */
+extern sigset_t pink_easy_empty_set;
+/** Blocked signal set */
+extern sigset_t pink_easy_blocked_set;
+
+/**
+ * Set up signal handlers
+ *
+ * @param intr Interrupt method
+ **/
+void pink_easy_interrupt_init(enum pink_easy_intr intr);
+
+/** @} */
+#endif

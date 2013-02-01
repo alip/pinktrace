@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -33,7 +33,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/internal.h>
+#include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
 const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
@@ -81,11 +81,12 @@ const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
 }
 
 PINK_GCC_ATTR((nonnull(6)))
-bool pink_read_socket_argument(pid_t tid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		bool decode_socketcall,
-		unsigned arg_index, long *argval)
+int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
+			      const pink_regs_t *regs,
+			      bool decode_socketcall,
+			      unsigned arg_index, long *argval)
 {
+	int r;
 	size_t wsize;
 	long addr;
 
@@ -97,20 +98,22 @@ bool pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 	 * int socketcall(int call, unsigned long *args);
 	 */
 
-	if (!pink_read_argument(tid, abi, regs, 1, &addr))
-		return false;
-	if (!pink_abi_wordsize(abi, &wsize))
-		return false;
+	r = pink_read_argument(tid, abi, regs, 1, &addr);
+	if (r < 0)
+		return r;
+	r = pink_abi_wordsize(abi, &wsize);
+	if (r < 0)
+		return r;
 	addr += arg_index * wsize;
 	if (wsize == sizeof(int)) {
 		unsigned int arg;
-		if (!pink_read_vm_object(tid, abi, addr, &arg))
-			return false;
+		if (pink_read_vm_object(tid, abi, addr, &arg) < 0)
+			return -errno;
 		*argval = arg;
 	} else {
 		unsigned long arg;
-		if (!pink_read_vm_object(tid, abi, addr, &arg))
-			return false;
+		if (pink_read_vm_object(tid, abi, addr, &arg) < 0)
+			return -errno;
 		*argval = arg;
 	}
 
@@ -118,40 +121,46 @@ bool pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 }
 
 PINK_GCC_ATTR((nonnull(7)))
-bool pink_read_socket_address(pid_t tid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		bool decode_socketcall,
-		unsigned arg_index, long *fd,
-		struct pink_sockaddr *sockaddr)
+int pink_read_socket_address(pid_t tid, enum pink_abi abi,
+			     const pink_regs_t *regs,
+			     bool decode_socketcall,
+			     unsigned arg_index, long *fd,
+			     struct pink_sockaddr *sockaddr)
 {
+	int r;
 	long addr, addrlen, args;
 	size_t wsize;
 
-	if (fd && !pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-					     0, fd))
-		return false;
-	if (!pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-				       arg_index, &addr))
-		return false;
-	if (!pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-				       arg_index + 1, &addrlen))
-		return false;
+	if (fd) {
+		r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+					      0, fd);
+		if (r < 0)
+			return r;
+	}
+	r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+				      arg_index, &addr);
+	if (r < 0)
+		return r;
+	r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+				      arg_index + 1, &addrlen);
+	if (r < 0)
+		return r;
 
 	if (addr == 0) {
 		sockaddr->family = -1;
 		sockaddr->length = 0;
-		return true;
+		return 0;
 	}
 	if (addrlen < 2 || (unsigned long)addrlen > sizeof(sockaddr->u))
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));
-	if (!pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen))
-		return false;
+	if (pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen) < 0)
+		return -errno;
 	sockaddr->u.pad[sizeof(sockaddr->u.pad) - 1] = '\0';
 
 	sockaddr->family = sockaddr->u.sa.sa_family;
 	sockaddr->length = addrlen;
 
-	return true;
+	return 0;
 }

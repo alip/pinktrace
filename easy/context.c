@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/internal.h>
+#include <pinktrace/easy/private.h>
 
 #include <assert.h>
 #include <stdlib.h>

@@ -1,9 +1,11 @@
 SUBDIRS= .
 
 CLEANFILES=
+EXTRA_DIST=
+MAINTAINERCLEANFILES=
 AM_CFLAGS= \
-	   -I$(top_builddir)/include \
-	   -I$(top_srcdir)/include \
+	   -I$(top_builddir) \
+	   -I$(top_srcdir) \
 	   @PINKTRACE_CFLAGS@
 
 easy_SRCS= \
@@ -17,18 +19,38 @@ easy_SRCS= \
 	   intr.c \
 	   loop.c \
 	   process.c
-EXTRA_DIST= $(easy_SRCS)
+EXTRA_DIST+= $(easy_SRCS)
+
+easy_INCLUDES= \
+	       attach.h \
+	       call.h \
+	       callback.h \
+	       context.h \
+	       error.h \
+	       exec.h \
+	       func.h \
+	       init.h \
+	       intr.h \
+	       loop.h \
+	       process.h \
+	       step.h \
+	       pink.h
+
+EXTRA_DIST+= \
+	     $(easy_INCLUDES) \
+	     private.h
 
 #if WANT_EASY
-#lib_LTLIBRARIES= libpinktrace_easy_@PINKTRACE_PC_SLOT@.la
-noinst_LTLIBRARIES= libpinktrace_easy_@PINKTRACE_PC_SLOT@.la
-libpinktrace_easy_@PINKTRACE_PC_SLOT@_la_SOURCES= $(easy_SRCS)
-#libpinktrace_easy_@PINKTRACE_PC_SLOT@_la_LDFLAGS= \
-#						  -version-info @PINK_VERSION_LIB_CURRENT@:@PINK_VERSION_LIB_REVISION@:0 \
-#						  -export-symbols-regex '^pink_'
+lib_LTLIBRARIES= libpinktrace_easy_@PINKTRACE_PC_SLOT@.la
+libpinktrace_easy_@PINKTRACE_PC_SLOT@_la_SOURCES= \
+						  $(easy_SRCS)
 libpinktrace_easy_@PINKTRACE_PC_SLOT@_la_LDFLAGS= \
+						  -version-info @PINK_VERSION_LIB_CURRENT@:@PINK_VERSION_LIB_REVISION@:0 \
 						  -export-symbols-regex '^pink_'
 libpinktrace_easy_@PINKTRACE_PC_SLOT@_la_LIBADD= $(top_builddir)/pinktrace/libpinktrace_@PINKTRACE_PC_SLOT@.la
+
+pinktrace_easy_includedir=$(includedir)/pinktrace-$(PINKTRACE_PC_SLOT)/pinktrace/easy
+pinktrace_easy_include_HEADERS= $(easy_INCLUDES)
 
 SPARSE=sparse
 SPARSE_CPPFLAGS= $(DEFAULT_INCLUDES) \

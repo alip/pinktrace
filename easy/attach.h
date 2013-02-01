@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,49 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/private.h>
-#include <pinktrace/pink.h>
-#include <pinktrace/easy/pink.h>
+#ifndef PINK_EASY_ATTACH_H
+#define PINK_EASY_ATTACH_H
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
+/**
+ * @file pinktrace/easy/attach.h
+ * @brief Pink's easy process attaching
+ *
+ * Do not include this file directly. Use pinktrace/easy/pink.h instead.
+ *
+ * @defgroup pink_easy_attach Pink's easy process attaching
+ * @ingroup pinktrace-easy
+ * @{
+ **/
+
+#include <pinktrace/compiler.h>
+
+#include <stdbool.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 
+struct pink_easy_context;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * Attach to a process for tracing.
+ * Call this multiple times before pink_easy_loop() to attach to multiple
+ * processes.
+ *
+ * @param ctx Tracing context
+ * @param tid Thread ID
+ * @param tgid Thread group ID. Use this to specify the thread group in case
+ *             the process is a clone. This is useful when attaching to all
+ *             threads of a process and lets pinktrace track whether the
+ *             process is a clone. Specify -1 for non-clones.
+ * @return true on success, false on failure and sets errno accordingly
+ **/
 bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
-{
-	short flags;
-	struct pink_easy_process *current;
+	PINK_GCC_ATTR((nonnull(1)));
 
-	current = pink_easy_process_list_lookup(&ctx->process_list, tid);
-	if (current != NULL && current->flags & PINK_EASY_PROCESS_ATTACHED)
-		return true;
-
-	if (pink_trace_attach(tid) < 0) {
-		ctx->callback_table.error(ctx, PINK_EASY_ERROR_ATTACH, tid);
-		return false;
-	}
-
-	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-	if (tgid > 0)
-		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current = pink_easy_process_new(ctx, tid, tgid, flags);
-	if (current == NULL) {
-		pink_trace_kill(tid, tgid, SIGCONT);
-		return false;
-	}
-
-	return true;
+#ifdef __cplusplus
 }
+#endif
+/** @} */
+#endif

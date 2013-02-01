@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/internal.h>
+#include <pinktrace/easy/private.h>
 #include <pinktrace/pink.h>
 #include <pinktrace/easy/pink.h>
 
@@ -45,7 +45,7 @@ bool pink_easy_call(struct pink_easy_context *ctx, pink_easy_child_func_t func, 
 		ctx->callback_table.error(ctx, PINK_EASY_ERROR_FORK, "fork");
 		return false;
 	} else if (tid == 0) { /* child */
-		if (!pink_trace_me())
+		if (pink_trace_me() < 0)
 			_exit(ctx->callback_table.cerror(PINK_EASY_CHILD_ERROR_SETUP));
 		kill(getpid(), SIGSTOP);
 		_exit(func(userdata));

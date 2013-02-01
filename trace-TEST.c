@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 
@@ -62,7 +63,7 @@ START_TEST(TEST_trace_clone)
 	}
 
 	LOOP_WHILE_TRUE() {
-		int status;
+		int r, status;
 		pid_t tracee_pid;
 
 		errno = 0;
@@ -73,7 +74,8 @@ START_TEST(TEST_trace_clone)
 			if (WEXITSTATUS(status)) {
 				if (tracee_pid != pid)
 					kill_save_errno(pid, SIGKILL);
-				fail_verbose("unexpected exit status %u", WEXITSTATUS(status));
+				fail_verbose("unexpected exit status %u",
+					     WEXITSTATUS(status));
 			}
 			continue;
 		}
@@ -90,10 +92,12 @@ START_TEST(TEST_trace_clone)
 		}
 		if (tracee_pid != pid) {
 			found_grandchild = tracee_pid;
-			if (!pink_trace_resume(tracee_pid, 0)) {
+			r = pink_trace_resume(tracee_pid, 0);
+			if (r < 0) {
 				kill_save_errno(tracee_pid, SIGKILL);
 				kill_save_errno(pid, SIGKILL);
-				fail_verbose("PTRACE_CONT (errno:%d %s)", errno, strerror(errno));
+				fail_verbose("PTRACE_CONT (errno:%d %s)",
+					     -r, strerror(-r));
 			}
 			continue;
 		}
@@ -205,7 +209,7 @@ START_TEST(TEST_trace_exec)
 				if ((pid_t)old_pid != pid) {
 					kill(pid, SIGKILL);
 					fail_verbose("PINK_TRACE_OPTION_EXEC works but can't tell the old pid"
-							" (Ignore if Linux version is older than 3.0.0)");
+						     " (Ignore if Linux version is older than 3.0.0)");
 				}
 				it_worked = true;
 				kill(pid, SIGKILL);

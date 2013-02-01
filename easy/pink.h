@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2012 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,40 +25,28 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/easy/private.h>
+#ifndef PINK_EASY_PINK_H
+#define PINK_EASY_PINK_H
+
+/**
+ * @file pinktrace/easy/pink.h
+ * @brief A header file including all other header files part of pinktrace-easy
+ * @defgroup pinktrace-easy Pink's Easy Tracing Library
+ **/
+
 #include <pinktrace/pink.h>
-#include <pinktrace/easy/pink.h>
 
-#include <assert.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/wait.h>
+#include <pinktrace/easy/attach.h>
+#include <pinktrace/easy/call.h>
+#include <pinktrace/easy/callback.h>
+#include <pinktrace/easy/context.h>
+#include <pinktrace/easy/error.h>
+#include <pinktrace/easy/exec.h>
+#include <pinktrace/easy/func.h>
+#include <pinktrace/easy/init.h>
+#include <pinktrace/easy/intr.h>
+#include <pinktrace/easy/loop.h>
+#include <pinktrace/easy/process.h>
+#include <pinktrace/easy/step.h>
 
-bool pink_easy_attach(struct pink_easy_context *ctx, pid_t tid, pid_t tgid)
-{
-	short flags;
-	struct pink_easy_process *current;
-
-	current = pink_easy_process_list_lookup(&ctx->process_list, tid);
-	if (current != NULL && current->flags & PINK_EASY_PROCESS_ATTACHED)
-		return true;
-
-	if (pink_trace_attach(tid) < 0) {
-		ctx->callback_table.error(ctx, PINK_EASY_ERROR_ATTACH, tid);
-		return false;
-	}
-
-	flags = PINK_EASY_PROCESS_ATTACHED | PINK_EASY_PROCESS_IGNORE_ONE_SIGSTOP;
-	if (tgid > 0)
-		flags |= PINK_EASY_PROCESS_CLONE_THREAD;
-	current = pink_easy_process_new(ctx, tid, tgid, flags);
-	if (current == NULL) {
-		pink_trace_kill(tid, tgid, SIGCONT);
-		return false;
-	}
-
-	return true;
-}
+#endif

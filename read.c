@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -37,34 +37,34 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <pinktrace/internal.h>
+#include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-bool pink_read_word_user(pid_t tid, long off, long *res)
+int pink_read_word_user(pid_t tid, long off, long *res)
 {
 	long val;
 
 	val = pink_ptrace(PTRACE_PEEKUSER, tid, (void *)off, NULL);
-	if (val == -1)
-		return false;
+	if (val < 0)
+		return -errno;
 	if (res != NULL)
 		*res = val;
-	return true;
+	return 0;
 }
 
-bool pink_read_word_data(pid_t tid, long off, long *res)
+int pink_read_word_data(pid_t tid, long off, long *res)
 {
 	long val;
 
 	val = pink_ptrace(PTRACE_PEEKDATA, tid, (void *)off, NULL);
-	if (val == -1)
-		return false;
+	if (val < 0)
+		return -errno;
 	if (res)
 		*res = val;
-	return true;
+	return 0;
 }
 
-bool pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi)
+int pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi)
 {
 	enum pink_abi abival;
 #if PINK_ABIS_SUPPORTED == 1
@@ -94,8 +94,7 @@ bool pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi)
 #endif
 		}
 	default:
-		errno = ENOTSUP;
-		return false;
+		return -ENOTSUP;
 	}
 #elif PINK_ARCH_IA64
 	/*
@@ -103,10 +102,12 @@ bool pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi)
 	 * 1 : ia32
 	 */
 #	define IA64_PSR_IS	((long)1 << 34)
+	int r;
 	long psr;
 
-	if (!pink_read_word_user(pid, PT_CR_IPSR, &psr))
-		return false;
+	r = pink_read_word_user(pid, PT_CR_IPSR, &psr);
+	if (r < 0)
+		return r;
 	abival = (psr & IA64_PSR_IS) ? 1 : 0;
 #elif PINK_ARCH_ARM
 	abival = (regs->ARM.cpsr & 0x20) ? 0 : 1;
@@ -117,24 +118,26 @@ bool pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi)
 #error unsupported architecture
 #endif
 	*abi = abival;
-	return true;
+	return 0;
 }
 
 static ssize_t _pink_process_vm_readv(pid_t tid,
-		const struct iovec *local_iov,
-		unsigned long liovcnt,
-		const struct iovec *remote_iov,
-		unsigned long riovcnt,
-		unsigned long flags)
+				      const struct iovec *local_iov,
+				      unsigned long liovcnt,
+				      const struct iovec *remote_iov,
+				      unsigned long riovcnt,
+				      unsigned long flags)
 {
 	ssize_t r;
 #ifdef HAVE_PROCESS_VM_READV
 	r = process_vm_readv(tid,
-			local_iov, liovcnt,
-			remote_iov, riovcnt,
-			flags);
+			     local_iov, liovcnt,
+			     remote_iov, riovcnt,
+			     flags);
 #elif defined(__NR_process_vm_readv)
-	r = syscall(__NR_process_vm_readv, (long)tid, local_iov, liovcnt, remote_iov, riovcnt, flags);
+	r = syscall(__NR_process_vm_readv, (long)tid,
+		    local_iov, liovcnt,
+		    remote_iov, riovcnt, flags);
 #else
 	errno = ENOSYS;
 	return -1;
@@ -142,10 +145,11 @@ static ssize_t _pink_process_vm_readv(pid_t tid,
 	return r;
 }
 
-static ssize_t _pink_read_vm_data_ptrace(pid_t tid, long addr, char *dest, size_t len)
+static ssize_t _pink_read_vm_data_ptrace(pid_t tid, long addr,
+					 char *dest, size_t len)
 {
 	bool started;
-	int n, m;
+	int n, m, r;
 	union {
 		long val;
 		char x[sizeof(long)];
@@ -158,8 +162,10 @@ static ssize_t _pink_read_vm_data_ptrace(pid_t tid, long addr, char *dest, size_
 		/* addr not a multiple of sizeof(long) */
 		n = addr - (addr & -sizeof(long)); /* residue */
 		addr &= -sizeof(long); /* residue */
-		if (!pink_read_word_data(tid, addr, &u.val)) {
+		r = pink_read_word_data(tid, addr, &u.val);
+		if (r < 0) {
 			/* Not started yet, thus we had a bogus address. */
+			errno = -r;
 			return -1;
 		}
 		started = true;
@@ -168,8 +174,11 @@ static ssize_t _pink_read_vm_data_ptrace(pid_t tid, long addr, char *dest, size_
 		addr += sizeof(long), dest += m, len -= m, count_read += m;
 	}
 	while (len > 0) {
-		if (!pink_read_word_data(tid, addr, &u.val))
+		r = pink_read_word_data(tid, addr, &u.val);
+		if (r < 0) {
+			errno = -r;
 			return started ? count_read : -1;
+		}
 		started = true;
 		m = MIN(sizeof(long), len);
 		memcpy(dest, u.x, m);
@@ -192,10 +201,14 @@ ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr,
 			  char *dest, size_t len)
 {
 #if PINK_ABIS_SUPPORTED > 1
+	int errcond;
 	size_t wsize;
 
-	if (!pink_abi_wordsize(abi, &wsize))
-		return false;
+	errcond = pink_abi_wordsize(abi, &wsize);
+	if (errcond < 0) {
+		errno = -errcond;
+		return -1;
+	}
 
 	if (wsize < sizeof(addr))
 		addr &= (1ul << 8 * wsize) - 1;
@@ -223,11 +236,12 @@ vm_readv_didnt_work:
 	return _pink_read_vm_data_ptrace(tid, addr, dest, len);
 }
 
-static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr, char *dest, size_t len)
+static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr,
+					     char *dest, size_t len)
 {
 	bool started;
 	unsigned i;
-	int n, m;
+	int n, m, r;
 	union {
 		long val;
 		char x[sizeof(long)];
@@ -240,8 +254,10 @@ static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr, char *dest, s
 		/* addr not a multiple of sizeof(long) */
 		n = addr - (addr & -sizeof(long)); /* residue */
 		addr &= -sizeof(long); /* residue */
-		if (!pink_read_word_data(tid, addr, &u.val)) {
+		r = pink_read_word_data(tid, addr, &u.val);
+		if (r < 0) {
 			/* Not started yet, thus we had a bogus address. */
+			errno = -r;
 			return -1;
 		}
 		started = true;
@@ -254,8 +270,11 @@ static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr, char *dest, s
 		count_read += m;
 	}
 	while (len > 0) {
-		if (!pink_read_word_data(tid, addr, &u.val))
+		r = pink_read_word_data(tid, addr, &u.val);
+		if (r < 0) {
+			errno = -r;
 			return count_read;
+		}
 		started = true;
 		m = MIN(sizeof(long), len);
 		memcpy(dest, u.x, m);
@@ -270,13 +289,18 @@ static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr, char *dest, s
 }
 
 PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr, char *dest, size_t len)
+ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr,
+			      char *dest, size_t len)
 {
 #if PINK_ABIS_SUPPORTED > 1
+	int errcond;
 	size_t wsize;
 
-	if (!pink_abi_wordsize(abi, &wsize))
-		return false;
+	errcond = pink_abi_wordsize(abi, &wsize);
+	if (errcond < 0) {
+		errno = -errcond;
+		return -1;
+	}
 
 	if (wsize < sizeof(addr))
 		addr &= (1ul << 8 * wsize) - 1;
@@ -337,8 +361,10 @@ ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr, char *des
 }
 
 PINK_GCC_ATTR((nonnull(3)))
-bool pink_read_syscall(pid_t tid, enum pink_abi abi, const pink_regs_t *regs, long *sysnum)
+int pink_read_syscall(pid_t tid, enum pink_abi abi,
+		      const pink_regs_t *regs, long *sysnum)
 {
+	int r;
 	long sysval;
 #if PINK_ARCH_ARM
 	/*
@@ -353,8 +379,9 @@ bool pink_read_syscall(pid_t tid, enum pink_abi abi, const pink_regs_t *regs, lo
 		/*
 		 * Get the ARM-mode system call number
 		 */
-		if (!pink_read_word_data(tid, regs->ARM_pc - 4, &sysval))
-			return false;
+		r = pink_read_word_data(tid, regs->ARM_pc - 4, &sysval);
+		if (r < 0)
+			return r;
 
 		/* Handle the EABI syscall convention.  We do not
 		   bother converting structures between the two
@@ -365,8 +392,8 @@ bool pink_read_syscall(pid_t tid, enum pink_abi abi, const pink_regs_t *regs, lo
 			sysval = regs->ARM_r7;
 		} else {
 			if ((sysval & 0x0ff00000) != 0x0f900000) {
-				errno = EFAULT; /* unknown syscall trap: 0x%08lx (sysval) */
-				return false;
+				/* unknown syscall trap: 0x%08lx (sysval) */
+				return -EFAULT;
 			}
 
 			/*
@@ -383,11 +410,13 @@ bool pink_read_syscall(pid_t tid, enum pink_abi abi, const pink_regs_t *regs, lo
 	}
 #elif PINK_ARCH_IA64
 	if (abi == 1) { /* ia32 */
-		if (!pink_read_word_user(tid, PT_R1, &sysval))
-			return false;
+		r = pink_read_word_user(tid, PT_R1, &sysval);
+		if (r < 0)
+			return r;
 	} else {
-		if (!pink_read_word_user(tid, PT_R15, &sysval))
-			return false;
+		r = pink_read_word_user(tid, PT_R15, &sysval);
+		if (r < 0)
+			return r;
 	}
 #elif PINK_ARCH_POWERPC
 	sysval = regs->gpr[0];
@@ -407,14 +436,15 @@ bool pink_read_syscall(pid_t tid, enum pink_abi abi, const pink_regs_t *regs, lo
 #error unsupported architecture
 #endif /* arch */
 	*sysnum = sysval;
-	return true;
+	return 0;
 }
 
 /*
  * Check the syscall return value register value for whether it is
  * a negated errno code indicating an error, or a success return value.
  */
-static inline int is_negated_errno(unsigned long int val, size_t current_wordsize)
+static inline int is_negated_errno(unsigned long int val,
+				   size_t current_wordsize)
 {
 	int nerrnos = 530; /* XXX: strace, errnoent.h */
 	unsigned long int max = -(long int) nerrnos;
@@ -428,16 +458,17 @@ static inline int is_negated_errno(unsigned long int val, size_t current_wordsiz
 }
 
 PINK_GCC_ATTR((nonnull(3,4)))
-bool pink_read_retval(pid_t tid, enum pink_abi abi,
-		const pink_regs_t *regs, long *retval,
-		int *error)
+int pink_read_retval(pid_t tid, enum pink_abi abi,
+		     const pink_regs_t *regs, long *retval,
+		     int *error)
 {
 	long myrval;
-	int myerror = 0;
+	int myerror = 0, r;
 	size_t wsize;
 
-	if (!pink_abi_wordsize(abi, &wsize))
-		return false;
+	r = pink_abi_wordsize(abi, &wsize);
+	if (r < 0)
+		return r;
 
 #if PINK_ARCH_ARM
 	if (is_negated_errno(regs->ARM_r0, wsize)) {
@@ -449,10 +480,12 @@ bool pink_read_retval(pid_t tid, enum pink_abi abi,
 #elif PINK_ARCH_IA64
 	long r8, r10;
 
-	if (!pink_read_word_user(tid, PT_R8, &r8))
-		return false;
-	if (!pink_read_word_user(tid, PT_R10, &r10))
-		return false;
+	r = pink_read_word_user(tid, PT_R8, &r8);
+	if (r < 0)
+		return r;
+	r = pink_read_word_user(tid, PT_R10, &r10);
+	if (r < 0)
+		return r;
 
 	if (abi == 1) { /* ia32 */
 		int err;
@@ -506,14 +539,15 @@ bool pink_read_retval(pid_t tid, enum pink_abi abi,
 	*retval = myrval;
 	if (error)
 		*error = myerror;
-	return true;
+	return 0;
 }
 
 PINK_GCC_ATTR((nonnull(5)))
-bool pink_read_argument(pid_t tid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		unsigned arg_index, long *argval)
+int pink_read_argument(pid_t tid, enum pink_abi abi,
+		       const pink_regs_t *regs,
+		       unsigned arg_index, long *argval)
 {
+	int r;
 	long myval;
 
 	if (arg_index >= PINK_MAX_ARGS) {
@@ -531,18 +565,20 @@ bool pink_read_argument(pid_t tid, enum pink_abi abi,
 #		  define PT_RBS_END	PT_AR_BSP
 #		endif
 
-		if (!pink_read_word_user(tid, PT_RBS_END, &rbs_end))
-			return false;
-		if (!pink_read_word_user(tid, PT_CFM, (long *) &cfm))
-			return false;
+		r = pink_read_word_user(tid, PT_RBS_END, &rbs_end);
+		if (r < 0)
+			return r;
+		r = pink_read_word_user(tid, PT_CFM, (long *) &cfm);
+		if (r < 0)
+			return r;
 
 		sof = (cfm >> 0) & 0x7f;
 		sol = (cfm >> 7) & 0x7f;
 		out0 = ia64_rse_skip_regs((unsigned long *) rbs_end, -sof + sol);
 
-		if (!pink_read_vm_data(tid, (unsigned long) ia64_rse_skip_regs(out0, arg_index),
-					sizeof(long), &myval))
-			return false;
+		if (pink_read_vm_data(tid, (unsigned long) ia64_rse_skip_regs(out0, arg_index),
+				      sizeof(long), &myval) < 0)
+			return -errno;
 	} else { /* ia32 */
 		int argreg;
 
@@ -556,8 +592,9 @@ bool pink_read_argument(pid_t tid, enum pink_abi abi,
 		default: _pink_assert_not_reached();
 		}
 
-		if (!pink_read_word_user(pid, argreg, &myval))
-			return false;
+		r = pink_read_word_user(pid, argreg, &myval);
+		if (r < 0)
+			return r;
 		/* truncate away IVE sign-extension */
 		myval &= 0xffffffff;
 	}
@@ -603,14 +640,15 @@ bool pink_read_argument(pid_t tid, enum pink_abi abi,
 #error unsupported architecture
 #endif
 	*argval = myval;
-	return true;
+	return 0;
 }
 
 ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
-		long arg, unsigned arr_index,
-		char *dest, size_t dest_len,
-		bool *nullptr)
+			       long arg, unsigned arr_index,
+			       char *dest, size_t dest_len,
+			       bool *nullptr)
 {
+	int r;
 	size_t wsize;
 	union {
 		unsigned int p32;
@@ -618,11 +656,12 @@ ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
 		char data[sizeof(long)];
 	} cp;
 
-	if (!pink_abi_wordsize(abi, &wsize))
+	r = pink_abi_wordsize(abi, &wsize);
+	if (r < 0)
 		return -1;
 	arg += arr_index * wsize;
 
-	if (!pink_read_vm_data(tid, abi, arg, cp.data, wsize))
+	if (pink_read_vm_data(tid, abi, arg, cp.data, wsize) < 0)
 		return -1;
 	if (wsize == 4)
 		cp.p64 = cp.p32;
@@ -630,7 +669,7 @@ ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
 		/* hit NULL, end of the array */
 		if (nullptr)
 			*nullptr = true;
-		return true;
+		return 0;
 	}
 	if (nullptr)
 		*nullptr = false;
