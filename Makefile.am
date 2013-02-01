@@ -61,8 +61,8 @@ CHECK_CFLAGS= \
 	      $(check_CFLAGS) \
 	      @PINKTRACE_CFLAGS@
 CHECK_LIBS= \
-	    $(top_builddir)/pinktrace/libpinktrace_@PINKTRACE_PC_SLOT@.la \
-	    -L$(top_builddir)/pinktrace/.libs \
+	    $(builddir)/libpinktrace_@PINKTRACE_PC_SLOT@.la \
+	    -L$(builddir)/.libs \
 	    -lpinktrace_@PINKTRACE_PC_SLOT@ \
 	    $(check_LIBS)
 
