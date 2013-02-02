@@ -326,8 +326,8 @@ ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr, char *des
 		p = memchr(local[0].iov_base, '\0', r);
 		if (p != NULL)
 			return count_read + (p - (char *)local[0].iov_base);
-		local[0].iov_base += r;
-		remote[0].iov_base += r;
+		local[0].iov_base = (char *)local[0].iov_base + r;
+		remote[0].iov_base = (char *)local[0].iov_base + r;
 		len -= r;
 	}
 	return count_read;
