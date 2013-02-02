@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -132,7 +132,8 @@ int pink_easy_errback_child_stderr(enum pink_easy_child_error e);
  * @param fatal_sig Signal causing the interrupt
  * @return pink_easy_loop() returns this value
  **/
-typedef int (*pink_easy_callback_interrupt_t) (const struct pink_easy_context *ctx, int fatal_sig);
+typedef int (*pink_easy_callback_interrupt_t) (const struct pink_easy_context *ctx,
+					       int fatal_sig);
 
 /**
  * Callback for process trace startup
@@ -142,7 +143,8 @@ typedef int (*pink_easy_callback_interrupt_t) (const struct pink_easy_context *c
  * @param parent Parent of the new process or NULL for initial processes
  **/
 typedef void (*pink_easy_callback_startup_t) (const struct pink_easy_context *ctx,
-		struct pink_easy_process *current, struct pink_easy_process *parent);
+					      struct pink_easy_process *current,
+					      struct pink_easy_process *parent);
 
 /**
  * Callback for process teardown
@@ -154,7 +156,7 @@ typedef void (*pink_easy_callback_startup_t) (const struct pink_easy_context *ct
  * @param current Detached process
  **/
 typedef void (*pink_easy_callback_teardown_t) (const struct pink_easy_context *ctx,
-		const struct pink_easy_process *current);
+					       const struct pink_easy_process *current);
 
 /**
  * Callback for the end of tracing.
@@ -182,9 +184,9 @@ typedef int (*pink_easy_callback_cleanup_t) (const struct pink_easy_context *ctx
  * @return See PINK_EASY_CFLAG_* for flags to set in the return value.
  **/
 typedef int (*pink_easy_callback_syscall_t) (const struct pink_easy_context *ctx,
-		struct pink_easy_process *current,
-		const pink_regs_t *regs,
-		bool entering);
+					     struct pink_easy_process *current,
+					     const pink_regs_t *regs,
+					     bool entering);
 
 /**
  * Callback for successful @e execve(2)
@@ -198,9 +200,9 @@ typedef int (*pink_easy_callback_syscall_t) (const struct pink_easy_context *ctx
  * @return See PINK_EASY_CFLAG_* for flags to set in the return value.
  **/
 typedef int (*pink_easy_callback_exec_t) (const struct pink_easy_context *ctx,
-		struct pink_easy_process *current,
-		const pink_regs_t *regs,
-		enum pink_abi old_abi);
+					  struct pink_easy_process *current,
+					  const pink_regs_t *regs,
+					  enum pink_abi old_abi);
 
 /**
  * Callback for pre-exit notification
@@ -211,7 +213,8 @@ typedef int (*pink_easy_callback_exec_t) (const struct pink_easy_context *ctx,
  * @return See PINK_EASY_CFLAG_* for flags to set in the return value.
  **/
 typedef int (*pink_easy_callback_pre_exit_t) (const struct pink_easy_context *ctx,
-		struct pink_easy_process *current, int status);
+					      struct pink_easy_process *current,
+					      int status);
 
 /**
  * Callback for seccomp filter notification
@@ -222,7 +225,8 @@ typedef int (*pink_easy_callback_pre_exit_t) (const struct pink_easy_context *ct
  * @return See PINK_EASY_CFLAG_* for flags to set in the return value.
  **/
 typedef int (*pink_easy_callback_seccomp_t) (const struct pink_easy_context *ctx,
-		struct pink_easy_process *current, long ret_data);
+					     struct pink_easy_process *current,
+					     long ret_data);
 
 /**
  * Callback for stopping signal delivery
@@ -233,7 +237,8 @@ typedef int (*pink_easy_callback_seccomp_t) (const struct pink_easy_context *ctx
  * @return See PINK_EASY_CFLAG_* for flags to set in the return value.
  **/
 typedef int (*pink_easy_callback_signal_t) (const struct pink_easy_context *ctx,
-		struct pink_easy_process *current, int status);
+					    struct pink_easy_process *current,
+					    int status);
 
 /**
  * Callback for genuine exit notification
@@ -244,7 +249,7 @@ typedef int (*pink_easy_callback_signal_t) (const struct pink_easy_context *ctx,
  * @return See PINK_EASY_CFLAG_* for flags to set in the return value.
  **/
 typedef int (*pink_easy_callback_exit_t) (const struct pink_easy_context *ctx,
-		pid_t tid, int status);
+					  pid_t tid, int status);
 
 /**
  * @brief Structure which represents a callback table

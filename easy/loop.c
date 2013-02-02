@@ -212,13 +212,14 @@ dont_switch_procs:
 		}
 
 		if (current == NULL) {
-			/* We might see the child's initial trap before we see the parent
+			/*
+			 * We might see the child's initial trap before we see the parent
 			 * return from the clone syscall. Leave the child suspended until
 			 * the parent returns from its system call. Only then we will have
 			 * the association between parent and child.
 			 */
 			current = pink_easy_process_new(ctx, tid, -1,
-					PINK_EASY_PROCESS_SUSPENDED);
+							PINK_EASY_PROCESS_SUSPENDED);
 			continue;
 		}
 
