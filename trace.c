@@ -130,7 +130,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_SYSGOOD
 		ptrace_options |= PTRACE_O_TRACESYSGOOD;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -138,7 +138,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_FORK
 		ptrace_options |= PTRACE_O_TRACEFORK;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -146,7 +146,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_VFORK
 		ptrace_options |= PTRACE_O_TRACEVFORK;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -154,7 +154,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_CLONE
 		ptrace_options |= PTRACE_O_TRACECLONE;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -162,7 +162,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_EXEC
 		ptrace_options |= PTRACE_O_TRACEEXEC;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -170,7 +170,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_VFORKDONE
 		ptrace_options |= PTRACE_O_TRACEVFORKDONE;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -178,7 +178,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_EXIT
 		ptrace_options |= PTRACE_O_TRACEEXIT;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -186,7 +186,7 @@ int pink_trace_setup(pid_t tid, int options)
 #if PINK_HAVE_OPTION_SECCOMP
 		ptrace_options |= PTRACE_O_TRACESECCOMP;
 #else
-		goto invalid;
+		return -EINVAL;
 #endif
 	}
 
@@ -194,8 +194,6 @@ int pink_trace_setup(pid_t tid, int options)
 			(void *)(long)ptrace_options) < 0)
 		return -errno;
 	return 0;
-invalid:
-	return -EINVAL;
 #else
 	return -ENOSYS;
 #endif

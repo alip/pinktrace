@@ -239,7 +239,6 @@ vm_readv_didnt_work:
 static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr,
 					     char *dest, size_t len)
 {
-	bool started;
 	unsigned i;
 	int n, m, r;
 	union {
@@ -248,7 +247,6 @@ static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr,
 	} u;
 	ssize_t count_read;
 
-	started = false;
 	count_read = 0;
 	if (addr & (sizeof(long) - 1)) {
 		/* addr not a multiple of sizeof(long) */
@@ -260,7 +258,6 @@ static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr,
 			errno = -r;
 			return -1;
 		}
-		started = true;
 		m = MIN(sizeof(long) - n, len);
 		memcpy(dest, &u.x[n], m);
 		while (n & (sizeof(long) - 1))
@@ -275,7 +272,6 @@ static ssize_t _pink_read_vm_data_nul_ptrace(pid_t tid, long addr,
 			errno = -r;
 			return count_read;
 		}
-		started = true;
 		m = MIN(sizeof(long), len);
 		memcpy(dest, u.x, m);
 		for (i = 0; i < sizeof(long); i++)
@@ -306,67 +302,71 @@ ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr,
 		addr &= (1ul << 8 * wsize) - 1;
 #endif
 
-#if PINK_HAVE_PROCESS_VM_READV
-	bool started;
-	ssize_t count_read;
-	struct iovec local[1], remote[1];
+	if (!_pink_process_vm_readv_not_supported) {
+		ssize_t count_read;
+		struct iovec local[1], remote[1];
 
-	started = false;
-	count_read = 0;
-	local[0].iov_base = dest;
-	remote[0].iov_base = (void *)addr;
+		count_read = 0;
+		local[0].iov_base = dest;
+		remote[0].iov_base = (void *)addr;
 
-	while (len > 0) {
-		int end_in_page;
-		int r;
-		int chunk_len;
-		char *p;
+		while (len > 0) {
+			int end_in_page;
+			int r;
+			int chunk_len;
+			char *p;
 
-		/* Don't read kilobytes: most strings are short */
-		chunk_len = len;
-		if (chunk_len > 256)
-			chunk_len = 256;
-		/* Don't cross pages. I guess otherwise we can get EFAULT
-		 * and fail to notice that terminating NUL lies
-		 * in the existing (first) page.
-		 * (I hope there aren't arches with pages < 4K)
-		 */
-		end_in_page = ((addr + chunk_len) & 4095);
-		r = chunk_len - end_in_page;
-		if (r > 0) /* if chunk_len > end_in_page */
-			chunk_len = r; /* chunk_len -= end_in_page */
+			/* Don't read kilobytes: most strings are short */
+			chunk_len = len;
+			if (chunk_len > 256)
+				chunk_len = 256;
+			/* Don't cross pages. I guess otherwise we can get EFAULT
+			 * and fail to notice that terminating NUL lies
+			 * in the existing (first) page.
+			 * (I hope there aren't arches with pages < 4K)
+			 */
+			end_in_page = ((addr + chunk_len) & 4095);
+			r = chunk_len - end_in_page;
+			if (r > 0) /* if chunk_len > end_in_page */
+				chunk_len = r; /* chunk_len -= end_in_page */
 
-		local[0].iov_len = remote[0].iov_len = chunk_len;
-		r = _pink_process_vm_readv(tid,
-				local, 1,
-				remote, 1,
-				/*flags:*/ 0
-		);
-		if (r < 0)
-			return -1;
-		started = true;
-		count_read += r;
+			local[0].iov_len = remote[0].iov_len = chunk_len;
+			r = _pink_process_vm_readv(tid,
+					local, 1,
+					remote, 1,
+					/*flags:*/ 0
+			);
+			if (r < 0) {
+				if (errno == ENOSYS)
+					_pink_process_vm_readv_not_supported = true;
+				else if (errno == EINVAL || errno == ESRCH)
+					return -1; /* is the process gone? */
+				else
+					goto vm_readv_didnt_work;
+			}
+			count_read += r;
 
-		p = memchr(local[0].iov_base, '\0', r);
-		if (p != NULL)
-			return count_read + (p - (char *)local[0].iov_base);
-		local[0].iov_base = (char *)local[0].iov_base + r;
-		remote[0].iov_base = (char *)local[0].iov_base + r;
-		len -= r;
+			p = memchr(local[0].iov_base, '\0', r);
+			if (p != NULL)
+				return count_read + (p - (char *)local[0].iov_base);
+			local[0].iov_base = (char *)local[0].iov_base + r;
+			remote[0].iov_base = (char *)local[0].iov_base + r;
+			len -= r;
+		}
+		return count_read;
 	}
-	return count_read;
-#else
+vm_readv_didnt_work:
 	return _pink_read_vm_data_nul_ptrace(tid, addr, dest, len);
-#endif
 }
 
 PINK_GCC_ATTR((nonnull(3)))
 int pink_read_syscall(pid_t tid, enum pink_abi abi,
 		      const pink_regs_t *regs, long *sysnum)
 {
+#if PINK_ARCH_ARM
 	int r;
 	long sysval;
-#if PINK_ARCH_ARM
+
 	/*
 	 * Note: we only deal with only 32-bit CPUs here.
 	 */
@@ -379,8 +379,8 @@ int pink_read_syscall(pid_t tid, enum pink_abi abi,
 		/*
 		 * Get the ARM-mode system call number
 		 */
-		r = pink_read_word_data(tid, regs->ARM_pc - 4, &sysval);
-		if (r < 0)
+		if ((r = pink_read_word_data(tid, regs->ARM_pc - 4,
+					     &sysval)) < 0)
 			return r;
 
 		/* Handle the EABI syscall convention.  We do not
@@ -408,20 +408,27 @@ int pink_read_syscall(pid_t tid, enum pink_abi abi,
 		 */
 		sysval &= 0x0000ffff;
 	}
+
+	*sysnum = sysval;
+	return 0;
 #elif PINK_ARCH_IA64
-	if (abi == 1) { /* ia32 */
-		r = pink_read_word_user(tid, PT_R1, &sysval);
-		if (r < 0)
-			return r;
-	} else {
-		r = pink_read_word_user(tid, PT_R15, &sysval);
-		if (r < 0)
-			return r;
-	}
+	int r;
+	long reg;
+	long sysval;
+
+	reg = (abi == 1 /* ia32 */) ? PT_R1 : PT_R15;
+
+	if ((r = pink_read_word_user(tid, reg, &sysval)) < 0)
+		return r;
+
+	*sysnum = sysval;
+	return 0;
 #elif PINK_ARCH_POWERPC
-	sysval = regs->gpr[0];
+	*sysnum = regs->gpr[0];
+	return 0;
 #elif PINK_ARCH_I386
-	sysval = regs->orig_eax;
+	*sysnum = regs->orig_eax;
+	return 0;
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
 # ifndef __X32_SYSCALL_BIT
 #  define __X32_SYSCALL_BIT	0x40000000
@@ -429,14 +436,14 @@ int pink_read_syscall(pid_t tid, enum pink_abi abi,
 # ifndef __X32_SYSCALL_MASK
 #  define __X32_SYSCALL_MASK	__X32_SYSCALL_BIT
 # endif
-	sysval = regs->orig_rax;
+	*sysnum = regs->orig_rax;
 	if (abi == PINK_ABI_X32)
-		sysval &= ~__X32_SYSCALL_MASK;
+		*sysnum &= ~__X32_SYSCALL_MASK;
+
+	return 0;
 #else
 #error unsupported architecture
 #endif /* arch */
-	*sysnum = sysval;
-	return 0;
 }
 
 /*
@@ -547,38 +554,38 @@ int pink_read_argument(pid_t tid, enum pink_abi abi,
 		       const pink_regs_t *regs,
 		       unsigned arg_index, long *argval)
 {
-	int r;
-	long myval;
-
 	if (arg_index >= PINK_MAX_ARGS) {
 		errno = EINVAL;
 		return false;
 	}
 
 #if PINK_ARCH_ARM
-	myval = regs->uregs[arg_index];
+	*argval = regs->uregs[arg_index];
+	return 0;
 #elif PINK_ARCH_IA64
+	int r;
+	long myval;
+
 	if (abi == 0) { /* !ia32 */
-		unsigned long *out0, cfm, sof, sol;
+		unsigned long *out0, cfm, sof, sol, skip;
 		long rbs_end;
 #		ifndef PT_RBS_END
 #		  define PT_RBS_END	PT_AR_BSP
 #		endif
 
-		r = pink_read_word_user(tid, PT_RBS_END, &rbs_end);
-		if (r < 0)
+		if ((r = pink_read_word_user(tid, PT_RBS_END, &rbs_end)) < 0)
 			return r;
-		r = pink_read_word_user(tid, PT_CFM, (long *) &cfm);
-		if (r < 0)
+		if ((r = pink_read_word_user(tid, PT_CFM, (long *) &cfm)) < 0)
 			return r;
 
 		sof = (cfm >> 0) & 0x7f;
 		sol = (cfm >> 7) & 0x7f;
 		out0 = ia64_rse_skip_regs((unsigned long *) rbs_end, -sof + sol);
+		skip = (unsigned long) ia64_rse_skip_regs(out0, arg_index);
 
-		if (pink_read_vm_data(tid, (unsigned long) ia64_rse_skip_regs(out0, arg_index),
-				      sizeof(long), &myval) < 0)
-			return -errno;
+		if ((r = pink_read_vm_data(tid, skip, sizeof(long),
+					   &myval)) < 0)
+			return r;
 	} else { /* ia32 */
 		int argreg;
 
@@ -592,55 +599,57 @@ int pink_read_argument(pid_t tid, enum pink_abi abi,
 		default: _pink_assert_not_reached();
 		}
 
-		r = pink_read_word_user(pid, argreg, &myval);
-		if (r < 0)
+		if ((r = pink_read_word_user(pid, argreg, &myval)) < 0)
 			return r;
 		/* truncate away IVE sign-extension */
 		myval &= 0xffffffff;
 	}
+	*argval = myval;
+	return 0;
 #elif PINK_ARCH_POWERPC
 	if (arg_index == 0)
-		myval = regs->orig_gpr3;
+		*argval = regs->orig_gpr3;
 	else
-		myval = regs->gpr[arg_index + 3];
+		*argval = regs->gpr[arg_index + 3];
+	return 0;
 #elif PINK_ARCH_I386
 	switch (arg_index) {
-	case 0: myval = regs->ebx; break;
-	case 1: myval = regs->ecx; break;
-	case 2: myval = regs->edx; break;
-	case 3: myval = regs->esi; break;
-	case 4: myval = regs->edi; break;
-	case 5: myval = regs->ebp; break;
+	case 0: *argval = regs->ebx; break;
+	case 1: *argval = regs->ecx; break;
+	case 2: *argval = regs->edx; break;
+	case 3: *argval = regs->esi; break;
+	case 4: *argval = regs->edi; break;
+	case 5: *argval = regs->ebp; break;
 	default: _pink_assert_not_reached();
 	}
+	return 0;
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
 	if (abi != 1) { /* x86-64 or x32 ABI */
 		switch (arg_index) {
-		case 0: myval = regs->rdi; break;
-		case 1: myval = regs->rsi; break;
-		case 2: myval = regs->rdx; break;
-		case 3: myval = regs->r10; break;
-		case 4: myval = regs->r8;  break;
-		case 5: myval = regs->r9;  break;
+		case 0: *argval = regs->rdi; break;
+		case 1: *argval = regs->rsi; break;
+		case 2: *argval = regs->rdx; break;
+		case 3: *argval = regs->r10; break;
+		case 4: *argval = regs->r8;  break;
+		case 5: *argval = regs->r9;  break;
 		default: _pink_assert_not_reached();
 		}
 	} else { /* i386 ABI */
 		/* (long)(int) is to sign-extend lower 32 bits */
 		switch (arg_index) {
-		case 0: myval = (long)(int)regs->rbx; break;
-		case 1: myval = (long)(int)regs->rcx; break;
-		case 2: myval = (long)(int)regs->rdx; break;
-		case 3: myval = (long)(int)regs->rsi; break;
-		case 4: myval = (long)(int)regs->rdi; break;
-		case 5: myval = (long)(int)regs->rbp; break;
+		case 0: *argval = (long)(int)regs->rbx; break;
+		case 1: *argval = (long)(int)regs->rcx; break;
+		case 2: *argval = (long)(int)regs->rdx; break;
+		case 3: *argval = (long)(int)regs->rsi; break;
+		case 4: *argval = (long)(int)regs->rdi; break;
+		case 5: *argval = (long)(int)regs->rbp; break;
 		default: _pink_assert_not_reached();
 		}
 	}
+	return 0;
 #else
 #error unsupported architecture
 #endif
-	*argval = myval;
-	return 0;
 }
 
 ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,

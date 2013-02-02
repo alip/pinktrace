@@ -201,8 +201,6 @@ START_TEST(TEST_write_retval)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		int error = 0;
-		long rval, sysno;
 		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);

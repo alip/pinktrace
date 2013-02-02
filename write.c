@@ -192,10 +192,10 @@ int pink_write_syscall(pid_t tid, enum pink_abi abi, long sysnum)
 
 int pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 {
-	int r;
 #if PINK_ARCH_ARM
 	return pink_write_word_user(tid, 0, retval);
 #elif PINK_ARCH_IA64
+	int r;
 	long r8, r10;
 
 	if (error) {
@@ -206,18 +206,16 @@ int pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 		r10 = 0;
 	}
 
-	r = pink_write_word_user(tid, PT_R8, r8);
-	if (r < 0)
+	if ((r = pink_write_word_user(tid, PT_R8, r8)) < 0)
 		return r;
-	r = pink_write_word_user(tid, PT_R10, r10);
-	if (r < 0)
-		return r;
+	return pink_write_word_user(tid, PT_R10, r10);
 #elif PINK_ARCH_POWERPC
 #define SO_MASK 0x10000000
+	int r;
 	long flags;
 
-	r = pink_read_word_user(tid, sizeof(unsigned long) * PT_CCR, &flags);
-	if (r < 0)
+	if ((r = pink_read_word_user(tid, sizeof(unsigned long) * PT_CCR,
+				     &flags)) < 0)
 		return r;
 
 	if (error) {
@@ -227,12 +225,10 @@ int pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error)
 		flags &= ~SO_MASK;
 	}
 
-	r = pink_write_word_user(tid, sizeof(unsigned long) * PT_R3, retval);
-	if (r < 0)
+	if ((r = pink_write_word_user(tid, sizeof(unsigned long) * PT_R3,
+				      retval)) < 0)
 		return r;
-	r = pink_write_word_user(tid, sizeof(unsigned long) * PT_CCR, flags);
-	if (r < 0)
-		return r;
+	return pink_write_word_user(tid, sizeof(unsigned long) * PT_CCR, flags);
 #elif PINK_ARCH_I386
 	if (error)
 		retval = (long)-error;

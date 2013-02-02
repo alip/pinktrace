@@ -139,9 +139,9 @@ void dump_basic_hex(const void *addr, size_t len)
 
 void dump_regs_struct(const pink_regs_t *regs)
 {
-	debug("\t --8< REGDUMP %p >8--\n", regs);
+	debug("\t --8< REGDUMP %p >8--\n", (void *)regs);
 #if !PINK_HAVE_REGS_T
-	debug("\t\tregs = %p (not supported)\n", regs);
+	debug("\t\tregs = %p (not supported)\n", (void *)regs);
 #elif PINK_ARCH_ARM
 	debug("\t\tregs->ARM_cpsr = %#lx\n", regs->ARM_cpsr);
 	debug("\t\tregs->ARM_pc = %#lx\n", regs->ARM_pc);
@@ -214,15 +214,14 @@ void dump_regs_struct(const pink_regs_t *regs)
 #else
 #error unsupported architecture
 #endif
-	debug("\t --8< REGDUMP END %p >8--\n", regs);
+	debug("\t --8< REGDUMP END %p >8--\n", (void *)regs);
 }
 
 void dump_socket_address(const struct pink_sockaddr *sockaddr)
 {
 	char ip[64];
-	const char *f;
 
-	debug("\t --8< SOCKADDRDUMP %p >8--\n", sockaddr);
+	debug("\t --8< SOCKADDRDUMP %p >8--\n", (void *)sockaddr);
 
 	debug("\t\tfamily:%d\n", sockaddr->family);
 
@@ -255,7 +254,7 @@ void dump_socket_address(const struct pink_sockaddr *sockaddr)
 #endif
 	}
 
-	debug("\t --8< SOCKADDRDUMP END %p >8--\n", sockaddr);
+	debug("\t --8< SOCKADDRDUMP END %p >8--\n", (void *)sockaddr);
 }
 
 pid_t fork_assert(void)
@@ -305,7 +304,7 @@ pid_t waitpid_no_intr_debug(unsigned loopcnt,
 	saved_errno = errno;
 	message("%s:%s@%d[%u] wait(pid:%d status:%p opts:%d) = %d ",
 			file, func, linecnt, loopcnt,
-			pid, status, options,
+			pid, (void *)status, options,
 			tracee_pid);
 	if (tracee_pid > 0) {
 		int s = *status;
@@ -607,14 +606,14 @@ void trace_set_regs_or_kill(pid_t pid, const pink_regs_t *regs)
 
 	saved_errno = errno;
 	info("\ttrace_set_regs(%u, %p) = %d (errno:%d %s)\n",
-	     pid, regs, r, errno, strerror(errno));
+	     pid, (void *)regs, r, errno, strerror(errno));
 	dump_regs_struct(regs);
 	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("PTRACE_SETREGS (pid:%u regs:%p errno:%d %s)",
-			     pid, regs, errno, strerror(errno));
+			     pid, (void *)regs, errno, strerror(errno));
 	}
 }
 
@@ -639,7 +638,7 @@ void read_abi_or_kill(pid_t pid, const pink_regs_t *regs, enum pink_abi *abi)
 
 	saved_errno = errno;
 	info("\tread_abi(%u, %p, %#x) = %d (errno:%d %s)\n",
-	     pid, regs, (r < 0) ? 0xbad : (unsigned)*abi, r,
+	     pid, (void *)regs, (r < 0) ? 0xbad : (unsigned)*abi, r,
 	     errno, strerror(errno));
 	errno = saved_errno;
 
@@ -663,7 +662,7 @@ void read_syscall_or_kill(pid_t pid, enum pink_abi abi, const pink_regs_t *regs,
 
 	saved_errno = errno;
 	info("\tread_syscall(%u, %d, %p, %ld) = %d (errno:%d %s)\n",
-	     pid, abi, regs,
+	     pid, abi, (void *)regs,
 	     (r < 0) ? PINK_SYSCALL_INVALID : *sysnum,
 	     r,
 	     errno, strerror(errno));
@@ -676,7 +675,7 @@ void read_syscall_or_kill(pid_t pid, enum pink_abi abi, const pink_regs_t *regs,
 			     " regs:%p"
 			     " errno:%d %s)",
 			     pid, abi,
-			     regs,
+			     (void *)regs,
 			     errno, strerror(errno));
 	}
 }
@@ -691,7 +690,7 @@ void read_retval_or_kill(pid_t pid, enum pink_abi abi, const pink_regs_t *regs,
 
 	saved_errno = errno;
 	info("\tread_retval(%u, %d, %p, %ld, %d %s) = %d (errno:%d %s)\n",
-			pid, abi, regs,
+			pid, abi, (void *)regs,
 			(r < 0) ? -1L : *retval,
 			(r < 0) ? -1 : *error,
 			(r < 0) ? "?" : strerror(*error),
@@ -704,7 +703,7 @@ void read_retval_or_kill(pid_t pid, enum pink_abi abi, const pink_regs_t *regs,
 			      "(pid:%u abi:%d,"
 			      " regs:%p"
 			      " errno:%d %s)",
-			      pid, abi, regs, errno, strerror(errno));
+			      pid, abi, (void *)regs, errno, strerror(errno));
 	}
 }
 
@@ -719,7 +718,7 @@ void read_argument_or_kill(pid_t pid, enum pink_abi abi,
 
 	saved_errno = errno;
 	info("\tread_argument(%u, %d, %p, %d, %ld) = %d (errno:%d %s)\n",
-			pid, abi, regs,
+			pid, abi, (void *)regs,
 			arg_index,
 			(r < 0) ? -1L : *argval,
 			r, errno, strerror(errno));
@@ -733,7 +732,7 @@ void read_argument_or_kill(pid_t pid, enum pink_abi abi,
 			     " arg_index:%d"
 			     " errno:%d %s)",
 			     pid, abi,
-			     regs,
+			     (void *)regs,
 			     arg_index,
 			     errno, strerror(errno));
 	}
@@ -819,8 +818,8 @@ void read_string_array_or_kill(pid_t pid, enum pink_abi abi, long arg,
 	     " = %zd (errno:%d %s)\n",
 	     pid, abi,
 	     arg, arr_index,
-	     dest, dest_len,
-	     nullptr,
+	     (void *)dest, dest_len,
+	     (void *)nullptr,
 	     r, errno, strerror(errno));
 	errno = saved_errno;
 
@@ -834,8 +833,8 @@ void read_string_array_or_kill(pid_t pid, enum pink_abi abi, long arg,
 			     " errno:%d %s)",
 			     pid, abi,
 			     arg, arr_index,
-			     dest, dest_len,
-			     nullptr,
+			     (void *)dest, dest_len,
+			     (void *)nullptr,
 			     errno, strerror(errno));
 	} else if ((size_t)r < dest_len) {
 		message("\tpink_read_string_array partial read,"
@@ -865,9 +864,9 @@ void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
 	     " %p)"
 	     " = %d (errno:%d %s)\n",
 	     pid, abi,
-	     regs,
+	     (void *)regs,
 	     decode_socketcall ? "true" : "false",
-	     subcall,
+	     (void *)subcall,
 	     r,
 	     errno, strerror(errno));
 	errno = saved_errno;
@@ -881,9 +880,9 @@ void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
 			     " subcall:%p"
 			     " errno:%d %s)",
 			     pid, abi,
-			     regs,
+			     (void *)regs,
 			     decode_socketcall ? "true" : "false",
-			     subcall,
+			     (void *)subcall,
 			     errno, strerror(errno));
 	}
 }
@@ -906,9 +905,9 @@ void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi, const
 	     " %u, %p)"
 	     " = %d (errno:%d %s)\n",
 	     pid, abi,
-	     regs,
+	     (void *)regs,
 	     decode_socketcall ? "true" : "false",
-	     arg_index, argval,
+	     arg_index, (void *)argval,
 	     r,
 	     errno, strerror(errno));
 	errno = saved_errno;
@@ -923,9 +922,9 @@ void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi, const
 			     " argval:%p"
 			     " errno:%d %s)",
 			     pid, abi,
-			     regs,
+			     (void *)regs,
 			     decode_socketcall ? "true" : "false",
-			     arg_index, argval,
+			     arg_index, (void *)argval,
 			     errno, strerror(errno));
 	}
 }
@@ -950,10 +949,10 @@ void read_socket_address_or_kill(pid_t pid, enum pink_abi abi,
 	     " %p)"
 	     " = %d (errno:%d %s)\n",
 	     pid, abi,
-	     regs,
+	     (void *)regs,
 	     decode_socketcall ? "true" : "false",
-	     arg_index, fd,
-	     sockaddr,
+	     arg_index, (void *)fd,
+	     (void *)sockaddr,
 	     r,
 	     errno, strerror(errno));
 	errno = saved_errno;
@@ -968,10 +967,10 @@ void read_socket_address_or_kill(pid_t pid, enum pink_abi abi,
 			     " fd:%p sockaddr:%p"
 			     " errno:%d %s)",
 			     pid, abi,
-			     regs,
+			     (void *)regs,
 			     decode_socketcall ? "true" : "false",
 			     arg_index,
-			     fd, sockaddr,
+			     (void *)fd, (void *)sockaddr,
 			     errno, strerror(errno));
 	}
 
@@ -989,6 +988,7 @@ void write_syscall_or_kill(pid_t pid, enum pink_abi abi, long sysnum)
 	info("\twrite_syscall(%u, %d, %ld) = %d (errno:%d %s)\n",
 	     pid, abi, sysnum,
 	     r, errno, strerror(errno));
+	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
@@ -1012,6 +1012,7 @@ void write_retval_or_kill(pid_t pid, enum pink_abi abi, long retval, int error)
 	     pid, abi, retval,
 	     error, strerror(error),
 	     r, errno, strerror(errno));
+	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
@@ -1036,6 +1037,7 @@ void write_argument_or_kill(pid_t pid, enum pink_abi abi,
 			pid, abi,
 			arg_index, argval,
 			r, errno, strerror(errno));
+	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);

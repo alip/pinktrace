@@ -166,7 +166,7 @@ START_TEST(TEST_read_socket_address_af_null)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		long argval, subcall;
+		long subcall;
 		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
@@ -264,7 +264,7 @@ START_TEST(TEST_read_socket_address_af_unix)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		long argval, subcall;
+		long subcall;
 		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
@@ -371,7 +371,7 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		long argval, subcall;
+		long subcall;
 		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
@@ -484,9 +484,8 @@ START_TEST(TEST_read_socket_address_af_inet)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		long argval, subcall;
+		long subcall;
 		pink_regs_t regs;
-		char ip[64];
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -596,9 +595,8 @@ START_TEST(TEST_read_socket_address_af_inet6)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		long argval, subcall;
+		long subcall;
 		pink_regs_t regs;
-		char ip[64];
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -709,7 +707,7 @@ START_TEST(TEST_read_socket_address_af_netlink)
 		int status;
 		pid_t tracee_pid;
 		enum pink_abi abi;
-		long argval, subcall;
+		long subcall;
 		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);

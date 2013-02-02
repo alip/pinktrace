@@ -128,22 +128,13 @@ int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 			     struct pink_sockaddr *sockaddr)
 {
 	int r;
-	long addr, addrlen, args;
-	size_t wsize;
+	long addr, addrlen;
 
-	if (fd) {
-		r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-					      0, fd);
-		if (r < 0)
-			return r;
-	}
-	r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-				      arg_index, &addr);
-	if (r < 0)
+	if (fd && (r = pink_read_socket_argument(tid, abi, regs, decode_socketcall, 0, fd)) < 0)
 		return r;
-	r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-				      arg_index + 1, &addrlen);
-	if (r < 0)
+	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall, arg_index, &addr)) < 0)
+		return r;
+	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall, arg_index + 1, &addrlen)) < 0)
 		return r;
 
 	if (addr == 0) {
@@ -155,8 +146,8 @@ int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));
-	if (pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen) < 0)
-		return -errno;
+	if ((r = pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen)) < 0)
+		return r;
 	sockaddr->u.pad[sizeof(sockaddr->u.pad) - 1] = '\0';
 
 	sockaddr->family = sockaddr->u.sa.sa_family;
