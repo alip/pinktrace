@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,6 +66,7 @@
 #include <pinktrace/trace.h>
 #include <pinktrace/read.h>
 #include <pinktrace/write.h>
+#include <pinktrace/vm.h>
 #include <pinktrace/socket.h>
 #include <pinktrace/pipe.h>
 

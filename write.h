@@ -71,35 +71,6 @@ int pink_write_word_user(pid_t tid, long off, long val);
 int pink_write_word_data(pid_t tid, long off, long val);
 
 /**
- * Write the given data argument @b src to address @b addr
- *
- * @note This function uses @c process_vm_writev() if available and falls back
- *       to the old @e ptrace(2) based method in case this system call fails
- *       with @e ENOSYS.
- * @see #PINK_HAVE_PROCESS_VM_WRITEV
- *
- * @param tid Thread ID
- * @param abi System call ABI; see pink_read_abi()
- * @param addr Address in tracee's address space
- * @param src Pointer to the data
- * @param len Number of bytes of data to write
- * @return On success, this function returns the number of bytes written.
- *         On error, -1 is returned and errno is set appropriately.
- *         Check the return value for partial writes.
- **/
-ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
-			   const char *src, size_t len);
-
-/**
- * Convenience macro to write an object
- *
- * @see pink_write_vm_data()
- **/
-#define pink_write_vm_object(tid, abi, addr, objp) \
-		pink_write_vm_data((tid), (abi), (addr), \
-				   (char *)(objp), sizeof(*(objp)))
-
-/**
  * Set the system call to the given value
  *
  * @note On ARM architecture, this only works for EABI system calls.
@@ -133,6 +104,39 @@ int pink_write_retval(pid_t tid, enum pink_abi abi, long retval, int error);
  **/
 int pink_write_argument(pid_t tid, enum pink_abi abi,
 			unsigned arg_index, long argval);
+
+/**
+ * Write the given data argument @b src to address @b addr
+ *
+ * @note This function calls the functions:
+ *       - pink_vm_cwrite()
+ *       - pink_vm_lwrite()
+ * depending on availability.
+ * @see pink_vm_cwrite()
+ * @see pink_vm_lwrite()
+ * @see #PINK_HAVE_PROCESS_VM_WRITEV
+ *
+ * @param tid Thread ID
+ * @param abi System call ABI; see pink_read_abi()
+ * @param addr Address in tracee's address space
+ * @param src Pointer to the data, must @b not be @e NULL
+ * @param len Number of bytes of data to write
+ * @return On success, this function returns the number of bytes written.
+ *         On error, -1 is returned and errno is set appropriately.
+ *         Check the return value for partial writes.
+ **/
+ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
+			   const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
+
+/**
+ * Convenience macro to write an object
+ *
+ * @see pink_write_vm_data()
+ **/
+#define pink_write_vm_object(tid, abi, addr, objp) \
+		pink_write_vm_data((tid), (abi), (addr), \
+				   (char *)(objp), sizeof(*(objp)))
 
 #ifdef __cplusplus
 }

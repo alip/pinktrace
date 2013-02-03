@@ -52,116 +52,6 @@ int pink_write_word_data(pid_t tid, long off, long val)
 	return 0;
 }
 
-static ssize_t _pink_process_vm_writev(pid_t tid,
-				       const struct iovec *local_iov,
-				       unsigned long liovcnt,
-				       const struct iovec *remote_iov,
-				       unsigned long riovcnt,
-				       unsigned long flags)
-{
-	ssize_t r;
-#ifdef HAVE_PROCESS_VM_WRITEV
-	r = process_vm_writev(tid,
-			      local_iov, liovcnt,
-			      remote_iov, riovcnt,
-			      flags);
-#elif defined(__NR_process_vm_writev)
-	r = syscall(__NR_process_vm_writev, (long)tid,
-		    local_iov, liovcnt,
-		    remote_iov, riovcnt,
-		    flags);
-#else
-	errno = ENOSYS;
-	return -1;
-#endif
-	return r;
-}
-
-static ssize_t _pink_write_vm_data_ptrace(pid_t tid, long addr,
-					  const char *src, size_t len)
-{
-	bool started;
-	int n, m;
-	union {
-		long val;
-		char x[sizeof(long)];
-	} u;
-	ssize_t count_written;
-
-	started = false;
-	count_written = 0;
-	if (addr & (sizeof(long) - 1)) {
-		/* addr not a multiple of sizeof(long) */
-		n = addr - (addr & - sizeof(long)); /* residue */
-		addr &= -sizeof(long); /* residue */
-		m = MIN(sizeof(long) - n, len);
-		memcpy(u.x, &src[n], m);
-		if (pink_write_word_data(tid, addr, u.val) < 0) {
-			/* Not started yet, thus we had a bogus address. */
-			return -1;
-		}
-		started = true;
-		addr += sizeof(long), src += m, len -= m, count_written += m;
-	}
-	while (len > 0) {
-		m = MIN(sizeof(long), len);
-		memcpy(u.x, src, m);
-		if (pink_write_word_data(tid, addr, u.val) < 0)
-			return started ? count_written : -1;
-		started = true;
-		addr += sizeof(long), src += m, len -= m, count_written += m;
-	}
-
-	return count_written;
-}
-
-#if PINK_HAVE_PROCESS_VM_WRITEV
-static bool _pink_process_vm_writev_not_supported = false;
-#define process_vm_writev _pink_process_vm_writev
-#else
-static bool _pink_process_vm_writev_not_supported = true;
-#define process_vm_writev(...) (errno = ENOSYS, -1)
-#endif
-
-ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
-			   const char *src, size_t len)
-{
-#if PINK_ABIS_SUPPORTED > 1
-	int errcond;
-	size_t wsize;
-
-	errcond = pink_abi_wordsize(abi, &wsize);
-	if (errcond < 0) {
-		errno = -errcond;
-		return -1;
-	}
-
-	if (wsize < sizeof(addr))
-		addr &= (1ul << 8 * wsize) - 1;
-#endif
-
-	if (!_pink_process_vm_writev_not_supported) {
-		int r;
-		struct iovec local[1], remote[1];
-
-		local[0].iov_base = (void *)src;
-		remote[0].iov_base = (void *)addr;
-		local[0].iov_len = remote[0].iov_len = len;
-
-		r = process_vm_writev(tid,
-				      local, 1,
-				      remote, 1,
-				      /*flags:*/ 0);
-		if (r < 0 && errno == ENOSYS) {
-			_pink_process_vm_writev_not_supported = true;
-			goto vm_writev_didnt_work;
-		}
-		return r;
-	}
-vm_writev_didnt_work:
-	return _pink_write_vm_data_ptrace(tid, addr, src, len);
-}
-
 int pink_write_syscall(pid_t tid, enum pink_abi abi, long sysnum)
 {
 	int r;
@@ -307,4 +197,16 @@ int pink_write_argument(pid_t tid, enum pink_abi abi, unsigned arg_index,
 #else
 #error unsupported architecture
 #endif
+}
+
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_write_vm_data(pid_t tid, enum pink_abi abi, long addr,
+			   const char *src, size_t len)
+{
+	int r;
+
+	r = pink_vm_cwrite(tid, abi, addr, src, len);
+	if (r < 0 && errno == ENOSYS)
+		return pink_vm_lwrite(tid, abi, addr, src, len);
+	return r;
 }

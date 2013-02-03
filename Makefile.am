@@ -21,6 +21,7 @@ libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= \
 					     syscall.c \
 					     read.c \
 					     write.c \
+					     vm.c \
 					     socket.c
 libpinktrace_@PINKTRACE_PC_SLOT@_la_LDFLAGS= \
 					     -version-info @PINK_VERSION_LIB_CURRENT@:@PINK_VERSION_LIB_REVISION@:0 \
@@ -39,6 +40,7 @@ pinktrace_include_HEADERS= \
 			   socket.h \
 			   syscall.h \
 			   trace.h \
+			   vm.h \
 			   write.h \
 			   pink.h
 noinst_HEADERS= \

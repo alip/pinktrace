@@ -8,6 +8,8 @@
  *   Copyright (c) 1999 IBM Deutschland Entwicklung GmbH, IBM Corporation
  *                       Linux for s390 port by D.J. Barrow
  *                      <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
+ *   Copyright (c) 2000 PocketPenguins Inc.  Linux for Hitachi SuperH
+ *                      port by Greg Banks <gbanks@pocketpenguins.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -91,38 +93,6 @@ int pink_read_word_data(pid_t tid, long off, long *res);
 int pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi);
 
 /**
- * Read len bytes of data of process @b pid, at address @b addr, to our address
- * space @b dest
- *
- * @note This function uses @c process_vm_readv() if available and falls back to
- *       the old @e ptrace(2) based method in case this system call fails with
- *       @e ENOSYS.
- * @see #PINK_HAVE_PROCESS_VM_READV
- *
- * @param tid Thread ID
- * @param abi System call ABI; see pink_read_abi()
- * @param addr Address in tracee's address space
- * @param dest Pointer to store the data, must @b not be @e NULL
- * @param len Number of bytes of data to read
- * @return On success, this function returns the number of bytes read.
- *         On error, -1 is returned and errno is set appropriately.
- *         Check the return value for partial reads.
- **/
-ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr,
-			  char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
-
-/**
- * Convenience macro to read an object
- *
- * @see pink_read_vm_data
- **/
-#define pink_read_vm_object(pid, abi, addr, objp) \
-		pink_read_vm_data((pid), (abi), (addr), \
-				(char *)(objp), \
-				sizeof(*(objp)))
-
-/**
  * Read the system call number
  *
  * @param tid Thread ID
@@ -166,8 +136,44 @@ int pink_read_argument(pid_t tid, enum pink_abi abi,
 	PINK_GCC_ATTR((nonnull(5)));
 
 /**
+ * Read len bytes of data of process @b pid, at address @b addr, to our address
+ * space @b dest
+ *
+ * @note This function calls the functions:
+ *       - pink_vm_cread()
+ *       - pink_vm_lread()
+ * depending on availability.
+ * @see pink_vm_cread()
+ * @see pink_vm_lread()
+ * @see #PINK_HAVE_PROCESS_VM_READV
+ *
+ * @param tid Thread ID
+ * @param abi System call ABI; see pink_read_abi()
+ * @param addr Address in tracee's address space
+ * @param dest Pointer to store the data, must @b not be @e NULL
+ * @param len Number of bytes of data to read
+ * @return On success, this function returns the number of bytes read.
+ *         On error, -1 is returned and errno is set appropriately.
+ *         Check the return value for partial reads.
+ **/
+ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr,
+			  char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
+
+/**
+ * Convenience macro to read an object
+ *
+ * @see pink_read_vm_data()
+ **/
+#define pink_read_vm_object(pid, abi, addr, objp) \
+		pink_read_vm_data((pid), (abi), (addr), \
+				  (char *)(objp), sizeof(*(objp)))
+
+/**
  * Like pink_read_vm_data() but make the additional effort of looking for a
  * terminating zero-byte
+ *
+ * @see pink_read_vm_data()
  **/
 ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr,
 			      char *dest, size_t len)
@@ -175,6 +181,8 @@ ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr,
 
 /**
  * Synonym for pink_read_vm_data_nul()
+ *
+ * @see pink_read_vm_data_nul()
  **/
 #define pink_read_string(tid, abi, addr, dest, len) \
 		pink_read_vm_data_nul((tid), (abi), (addr), \
