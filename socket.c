@@ -146,8 +146,9 @@ int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));
-	if ((r = pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen)) < 0)
-		return r;
+	/* FIXME: Check for partial write! */
+	if (pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen) < 0)
+		return -errno;
 	sockaddr->u.pad[sizeof(sockaddr->u.pad) - 1] = '\0';
 
 	sockaddr->family = sockaddr->u.sa.sa_family;

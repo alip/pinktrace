@@ -345,8 +345,8 @@ int pink_read_argument(pid_t tid, enum pink_abi abi,
 		out0 = ia64_rse_skip_regs((unsigned long *) rbs_end, -sof + sol);
 		skip = (unsigned long) ia64_rse_skip_regs(out0, arg_index);
 
-		if ((r = pink_read_vm_data(tid, skip, sizeof(long), &myval)) < 0)
-			return r;
+		if (pink_read_vm_data(tid, skip, sizeof(long), &myval) < 0)
+			return -errno;
 	} else { /* ia32 */
 		int argreg;
 
@@ -455,6 +455,7 @@ ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
 		return -1;
 	arg += arr_index * wsize;
 
+	/* FIXME: Check for partial write! */
 	if (pink_read_vm_data(tid, abi, arg, cp.data, wsize) < 0)
 		return -1;
 	if (wsize == 4)
