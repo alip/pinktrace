@@ -300,7 +300,7 @@ ssize_t pink_vm_cread_nul(pid_t tid, enum pink_abi abi, long addr,
 		if (p != NULL)
 			return count_read + (p - (char *)local[0].iov_base);
 		local[0].iov_base = (char *)local[0].iov_base + r;
-		remote[0].iov_base = (char *)local[0].iov_base + r;
+		remote[0].iov_base = (char *)remote[0].iov_base + r;
 		len -= r;
 	}
 	return count_read;
