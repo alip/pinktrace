@@ -176,7 +176,7 @@ ssize_t pink_vm_lwrite(pid_t tid, enum pink_abi abi, long addr,
 	started = false;
 	count_written = 0;
 	if (myaddr & (sizeof(long) - 1)) {
-		/* addr not a multiple of sizeof(long) */
+		/* myaddr not a multiple of sizeof(long) */
 		n = myaddr - (myaddr & - sizeof(long)); /* residue */
 		myaddr &= -sizeof(long); /* residue */
 		m = MIN(sizeof(long) - n, len);
@@ -187,7 +187,7 @@ ssize_t pink_vm_lwrite(pid_t tid, enum pink_abi abi, long addr,
 			return -1;
 		}
 		started = true;
-		addr += sizeof(long), src += m, len -= m, count_written += m;
+		myaddr += sizeof(long), src += m, len -= m, count_written += m;
 	}
 	while (len > 0) {
 		m = MIN(sizeof(long), len);
@@ -246,7 +246,7 @@ ssize_t pink_vm_cread(pid_t tid, enum pink_abi abi, long addr,
 		return r;
 
 	local[0].iov_base = dest;
-	remote[0].iov_base = (void *)addr;
+	remote[0].iov_base = (void *)myaddr;
 	local[0].iov_len = remote[0].iov_len = len;
 
 	return process_vm_readv(tid, local, 1, remote, 1, /*flags:*/0);
@@ -285,7 +285,7 @@ ssize_t pink_vm_cread_nul(pid_t tid, enum pink_abi abi, long addr,
 		 * in the existing (first) page.
 		 * (I hope there aren't arches with pages < 4K)
 		 */
-		end_in_page = ((addr + chunk_len) & 4095);
+		end_in_page = ((myaddr + chunk_len) & 4095);
 		r = chunk_len - end_in_page;
 		if (r > 0) /* if chunk_len > end_in_page */
 			chunk_len = r; /* chunk_len -= end_in_page */
