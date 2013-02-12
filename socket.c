@@ -84,14 +84,24 @@ PINK_GCC_ATTR((nonnull(6)))
 int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 			      const pink_regs_t *regs,
 			      bool decode_socketcall,
-			      unsigned arg_index, long *argval)
+			      unsigned arg_index, unsigned long *argval)
 {
 	int r;
 	size_t wsize;
 	long addr;
+	unsigned long u_addr;
 
-	if (!decode_socketcall)
-		return pink_read_argument(tid, abi, regs, arg_index, argval);
+	if (!argval)
+		return -EINVAL;
+
+	if (!decode_socketcall) {
+		long arg;
+		r = pink_read_argument(tid, abi, regs, arg_index, &arg);
+		if (r < 0)
+			return r;
+		*argval = arg;
+		return 0;
+	}
 
 	/*
 	 * Decoding the second argument of:
@@ -101,18 +111,19 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 	r = pink_read_argument(tid, abi, regs, 1, &addr);
 	if (r < 0)
 		return r;
+	u_addr = addr;
 	r = pink_abi_wordsize(abi, &wsize);
 	if (r < 0)
 		return r;
-	addr += arg_index * wsize;
+	u_addr += arg_index * wsize;
 	if (wsize == sizeof(int)) {
 		unsigned int arg;
-		if (pink_read_vm_object(tid, abi, addr, &arg) < 0)
+		if (pink_read_vm_object(tid, abi, u_addr, &arg) < 0)
 			return -errno;
 		*argval = arg;
 	} else {
 		unsigned long arg;
-		if (pink_read_vm_object(tid, abi, addr, &arg) < 0)
+		if (pink_read_vm_object(tid, abi, u_addr, &arg) < 0)
 			return -errno;
 		*argval = arg;
 	}
@@ -124,17 +135,25 @@ PINK_GCC_ATTR((nonnull(7)))
 int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 			     const pink_regs_t *regs,
 			     bool decode_socketcall,
-			     unsigned arg_index, long *fd,
+			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
 {
 	int r;
-	long addr, addrlen;
+	unsigned long myfd;
+	unsigned long addr, addrlen;
 
-	if (fd && (r = pink_read_socket_argument(tid, abi, regs, decode_socketcall, 0, fd)) < 0)
+	if (fd) {
+		r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+					      0, &myfd);
+		if (r < 0)
+			return r;
+		*fd = (int)myfd;
+	}
+	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+					   arg_index, &addr)) < 0)
 		return r;
-	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall, arg_index, &addr)) < 0)
-		return r;
-	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall, arg_index + 1, &addrlen)) < 0)
+	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
+					   arg_index + 1, &addrlen)) < 0)
 		return r;
 
 	if (addr == 0) {
@@ -142,7 +161,7 @@ int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 		sockaddr->length = 0;
 		return 0;
 	}
-	if (addrlen < 2 || (unsigned long)addrlen > sizeof(sockaddr->u))
+	if (addrlen < 2 || addrlen > sizeof(sockaddr->u))
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));

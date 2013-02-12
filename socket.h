@@ -190,7 +190,7 @@ const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
 int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 			      const pink_regs_t *regs,
 			      bool decode_socketcall,
-			      unsigned arg_index, long *argval)
+			      unsigned arg_index, unsigned long *argval)
 	PINK_GCC_ATTR((nonnull(6)));
 
 /**
@@ -215,7 +215,7 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 			     const pink_regs_t *regs,
 			     bool decode_socketcall,
-			     unsigned arg_index, long *fd,
+			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
 	PINK_GCC_ATTR((nonnull(7)));
 

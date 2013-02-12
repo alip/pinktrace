@@ -889,7 +889,7 @@ void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
 
 void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi, const
 				  pink_regs_t *regs, bool decode_socketcall,
-				  unsigned arg_index, long *argval)
+				  unsigned arg_index, unsigned long *argval)
 {
 	int r;
 	int saved_errno;
@@ -932,7 +932,7 @@ void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi, const
 void read_socket_address_or_kill(pid_t pid, enum pink_abi abi,
 				 const pink_regs_t *regs,
 				 bool decode_socketcall, unsigned arg_index,
-				 long *fd, struct pink_sockaddr *sockaddr)
+				 int *fd, struct pink_sockaddr *sockaddr)
 {
 	int r;
 	int saved_errno;

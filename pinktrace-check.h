@@ -164,11 +164,11 @@ void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
 void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi,
 		const pink_regs_t *regs,
 		bool decode_socketcall,
-		unsigned arg_index, long *argval);
+		unsigned arg_index, unsigned long *argval);
 void read_socket_address_or_kill(pid_t pid, enum pink_abi abi,
 		const pink_regs_t *regs,
 		bool decode_socketcall,
-		unsigned arg_index, long *fd,
+		unsigned arg_index, int *fd,
 		struct pink_sockaddr *sockaddr);
 
 void write_syscall_or_kill(pid_t pid, enum pink_abi abi, long sysnum);

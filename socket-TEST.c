@@ -133,8 +133,8 @@ START_TEST(TEST_read_socket_address_af_null)
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
-	long expfd = 23;
-	long newfd;
+	int expfd = 23;
+	int newfd;
 	struct pink_sockaddr expaddr;
 	struct pink_sockaddr newaddr;
 
@@ -189,7 +189,7 @@ START_TEST(TEST_read_socket_address_af_null)
 			if (newfd != expfd) {
 				kill(pid, SIGKILL);
 				fail_verbose("File descriptors not equal"
-					     " (expected:%ld got:%ld)",
+					     " (expected:%d got:%d)",
 					     expfd, newfd);
 			}
 			if (newaddr.family != expaddr.family) {
@@ -225,8 +225,8 @@ START_TEST(TEST_read_socket_address_af_unix)
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
-	long expfd = 23;
-	long newfd;
+	int expfd = 23;
+	int newfd;
 	struct pink_sockaddr expaddr;
 	struct pink_sockaddr newaddr;
 	socklen_t socklen = sizeof(struct sockaddr);
@@ -287,7 +287,7 @@ START_TEST(TEST_read_socket_address_af_unix)
 			if (newfd != expfd) {
 				kill(pid, SIGKILL);
 				fail_verbose("File descriptors not equal"
-					     " (expected:%ld got:%ld)",
+					     " (expected:%d got:%d)",
 					     expfd, newfd);
 			}
 			if (newaddr.family != expaddr.family) {
@@ -331,8 +331,8 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
-	long expfd = 23;
-	long newfd;
+	int expfd = 23;
+	int newfd;
 	struct pink_sockaddr expaddr;
 	struct pink_sockaddr newaddr;
 	socklen_t socklen = sizeof(struct sockaddr);
@@ -394,7 +394,7 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 			if (newfd != expfd) {
 				kill(pid, SIGKILL);
 				fail_verbose("File descriptors not equal"
-					     " (expected:%ld got:%ld)",
+					     " (expected:%d got:%d)",
 					     expfd, newfd);
 			}
 			if (newaddr.family != expaddr.family) {
@@ -444,8 +444,8 @@ START_TEST(TEST_read_socket_address_af_inet)
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
-	long expfd = 23;
-	long newfd;
+	int expfd = 23;
+	int newfd;
 	struct pink_sockaddr expaddr;
 	struct pink_sockaddr newaddr;
 	socklen_t socklen = sizeof(struct sockaddr);
@@ -507,7 +507,7 @@ START_TEST(TEST_read_socket_address_af_inet)
 			if (newfd != expfd) {
 				kill(pid, SIGKILL);
 				fail_verbose("File descriptors not equal"
-					     " (expected:%ld got:%ld)",
+					     " (expected:%d got:%d)",
 					     expfd, newfd);
 			}
 			if (newaddr.family != expaddr.family) {
@@ -555,8 +555,8 @@ START_TEST(TEST_read_socket_address_af_inet6)
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
-	long expfd = 23;
-	long newfd;
+	int expfd = 23;
+	int newfd;
 	struct pink_sockaddr expaddr;
 	struct pink_sockaddr newaddr;
 	socklen_t socklen = sizeof(struct sockaddr_in6);
@@ -618,7 +618,7 @@ START_TEST(TEST_read_socket_address_af_inet6)
 			if (newfd != expfd) {
 				kill(pid, SIGKILL);
 				fail_verbose("File descriptors not equal"
-					     " (expected:%ld got:%ld)",
+					     " (expected:%d got:%d)",
 					     expfd, newfd);
 			}
 			if (newaddr.family != expaddr.family) {
@@ -667,8 +667,8 @@ START_TEST(TEST_read_socket_address_af_netlink)
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
-	long expfd = 23;
-	long newfd;
+	int expfd = 23;
+	int newfd;
 	struct pink_sockaddr expaddr;
 	struct pink_sockaddr newaddr;
 	socklen_t socklen = sizeof(struct sockaddr_nl);
@@ -730,7 +730,7 @@ START_TEST(TEST_read_socket_address_af_netlink)
 			if (newfd != expfd) {
 				kill(pid, SIGKILL);
 				fail_verbose("File descriptors not equal"
-					     " (expected:%ld got:%ld)",
+					     " (expected:%d got:%d)",
 					     expfd, newfd);
 			}
 			if (newaddr.family != expaddr.family) {
