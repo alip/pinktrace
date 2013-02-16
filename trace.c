@@ -109,6 +109,17 @@ int pink_trace_get_regs(pid_t tid, pink_regs_t *regs)
 #endif
 }
 
+int pink_trace_get_siginfo(pid_t tid, siginfo_t *info)
+{
+#if PINK_HAVE_GETSIGINFO
+	if (pink_ptrace(PTRACE_GETSIGINFO, tid, NULL, info) < 0)
+		return -errno;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}
+
 int pink_trace_set_regs(pid_t tid, const pink_regs_t *regs)
 {
 #if PINK_HAVE_REGS_T

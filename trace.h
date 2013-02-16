@@ -43,6 +43,7 @@
 
 #include <stdbool.h>
 #include <sys/types.h>
+#include <signal.h>
 
 /**
  * This define represents the trace option SYSGOOD.
@@ -231,18 +232,31 @@ int pink_trace_geteventmsg(pid_t tid, unsigned long *data);
  *
  * @see PINK_HAVE_REGS_T
  *
- * @param tid Thread ID of the tracee
+ * @param tid Thread ID
  * @param regs Pointer to the structure of registers.
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_get_regs(pid_t tid, pink_regs_t *regs);
 
 /**
+ * Retrieve information about the signal that caused the stop.
+ * Copy a siginfo_t structure (see sigaction(2)) from the tracee to the address
+ * data in the tracer.
+ *
+ * @see PINK_HAVE_GETSIGINFO
+ *
+ * @param tid Thread ID
+ * @param info Signal information
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_get_siginfo(pid_t tid, siginfo_t *info);
+
+/**
  * Set the child's general purpose registers
  *
  * @see PINK_HAVE_REGS_T
  *
- * @param tid Thread ID of the tracee
+ * @param tid Thread ID
  * @param regs Same as pink_trace_get_regs()
  * @return 0 on success, negated errno on failure
  **/

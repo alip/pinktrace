@@ -143,6 +143,15 @@
 #define PINK_HAVE_GETEVENTMSG		@PINK_HAVE_GETEVENTMSG@
 
 /**
+ * Define to 1 if pink_trace_get_siginfo() is supported, 0 otherwise
+ *
+ * @attention If this define is 0, pink_trace_get_siginfo always returns @c -ENSOYS.
+ * @note This function is supported on Linux-2.3.99-pre6 and newer.
+ * @see pink_trace_get_siginfo()
+ **/
+#define PINK_HAVE_GETSIGINFO		@PINK_HAVE_GETSIGINFO@
+
+/**
  * Define to 1 if pink_trace_sysemu() is supported, 0 otherwise
  *
  * @attention If this define is 0, pink_trace_sysemu() always returns -ENOSYS.
@@ -158,6 +167,7 @@
  * @see pink_trace_sysemu_singlestep()
  **/
 #define PINK_HAVE_SYSEMU_SINGLESTEP	@PINK_HAVE_SYSEMU_SINGLESTEP@
+
 /**
  * Define to 1 if pink_trace_seize() is supported, 0 otherwise
  *
