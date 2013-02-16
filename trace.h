@@ -284,7 +284,7 @@ int pink_trace_sysemu(pid_t tid, int sig);
 int pink_trace_sysemu_singlestep(pid_t tid, int sig);
 
 /**
- * Attaches to the process specified in pid, making it a traced "child" of the
+ * Attaches to the process specified in tid, making it a traced "child" of the
  * calling process; the behaviour of the child is as if it had done a
  * PTRACE_TRACEME. The child is sent a SIGSTOP, but will not necessarily have
  * stopped by the completion of this call; use wait(2) to wait for the child to
@@ -304,6 +304,39 @@ int pink_trace_attach(pid_t tid);
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_detach(pid_t tid, int sig);
+
+/**
+ * Attach to the process specified in tid, without trapping it or affecting its
+ * signal and job control states.
+ *
+ * @see #PINK_HAVE_SEIZE
+ *
+ * @param tid Thread ID
+ * @param options Bitwise OR'ed PINK_TRACE_OPTION_* flags
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_seize(pid_t tid, int options);
+
+/**
+ * Trap the process without any signal or job control related side effects.
+ *
+ * @see #PINK_HAVE_INTERRUPT
+ *
+ * @param tid Thread ID
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_interrupt(pid_t tid);
+
+/**
+ * Listen for ptrace events asynchronously after pink_trace_interrupt().
+ *
+ * @see #PINK_HAVE_LISTEN
+ * @see pink_trace_interrupt()
+ *
+ * @param tid Thread ID
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_listen(pid_t tid);
 
 #ifdef __cplusplus
 }

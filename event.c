@@ -48,6 +48,8 @@ const char *pink_event_name(enum pink_event event)
 		return "exec";
 	case PINK_EVENT_EXIT:
 		return "exit";
+	case PINK_EVENT_STOP:
+		return "stop";
 	case PINK_EVENT_NONE:
 	default:
 		return NULL;

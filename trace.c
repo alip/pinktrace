@@ -235,3 +235,36 @@ int pink_trace_detach(pid_t tid, int sig)
 		return -errno;
 	return 0;
 }
+
+int pink_trace_seize(pid_t tid, int options)
+{
+#if PINK_HAVE_SEIZE
+	if (pink_ptrace(PTRACE_SEIZE, tid, NULL, (void *)(long)options) < 0)
+		return -errno;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}
+
+int pink_trace_interrupt(pid_t tid)
+{
+#if PINK_HAVE_INTERRUPT
+	if (pink_ptrace(PTRACE_INTERRUPT, tid, NULL, NULL) < 0)
+		return -errno;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}
+
+int pink_trace_listen(pid_t tid)
+{
+#if PINK_HAVE_LISTEN
+	if (pink_ptrace(PTRACE_LISTEN, tid, NULL, NULL) < 0)
+		return -errno;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}

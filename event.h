@@ -91,6 +91,12 @@ enum pink_event {
 	 * @see #PINK_HAVE_EVENT_SECCOMP
 	 **/
 	PINK_EVENT_SECCOMP = 7,
+	/**
+	 * STOP notification from seized child
+	 *
+	 * @see #PINK_HAVE_EVENT_STOP
+	 **/
+	PINK_EVENT_STOP = 128,
 };
 
 #ifdef __cplusplus

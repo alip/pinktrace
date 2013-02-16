@@ -1,7 +1,7 @@
 @GENERATED_FILE@
 
 /*
- * Copyright (c) 2011, 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -128,8 +128,7 @@
  * Define to 1 if pink_trace_setup() is supported, 0 otherwise
  *
  * @note This function is supported on Linux-2.4.6 and newer.
- * @attention If this is 0, pink_trace_setup() always returns false and
- *            sets errno to @c ENOSYS
+ * @attention If this define is 0, pink_trace_setup() always returns @c -ENOSYS.
  * @see pink_trace_setup()
  **/
 #define PINK_HAVE_SETUP			@PINK_HAVE_SETUP@
@@ -137,8 +136,7 @@
 /**
  * Define to 1 if pink_trace_geteventmsg() is supported, 0 otherwise
  *
- * @attention If this is 0, pink_trace_geteventmsg() always returns false and
- *            sets errno to @c ENOSYS.
+ * @attention If this define is 0, pink_trace_geteventmsg() always returns @c -ENOSYS.
  * @note This function is supported on Linux-2.5.46 and newer.
  * @see pink_trace_geteventmsg()
  **/
@@ -147,8 +145,7 @@
 /**
  * Define to 1 if pink_trace_sysemu() is supported, 0 otherwise
  *
- * @attention If this is 0, pink_trace_sysemu() always returns false and
- *            sets errno to @c ENOSYS
+ * @attention If this define is 0, pink_trace_sysemu() always returns -ENOSYS.
  * @note This function is supported on Linux-2.6.14 and newer.
  * @see pink_trace_sysemu()
  **/
@@ -156,12 +153,32 @@
 /**
  * Define to 1 if pink_trace_sysemu_singlestep() is supported, 0 otherwise
  *
- * @attention If this is 0, pink_trace_sysemu_singlestep() always returns false and
- *            sets errno to @c ENOSYS
+ * @attention If this define is 0, pink_trace_sysemu_singlestep() always returns -ENOSYS.
  * @note This function is supported on Linux-2.6.14 and newer.
  * @see pink_trace_sysemu_singlestep()
  **/
 #define PINK_HAVE_SYSEMU_SINGLESTEP	@PINK_HAVE_SYSEMU_SINGLESTEP@
+/**
+ * Define to 1 if pink_trace_seize() is supported, 0 otherwise
+ *
+ * @attention If this define is 0, pink_trace_seize() always returns @c -ENOSYS.
+ * @note This function is supported on Linux-3.4 and newer.
+ **/
+#define PINK_HAVE_SEIZE			@PINK_HAVE_SEIZE@
+/**
+ * Define to 1 if pink_trace_interrupt() is supported, 0 otherwise
+ *
+ * @attention If this define is 0, pink_trace_interrupt() always returns @c -ENOSYS.
+ * @note This function is supported on Linux-3.4 and newer.
+ **/
+#define PINK_HAVE_INTERRUPT		@PINK_HAVE_INTERRUPT@
+/**
+ * Define to 1 if pink_trace_listen() is supported, 0 otherwise
+ *
+ * @attention If this define is 0, pink_trace_listen() always returns @c -ENOSYS.
+ * @note This function is supported on Linux-3.4 and newer.
+ **/
+#define PINK_HAVE_LISTEN		@PINK_HAVE_LISTEN@
 
 /**
  * Define to 1 if #PINK_EVENT_FORK is supported, 0 otherwise
@@ -206,6 +223,12 @@
  * @note This event is supported on Linux-3.5 and newer.
  **/
 #define PINK_HAVE_EVENT_SECCOMP		@PINK_HAVE_EVENT_SECCOMP@
+/**
+ * Define to 1 if #PINK_EVENT_STOP is supported, 0 otherwise
+ *
+ * @note This event is supported on Linux-3.4 and newer.
+ **/
+#define PINK_HAVE_EVENT_STOP		@PINK_HAVE_EVENT_STOP@
 
 /**
  * Define to 1 if @e tkill(2) system call is available, 0 otherwise
