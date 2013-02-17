@@ -40,12 +40,6 @@
  *
  * @attention This is a work in progress and the API is @b not stable.
  *
- * @section parts Parts
- *
- * This library is divided into two parts:
- * - @ref pinktrace      "Core library (pinktrace)"
- * - @ref pinktrace-easy "Easy library (pinktrace-easy)"
- *
  * @author Ali Polatel <alip@exherbo.org>
  **/
 

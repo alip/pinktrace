@@ -1,4 +1,4 @@
-SUBDIRS= linux . easy
+SUBDIRS= linux .
 
 CLEANFILES=
 EXTRA_DIST=
