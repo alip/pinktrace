@@ -99,4 +99,6 @@
 		abort();						\
 	} while (0)
 
+long _pink_shuffle_scno(unsigned long scno);
+
 #endif

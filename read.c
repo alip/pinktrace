@@ -141,36 +141,22 @@ int pink_read_syscall(pid_t tid, enum pink_abi abi,
 		/*
 		 * Get the ARM-mode system call number
 		 */
-		if ((r = pink_read_word_data(tid, regs->ARM_pc - 4,
-					     &sysval)) < 0)
+		if ((r = pink_read_word_data(tid, regs->ARM_pc - 4, &sysval)) < 0)
 			return r;
 
-		/* Handle the EABI syscall convention.  We do not
-		   bother converting structures between the two
-		   ABIs, but basic functionality should work even
-		   if the tracer and the tracee have different
-		   ABIs. */
+		/* EABI syscall convention? */
 		if (sysval == 0xef000000) {
-			sysval = regs->ARM_r7;
+			sysval = regs->ARM_r7; /* yes */
 		} else {
 			if ((sysval & 0x0ff00000) != 0x0f900000) {
 				/* unknown syscall trap: 0x%08lx (sysval) */
 				return -EFAULT;
 			}
-
-			/*
-			 * Fixup the syscall number
-			 */
+			/* Fixup the syscall number */
 			sysval &= 0x000fffff;
 		}
 	}
-	if (sysval & 0x0f0000) {
-		/*
-		 * Handle ARM specific syscall
-		 */
-		sysval &= 0x0000ffff;
-	}
-
+	sysval = _pink_syscall_shuffle(sysval);
 	*sysnum = sysval;
 	return 0;
 #elif PINK_ARCH_IA64

@@ -376,3 +376,19 @@
 	"setns", /* 375 */
 	"process_vm_readv", /* 376 */
 	"process_vm_writev", /* 377 */
+#define ARM_LAST_ORDINARY_SYSCALL 377
+	/* __ARM_NR_cmpxchg (0x000ffff0).
+	 * Remapped by shuffle_scno() to be directly after ordinary syscalls
+	 * in this table.
+	 */
+	"cmpxchg",
+	/* ARM specific syscalls. Encoded with scno 0x000f00xx.
+	 * Remapped by shuffle_scno() to be directly after __ARM_NR_cmpxchg.
+	 */
+	NULL, /* 0 */
+	"breakpoint", /* 1 */
+	"cacheflush", /* 2 */
+	"usr26", /* 3 */
+	"usr32", /* 4 */
+	"set_tls", /* 5 */
+#define ARM_LAST_SPECIAL_SYSCALL 5

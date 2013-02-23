@@ -53,11 +53,6 @@ int pink_abi_wordsize(enum pink_abi abi, size_t *wsize)
 	case 0: /* fall through */
 	case 1: *wsize = 4; return 0;
 	}
-#elif PINK_ARCH_ARM
-	switch (abi) {
-	case 0: /* fall through */
-	case 1: *wsize = 4; return 0;
-	}
 #elif PINK_ARCH_POWERPC64
 	switch (abi) {
 	case 0: *wsize = 8; return 0;
