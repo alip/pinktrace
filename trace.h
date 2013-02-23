@@ -180,7 +180,7 @@ int pink_trace_resume(pid_t tid, int sig);
  *   - If @e tgkill(2) system call is available: tgkill(tid, tgid, sig);
  *   - Otherwise if @e tkill(2) system call is available: tkill(tid, sig);
  *   - And otherwise: kill(tid, sig);
- *   is called.
+ *   is called. For #tgid <= 0 @e tgkill(2) is skipped.
  *
  * @see #PINK_HAVE_TKILL
  * @see #PINK_HAVE_TGKILL

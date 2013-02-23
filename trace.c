@@ -62,15 +62,24 @@ int pink_trace_resume(pid_t tid, int sig)
 
 int pink_trace_kill(pid_t tid, pid_t tgid, int sig)
 {
-	int retval;
-#if PINK_HAVE_TGKILL
-	retval = syscall(__NR_tgkill, tgid, tid, sig);
-#elif PINK_HAVE_TKILL
-	retval = syscall(__NR_tkill, tid, sig);
+	if (tid <= 0)
+		return -EINVAL;
+
+	if (tgid <= 0) {
+#if PINK_HAVE_TKILL
+		return syscall(__NR_tkill, tid, sig) < 0 ? -errno : 0;
 #else
-	retval = kill(tid, sig);
+		return kill(tid, sig) < 0 ? -errno : 0;
 #endif
-	return (retval < 0) ? -errno : 0;
+	} else {
+#if PINK_HAVE_TGKILL
+		return syscall(__NR_tgkill, tid, tgid, sig) ? -errno : 0;
+#elif PINK_HAVE_TKILL
+		return syscall(__NR_tkill, tid, sig) < 0 ? -errno : 0;
+#else
+		return kill(tid, sig) < 0 ? -errno : 0;
+#endif
+	}
 }
 
 int pink_trace_singlestep(pid_t tid, int sig)
