@@ -39,10 +39,6 @@
  * @{
  **/
 
-#include <pinktrace/compiler.h>
-#include <pinktrace/abi.h>
-#include <pinktrace/regs.h>
-
 #include <stdbool.h>
 #include <sys/types.h>
 
@@ -138,10 +134,6 @@ enum pink_socket_subcall {
 	PINK_SOCKET_SUBCALL_ACCEPT4,
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Name socket subcall
  *
@@ -160,17 +152,15 @@ const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
  * @see pink_read_argument
  * @see pink_read_syscall
  *
- * @param tid Thread ID
- * @param abi System call ABI; see pink_read_abi()
- * @param regs Pointer to the structure of registers; see pink_trace_get_regs()
+ * @param tracee Traced process
  * @param decode_socketcall Boolean to specify decoding @e socketcall(2)
  * @param subcall Pointer to store the result, must not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-#define pink_read_socket_subcall(tid, abi, regs, decode_socketcall, subcall) \
+#define pink_read_socket_subcall(tracee, decode_socketcall, subcall) \
 		((decode_socketcall) \
-			? pink_read_argument((tid), (abi), (regs), 0, (subcall)) \
-			: pink_read_syscall((tid), (abi), (regs), (subcall)))
+			? pink_read_argument((tracee), 0, (subcall)) \
+			: pink_read_syscall((tracee), (subcall)))
 
 /**
  * Read the specified socket call argument.
@@ -187,11 +177,9 @@ const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
  * @param argval Pointer to store the value, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
-			      const pink_regs_t *regs,
-			      bool decode_socketcall,
+int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)
-	PINK_GCC_ATTR((nonnull(6)));
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Read the specified socket call address
@@ -199,9 +187,7 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
  * @note If the address argument of the system call was NULL, this function
  *       returns true and sets sockaddr->family to -1.
  *
- * @param tid Thread ID
- * @param abi System call ABI; see pink_read_abi()
- * @param regs Pointer to the structure of registers; see pink_trace_get_regs()
+ * @param tracee Traced process
  * @param decode_socketcall Boolean to specify decoding @e socketcall(2)
  * @param arg_index The index of the argument. One of:
  *  - 1 (for connect, bind etc.)
@@ -212,15 +198,10 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
  * @param sockaddr Pointer to store the socket address, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_socket_address(pid_t tid, enum pink_abi abi,
-			     const pink_regs_t *regs,
-			     bool decode_socketcall,
+int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall,
 			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
-	PINK_GCC_ATTR((nonnull(7)));
+	PINK_GCC_ATTR((nonnull(5)));
 
-#ifdef __cplusplus
-}
-#endif
 /** @} */
 #endif

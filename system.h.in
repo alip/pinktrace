@@ -145,11 +145,28 @@
 /**
  * Define to 1 if pink_trace_get_siginfo() is supported, 0 otherwise
  *
- * @attention If this define is 0, pink_trace_get_siginfo always returns @c -ENSOYS.
+ * @attention If this define is 0, pink_trace_get_siginfo always returns @c -ENOSYS.
  * @note This function is supported on Linux-2.3.99-pre6 and newer.
  * @see pink_trace_get_siginfo()
  **/
 #define PINK_HAVE_GETSIGINFO		@PINK_HAVE_GETSIGINFO@
+
+/**
+ * Define to 1 if pink_trace_get_regset() is supported, 0 otherwise
+ *
+ * @attention If this define is 0, pink_trace_get_regset always returns @c -ENOSYS.
+ * @note This function is supported on Linux-2.6.33 and newer.
+ * @see pink_trace_get_regset()
+ **/
+#define PINK_HAVE_GETREGSET		@PINK_HAVE_GETREGSET@
+/**
+ * Define to 1 if pink_trace_set_regset() is supported, 0 otherwise
+ *
+ * @attention If this define is 0, pink_trace_set_regset always returns @c -ENOSYS.
+ * @note This function is supported on Linux-2.6.33 and newer.
+ * @see pink_trace_set_regset()
+ **/
+#define PINK_HAVE_SETREGSET		@PINK_HAVE_SETREGSET@
 
 /**
  * Define to 1 if pink_trace_sysemu() is supported, 0 otherwise

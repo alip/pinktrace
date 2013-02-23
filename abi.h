@@ -43,79 +43,38 @@
  * @{
  **/
 
-#include <pinktrace/compiler.h>
-
-#include <stdbool.h>
-#include <sys/types.h>
-
-#define PINK_ABIS_SUPPORTED 1
-#if PINK_ARCH_POWERPC64
-# undef PINK_ABIS_SUPPORTED
-# define PINK_ABIS_SUPPORTED 2
-#elif PINK_ARCH_X86_64
-# undef PINK_ABIS_SUPPORTED
-# define PINK_ABIS_SUPPORTED 3
-#elif PINK_ARCH_X32
-# undef PINK_ABIS_SUPPORTED
-# define PINK_ABIS_SUPPORTED 2
-#endif
-
-enum pink_abi {
-	PINK_ABI_0,
-#define PINK_ABI_DEFAULT	PINK_ABI_0
-#if PINK_ARCH_ARM
-#define PINK_ABI_ARM		PINK_ABI_0
-#elif PINK_ARCH_IA64
-#define PINK_ABI_IA64		PINK_ABI_0
-#elif PINK_ARCH_POWERPC
-#define PINK_ABI_POWERPC	PINK_ABI_0
-#elif PINK_ARCH_POWERPC64
-#define PINK_ABI_POWERPC64	PINK_ABI_0
-#elif PINK_ARCH_I386
-#define PINK_ABI_I386		PINK_ABI_0
-#elif PINK_ARCH_X86_64
-#define PINK_ABI_X86_64		PINK_ABI_0
-#elif PINK_ARCH_X32
-#define PINK_ABI_X32		PINK_ABI_0
-#else
-#error unsupported architecture
-#endif
-#if PINK_ABIS_SUPPORTED > 1
-	PINK_ABI_1,
-#if PINK_ARCH_POWERPC64
-#define PINK_ABI_POWERPC	PINK_ABI_1
-#elif PINK_ARCH_X86_64
-#define PINK_ABI_I386		PINK_ABI_1
-#elif PINK_ARCH_X32
-#define PINK_ABI_I386		PINK_ABI_1
-#else
-#error unsupported architecture
-#endif
-#endif
-#if PINK_ABIS_SUPPORTED > 2
-	PINK_ABI_2,
 #if PINK_ARCH_X86_64
-#define PINK_ABI_X32		PINK_ABI_2
+# define PINK_ABIS_SUPPORTED 3
+# define PINK_ABI_X86_64 0
+# define PINK_ABI_X32 1
+# define PINK_ABI_I386 2
 #endif
-#endif
-};
 
-#ifdef __cplusplus
-extern "C" {
+#if PINK_ARCH_X32
+# define PINK_ABIS_SUPPORTED 2
+# define PINK_ABI_X32 0
+# define PINK_ABI_I386 1
 #endif
+
+#if PINK_ARCH_POWERPC64
+# define PINK_ABIS_SUPPORTED 2
+# define PINK_ABI_PPC64 0
+# define PINK_ABI_PPC32 1
+#endif
+
+#ifndef PINK_ABIS_SUPPORTED
+# define PINK_ABIS_SUPPORTED 1
+#endif
+#define PINK_ABI_DEFAULT 0
 
 /**
  * Return the word size of the system call ABI
  *
  * @param abi System call ABI
- * @param wsize Pointer to store the word size, must @b not be @e NULL
- * @return 0 on success, negated errno on failure
+ * @return Word size
  **/
-int pink_abi_wordsize(enum pink_abi abi, size_t *wsize)
-	PINK_GCC_ATTR((nonnull(2)));
+size_t pink_abi_wordsize(short abi)
+	PINK_GCC_ATTR((pure));
 
-#ifdef __cplusplus
-}
-#endif
 /** @} */
 #endif

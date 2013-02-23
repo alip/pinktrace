@@ -39,10 +39,6 @@
  * @{
  **/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define PINK_PIPE_RD	0 /**< Index of the read end of the pipe */
 #define PINK_PIPE_WR	1 /**< Index of the write end of the pipe */
 
@@ -106,8 +102,5 @@ int pink_pipe_read_int(int pipefd[2], int *i);
  **/
 int pink_pipe_write_int(int pipefd[2], int i);
 
-#ifdef __cplusplus
-}
-#endif
 /** @} */
 #endif

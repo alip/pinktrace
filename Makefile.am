@@ -16,9 +16,10 @@ lib_LTLIBRARIES = libpinktrace_@PINKTRACE_PC_SLOT@.la
 
 libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= \
 					     trace.c \
-					     abi.c \
 					     event.c \
+					     abi.c \
 					     syscall.c \
+					     process.c \
 					     read.c \
 					     write.c \
 					     vm.c \
@@ -31,17 +32,17 @@ pinktrace_includedir= $(includedir)/pinktrace-$(PINKTRACE_PC_SLOT)/pinktrace/
 pinktrace_include_HEADERS= \
 			   about.h \
 			   system.h \
-			   abi.h \
 			   compat.h \
 			   compiler.h \
 			   event.h \
-			   read.h \
-			   regs.h \
-			   socket.h \
-			   syscall.h \
 			   trace.h \
+			   abi.h \
+			   syscall.h \
+			   process.h \
 			   vm.h \
+			   read.h \
 			   write.h \
+			   socket.h \
 			   pink.h
 noinst_HEADERS= \
 		private.h

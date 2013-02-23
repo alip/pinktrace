@@ -40,11 +40,11 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-int pink_read_word_user(pid_t tid, long off, long *res)
+int pink_read_word_user(pid_t pid, long off, long *res)
 {
 	long val;
 
-	val = pink_ptrace(PTRACE_PEEKUSER, tid, (void *)off, NULL);
+	val = pink_ptrace(PTRACE_PEEKUSER, pid, (void *)off, NULL);
 	if (val < 0)
 		return -errno;
 	if (res != NULL)
@@ -52,11 +52,11 @@ int pink_read_word_user(pid_t tid, long off, long *res)
 	return 0;
 }
 
-int pink_read_word_data(pid_t tid, long off, long *res)
+int pink_read_word_data(pid_t pid, long off, long *res)
 {
 	long val;
 
-	val = pink_ptrace(PTRACE_PEEKDATA, tid, (void *)off, NULL);
+	val = pink_ptrace(PTRACE_PEEKDATA, pid, (void *)off, NULL);
 	if (val < 0)
 		return -errno;
 	if (res)
@@ -64,89 +64,32 @@ int pink_read_word_data(pid_t tid, long off, long *res)
 	return 0;
 }
 
-int pink_read_abi(pid_t tid, const pink_regs_t *regs, enum pink_abi *abi)
-{
-	enum pink_abi abival;
-#if PINK_ABIS_SUPPORTED == 1
-	abival = 0;
-#elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-	/* Check CS register value. On x86-64 linux it is:
-	 *	0x33	for long mode (64 bit)
-	 *	0x23	for compatibility mode (32 bit)
-	 * Check DS register value. On x86-64 linux it is:
-	 *	0x2b	for x32 mode (x86-64 in 32 bit)
-	 */
-	switch (regs->cs) {
-	case 0x23:
-		abival = 1;
-		break;
-	case 0x33:
-		if (regs->ds == 0x2b) {
-			abival = PINK_ABI_X32;
-			break;
-		}
-		else {
-#if PINK_ARCH_X86_64
-			abival = 0;
-			break;
-#else /* PINK_ARCH_X32 */
-			/* fall through */;
-#endif
-		}
-	default:
-		return -ENOTSUP;
-	}
-#elif PINK_ARCH_IA64
-	/*
-	 * 0 : ia64
-	 * 1 : ia32
-	 */
-#	define IA64_PSR_IS	((long)1 << 34)
-	int r;
-	long psr;
-
-	r = pink_read_word_user(pid, PT_CR_IPSR, &psr);
-	if (r < 0)
-		return r;
-	abival = (psr & IA64_PSR_IS) ? 1 : 0;
-#elif PINK_ARCH_ARM
-	abival = (regs->ARM.cpsr & 0x20) ? 0 : 1;
-#elif PINK_ARCH_POWERPC64
-	/* SF is bit 0 of MSR (Machine State Register) */
-	abival = (regs->msr & 0) ? 0 : 1;
-#else
-#error unsupported architecture
-#endif
-	*abi = abival;
-	return 0;
-}
-
-PINK_GCC_ATTR((nonnull(3)))
-int pink_read_syscall(pid_t tid, enum pink_abi abi,
-		      const pink_regs_t *regs, long *sysnum)
+PINK_GCC_ATTR((nonnull(2)))
+int pink_read_syscall(struct pink_process *tracee, long *sysnum)
 {
 #if PINK_ARCH_ARM
 	int r;
 	long sysval;
+	struct pt_regs regs = tracee->regset.arm_regs;
 
 	/*
 	 * Note: we only deal with only 32-bit CPUs here.
 	 */
-	if (regs->ARM_cpsr & 0x20) {
+	if (regs.ARM_cpsr & 0x20) {
 		/*
 		 * Get the Thumb-mode system call number
 		 */
-		sysval = regs->ARM_r7;
+		sysval = regs.ARM_r7;
 	} else {
 		/*
 		 * Get the ARM-mode system call number
 		 */
-		if ((r = pink_read_word_data(tid, regs->ARM_pc - 4, &sysval)) < 0)
+		if ((r = pink_read_word_data(tracee->pid, regs.ARM_pc - 4, &sysval)) < 0)
 			return r;
 
 		/* EABI syscall convention? */
 		if (sysval == 0xef000000) {
-			sysval = regs->ARM_r7; /* yes */
+			sysval = regs.ARM_r7; /* yes */
 		} else {
 			if ((sysval & 0x0ff00000) != 0x0f900000) {
 				/* unknown syscall trap: 0x%08lx (sysval) */
@@ -164,30 +107,26 @@ int pink_read_syscall(pid_t tid, enum pink_abi abi,
 	long reg;
 	long sysval;
 
-	reg = (abi == 1 /* ia32 */) ? PT_R1 : PT_R15;
-
-	if ((r = pink_read_word_user(tid, reg, &sysval)) < 0)
+	reg = tracee->regset.ia32 ? PT_R1 : PT_R15;
+	if ((r = pink_read_word_user(tracee->pid, reg, &sysval)) < 0)
 		return r;
 
 	*sysnum = sysval;
 	return 0;
 #elif PINK_ARCH_POWERPC
-	*sysnum = regs->gpr[0];
+	*sysnum = tracee->regset.ppc_regs.gpr[0];
 	return 0;
 #elif PINK_ARCH_I386
-	*sysnum = regs->orig_eax;
+	*sysnum = tracee->regset.i386_regs.orig_eax;
 	return 0;
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-# ifndef __X32_SYSCALL_BIT
-#  define __X32_SYSCALL_BIT	0x40000000
-# endif
-# ifndef __X32_SYSCALL_MASK
-#  define __X32_SYSCALL_MASK	__X32_SYSCALL_BIT
-# endif
-	*sysnum = regs->orig_rax;
-	if (abi == PINK_ABI_X32)
-		*sysnum &= ~__X32_SYSCALL_MASK;
-
+	if (tracee->regset.abi == PINK_ABI_I386) {
+		*sysnum = tracee->regset.x86_regs_union.i386_r.orig_eax;
+	} else {
+		*sysnum = tracee->regset.x86_regs_union.x86_64_r.orig_rax;
+		if (tracee->regset.abi == PINK_ABI_X32)
+			*sysnum -= __X32_SYSCALL_BIT;
+	}
 	return 0;
 #else
 #error unsupported architecture
@@ -198,12 +137,11 @@ int pink_read_syscall(pid_t tid, enum pink_abi abi,
  * Check the syscall return value register value for whether it is
  * a negated errno code indicating an error, or a success return value.
  */
-static inline int is_negated_errno(unsigned long int val,
-				   size_t current_wordsize)
+static inline int is_negated_errno(unsigned long int val, size_t current_wordsize)
 {
 	int nerrnos = 530; /* XXX: strace, errnoent.h */
 	unsigned long int max = -(long int) nerrnos;
-#if PINK_ABIS_SUPPORTED > 1
+#if SUPPORTED_ABIS > 1
 	if (current_wordsize < sizeof(val)) {
 		val = (unsigned int) val;
 		max = (unsigned int) max;
@@ -212,37 +150,34 @@ static inline int is_negated_errno(unsigned long int val,
 	return val > max;
 }
 
-PINK_GCC_ATTR((nonnull(3,4)))
-int pink_read_retval(pid_t tid, enum pink_abi abi,
-		     const pink_regs_t *regs, long *retval,
-		     int *error)
+PINK_GCC_ATTR((nonnull(2,3)))
+int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
 {
 	long myrval;
-	int myerror = 0, r;
-	size_t wsize;
-
-	r = pink_abi_wordsize(abi, &wsize);
-	if (r < 0)
-		return r;
+	int myerror = 0;
+	size_t wsize = pink_abi_wordsize(pink_process_get_abi(tracee));
 
 #if PINK_ARCH_ARM
-	if (is_negated_errno(regs->ARM_r0, wsize)) {
+	struct pt_regs regs = tracee->regset.arm_regs;
+
+	if (is_negated_errno(regs.ARM_r0, wsize)) {
 		myrval = -1;
-		myerror = -regs->ARM_r0;
+		myerror = -regs.ARM_r0;
 	} else {
-		myrval = regs->ARM_r0;
+		myrval = regs.ARM_r0;
 	}
 #elif PINK_ARCH_IA64
+	int r;
 	long r8, r10;
 
-	r = pink_read_word_user(tid, PT_R8, &r8);
+	r = pink_read_word_user(tracee->pid, PT_R8, &r8);
 	if (r < 0)
 		return r;
-	r = pink_read_word_user(tid, PT_R10, &r10);
+	r = pink_read_word_user(tracee->pid, PT_R10, &r10);
 	if (r < 0)
 		return r;
 
-	if (abi == 1) { /* ia32 */
+	if (tracee->regset.abi == 1) { /* ia32 */
 		int err;
 
 		err = (int)r8;
@@ -261,11 +196,12 @@ int pink_read_retval(pid_t tid, enum pink_abi abi,
 		}
 	}
 #elif PINK_ARCH_POWERPC
-#define SO_MASK 0x10000000
+# define SO_MASK 0x10000000
 	long ppc_result;
+	struct pt_regs regs = tracee->regset.ppc_regs;
 
-	ppc_result = regs->gpr[3];
-	if (regs->ccr & SO_MASK)
+	ppc_result = regs.gpr[3];
+	if (regs.ccr & SO_MASK)
 		ppc_result = -ppc_result;
 
 	if (is_negated_errno(ppc_result, wsize)) {
@@ -275,18 +211,29 @@ int pink_read_retval(pid_t tid, enum pink_abi abi,
 		myrval = ppc_result;
 	}
 #elif PINK_ARCH_I386
-	if (is_negated_errno(regs->eax, wsize)) {
+	struct user_regs_struct regs = tracee->regset.i386_regs;
+
+	if (is_negated_errno(regs.eax, wsize)) {
 		myrval = -1;
-		myerror = -regs->eax;
+		myerror = -regs.eax;
 	} else {
-		myrval = regs->eax;
+		myrval = regs.eax;
 	}
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-	if (is_negated_errno(regs->rax, wsize)) {
-		myrval = -1;
-		myerror = -regs->rax;
+	long rax;
+
+	if (tracee->regset.abi == PINK_ABI_I386) {
+		/* Sign extend from 32 bits */
+		rax = (int32_t)tracee->regset.x86_regs_union.i386_r.eax;
 	} else {
-		myrval = regs->rax;
+		/* Note: in X32 build, this truncates 64 to 32 bits */
+		rax = tracee->regset.x86_regs_union.x86_64_r.rax;
+	}
+	if (is_negated_errno(rax, wsize)) {
+		myrval = -1;
+		myerror = -rax;
+	} else {
+		myrval = rax;
 	}
 #else
 #error unsupported architecture
@@ -297,56 +244,47 @@ int pink_read_retval(pid_t tid, enum pink_abi abi,
 	return 0;
 }
 
-PINK_GCC_ATTR((nonnull(5)))
-int pink_read_argument(pid_t tid, enum pink_abi abi,
-		       const pink_regs_t *regs,
-		       unsigned arg_index, long *argval)
+PINK_GCC_ATTR((nonnull(3)))
+int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *argval)
 {
-	if (arg_index >= PINK_MAX_ARGS) {
-		errno = EINVAL;
-		return false;
-	}
+	if (arg_index >= PINK_MAX_ARGS)
+		return -EINVAL;
 
 #if PINK_ARCH_ARM
-	*argval = regs->uregs[arg_index];
+	*argval = tracee->regset.arm_regs.uregs[arg_index];
 	return 0;
 #elif PINK_ARCH_IA64
 	int r;
 	long myval;
 
-	if (abi == 0) { /* !ia32 */
-		unsigned long *out0, cfm, sof, sol, skip;
+	if (tracee->regset.abi == 0) { /* !ia32 */
+		unsigned long *out0, cfm, sof, sol, addr;
 		long rbs_end;
 #		ifndef PT_RBS_END
 #		  define PT_RBS_END	PT_AR_BSP
 #		endif
 
-		if ((r = pink_read_word_user(tid, PT_RBS_END, &rbs_end)) < 0)
+		if ((r = pink_read_word_user(tracee->pid, PT_RBS_END, &rbs_end)) < 0)
 			return r;
-		if ((r = pink_read_word_user(tid, PT_CFM, (long *) &cfm)) < 0)
+		if ((r = pink_read_word_user(tracee->id, PT_CFM, (long *) &cfm)) < 0)
 			return r;
 
 		sof = (cfm >> 0) & 0x7f;
 		sol = (cfm >> 7) & 0x7f;
 		out0 = ia64_rse_skip_regs((unsigned long *) rbs_end, -sof + sol);
-		skip = (unsigned long) ia64_rse_skip_regs(out0, arg_index);
+		addr = (unsigned long) ia64_rse_skip_regs(out0, arg_index);
 
-		if (pink_read_vm_data(tid, skip, sizeof(long), &myval) < 0)
+		if (pink_read_vm_data(tracee, addr, sizeof(long), &myval) < 0)
 			return -errno;
 	} else { /* ia32 */
-		int argreg;
+		static const int argreg[PINK_MAX_ARGS] = { PT_R11 /* EBX = out0 */,
+						           PT_R9  /* ECX = out1 */,
+						           PT_R10 /* EDX = out2 */,
+						           PT_R14 /* ESI = out3 */,
+						           PT_R15 /* EDI = out4 */,
+						           PT_R13 /* EBP = out5 */};
 
-		switch (arg_index) {
-		case 0: argreg = PT_R11; break; /* EBX = out0 */
-		case 1: argreg = PT_R9;  break; /* ECX = out1 */
-		case 2: argreg = PT_R10; break; /* EDX = out2 */
-		case 3: argreg = PT_R14; break; /* ESI = out3 */
-		case 4: argreg = PT_R15; break; /* EDI = out4 */
-		case 5: argreg = PT_R13; break; /* EBP = out5 */
-		default: _pink_assert_not_reached();
-		}
-
-		if ((r = pink_read_word_user(pid, argreg, &myval)) < 0)
+		if ((r = pink_read_word_user(tracee->pid, argreg[arg_index], &myval)) < 0)
 			return r;
 		/* truncate away IVE sign-extension */
 		myval &= 0xffffffff;
@@ -354,42 +292,44 @@ int pink_read_argument(pid_t tid, enum pink_abi abi,
 	*argval = myval;
 	return 0;
 #elif PINK_ARCH_POWERPC
-	if (arg_index == 0)
-		*argval = regs->orig_gpr3;
-	else
-		*argval = regs->gpr[arg_index + 3];
+	*argval = (arg_index == 0) ? tracee->regset.ppc_regs.orig_gpr3
+				   : tracee->regset.ppc_regs.gpr[arg_index + 3];
 	return 0;
 #elif PINK_ARCH_I386
+	struct user_regs_struct regs = tracee->regset.i386_regs;
+
 	switch (arg_index) {
-	case 0: *argval = regs->ebx; break;
-	case 1: *argval = regs->ecx; break;
-	case 2: *argval = regs->edx; break;
-	case 3: *argval = regs->esi; break;
-	case 4: *argval = regs->edi; break;
-	case 5: *argval = regs->ebp; break;
+	case 0: *argval = regs.ebx; break;
+	case 1: *argval = regs.ecx; break;
+	case 2: *argval = regs.edx; break;
+	case 3: *argval = regs.esi; break;
+	case 4: *argval = regs.edi; break;
+	case 5: *argval = regs.ebp; break;
 	default: _pink_assert_not_reached();
 	}
 	return 0;
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-	if (abi != 1) { /* x86-64 or x32 ABI */
+	if (tracee->regset.abi != PINK_ABI_I386) { /* x86-64 or x32 ABI */
+		struct user_regs_struct regs = tracee->regset.x86_regs_union.x86_64_r;
 		switch (arg_index) {
-		case 0: *argval = regs->rdi; break;
-		case 1: *argval = regs->rsi; break;
-		case 2: *argval = regs->rdx; break;
-		case 3: *argval = regs->r10; break;
-		case 4: *argval = regs->r8;  break;
-		case 5: *argval = regs->r9;  break;
+		case 0: *argval = regs.rdi; break;
+		case 1: *argval = regs.rsi; break;
+		case 2: *argval = regs.rdx; break;
+		case 3: *argval = regs.r10; break;
+		case 4: *argval = regs.r8;  break;
+		case 5: *argval = regs.r9;  break;
 		default: _pink_assert_not_reached();
 		}
 	} else { /* i386 ABI */
+		struct i386_user_regs_struct regs = tracee->regset.x86_regs_union.i386_r;
 		/* (long)(int) is to sign-extend lower 32 bits */
 		switch (arg_index) {
-		case 0: *argval = (long)(int)regs->rbx; break;
-		case 1: *argval = (long)(int)regs->rcx; break;
-		case 2: *argval = (long)(int)regs->rdx; break;
-		case 3: *argval = (long)(int)regs->rsi; break;
-		case 4: *argval = (long)(int)regs->rdi; break;
-		case 5: *argval = (long)(int)regs->rbp; break;
+		case 0: *argval = (long)(int)regs.ebx; break;
+		case 1: *argval = (long)(int)regs.ecx; break;
+		case 2: *argval = (long)(int)regs.edx; break;
+		case 3: *argval = (long)(int)regs.esi; break;
+		case 4: *argval = (long)(int)regs.edi; break;
+		case 5: *argval = (long)(int)regs.ebp; break;
 		default: _pink_assert_not_reached();
 		}
 	}
@@ -399,36 +339,36 @@ int pink_read_argument(pid_t tid, enum pink_abi abi,
 #endif
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_read_vm_data(pid_t tid, enum pink_abi abi, long addr,
-			  char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(3)))
+ssize_t pink_read_vm_data(struct pink_process *tracee, long addr, char *dest, size_t len)
 {
-	int r;
+	ssize_t r;
 
-	r = pink_vm_cread(tid, abi, addr, dest, len);
-	if (r < 0 && errno == ENOSYS)
-		return pink_vm_lread(tid, abi, addr, dest, len);
+	errno = 0;
+	r = pink_vm_cread(tracee, addr, dest, len);
+	if (errno == ENOSYS)
+		return pink_vm_lread(tracee, addr, dest, len);
+	return r;
+}
+
+PINK_GCC_ATTR((nonnull(3)))
+ssize_t pink_read_vm_data_nul(struct pink_process *tracee, long addr, char *dest, size_t len)
+{
+	ssize_t r;
+
+	errno = 0;
+	r = pink_vm_cread_nul(tracee, addr, dest, len);
+	if (errno == ENOSYS)
+		return pink_vm_lread_nul(tracee, addr, dest, len);
 	return r;
 }
 
 PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_read_vm_data_nul(pid_t tid, enum pink_abi abi, long addr,
-			      char *dest, size_t len)
-{
-	int r;
-
-	r = pink_vm_cread_nul(tid, abi, addr, dest, len);
-	if (r < 0 && errno == ENOSYS)
-		return pink_vm_lread_nul(tid, abi, addr, dest, len);
-	return r;
-}
-
-ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
+ssize_t pink_read_string_array(struct pink_process *tracee,
 			       long arg, unsigned arr_index,
 			       char *dest, size_t dest_len,
 			       bool *nullptr)
 {
-	int r;
 	size_t wsize;
 	union {
 		unsigned int p32;
@@ -436,14 +376,13 @@ ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
 		char data[sizeof(long)];
 	} cp;
 
-	r = pink_abi_wordsize(abi, &wsize);
-	if (r < 0)
-		return -1;
+	wsize = pink_abi_wordsize(pink_process_get_abi(tracee));
 	arg += arr_index * wsize;
 
-	/* FIXME: Check for partial write! */
-	if (pink_read_vm_data(tid, abi, arg, cp.data, wsize) < 0)
-		return -1;
+	errno = 0;
+	pink_read_vm_data(tracee, arg, cp.data, wsize);
+	if (errno)
+		return 0;
 	if (wsize == 4)
 		cp.p64 = cp.p32;
 	if (cp.p64 == 0) {
@@ -454,5 +393,5 @@ ssize_t pink_read_string_array(pid_t tid, enum pink_abi abi,
 	}
 	if (nullptr)
 		*nullptr = false;
-	return pink_read_vm_data_nul(tid, abi, cp.p64, dest, dest_len);
+	return pink_read_vm_data_nul(tracee, cp.p64, dest, dest_len);
 }

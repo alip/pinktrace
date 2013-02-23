@@ -45,6 +45,7 @@
 #define _ATFILE_SOURCE 1
 #endif
 
+#include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 #include <check.h>
 
@@ -89,10 +90,6 @@ int pprintf(int pretty, const char *format, ...)
 		}						\
 	} while (0)
 
-void dump_basic_hex(const void *addr, size_t len);
-void dump_regs_struct(const pink_regs_t *regs);
-void dump_socket_address(const struct pink_sockaddr *sockaddr);
-
 pid_t fork_assert(void);
 void kill_save_errno(pid_t pid, int sig);
 
@@ -112,21 +109,21 @@ bool check_exit_code_or_fail(int status, int code);
 bool check_signal_or_fail(int status, int sig);
 bool check_stopped_or_kill(pid_t pid, int status);
 
-void check_syscall_equal_or_kill(pid_t pid, enum pink_abi abi,
-		long sysnum, long sysnum_expected);
+void check_syscall_equal_or_kill(pid_t pid,
+				 long sysnum, long sysnum_expected);
 void check_retval_equal_or_kill(pid_t pid,
-		long retval, long retval_expected,
-		int error, int error_expected);
+				long retval, long retval_expected,
+				int error, int error_expected);
 void check_argument_equal_or_kill(pid_t pid,
-		long arg, long arg_expected);
+				  long arg, long arg_expected);
 void check_memory_equal_or_kill(pid_t pid,
-		const void *val,
-		const void *val_expected,
-		size_t n);
+				const void *val,
+				const void *val_expected,
+				size_t n);
 void check_string_equal_or_kill(pid_t pid,
-		const char *str,
-		const char *str_expected,
-		size_t len);
+				const char *str,
+				const char *str_expected,
+				size_t len);
 void check_addr_loopback_or_kill(pid_t pid, in_addr_t addr);
 #if PINK_HAVE_IPV6
 void check_addr6_loopback_or_kill(pid_t pid, struct in6_addr *addr6);
@@ -136,47 +133,34 @@ void trace_me_and_stop(void);
 void trace_syscall_or_kill(pid_t pid, int sig);
 void trace_setup_or_kill(pid_t pid, int options);
 void trace_geteventmsg_or_kill(pid_t pid, unsigned long *data);
-void trace_get_regs_or_kill(pid_t pid, pink_regs_t *regs);
-void trace_set_regs_or_kill(pid_t pid, const pink_regs_t *regs);
+
 enum pink_event event_decide_and_print(int status);
-void read_abi_or_kill(pid_t pid, const pink_regs_t *regs, enum pink_abi *abi);
-void read_syscall_or_kill(pid_t pid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		long *sysnum);
-void read_retval_or_kill(pid_t pid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		long *retval, int *error);
-void read_argument_or_kill(pid_t pid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		unsigned arg_index, long *argval);
-void read_vm_data_or_kill(pid_t pid, enum pink_abi abi, long addr,
-		char *dest, size_t len);
-void read_vm_data_nul_or_kill(pid_t pid, enum pink_abi abi, long addr,
-		char *dest, size_t len);
-void read_string_array_or_kill(pid_t pid, enum pink_abi abi,
-		long arg, unsigned arr_index,
-		char *dest, size_t dest_len,
-		bool *nullptr);
-void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
-				 const pink_regs_t *regs,
+
+void process_alloc_or_kill(pid_t pid, struct pink_process **p);
+void process_update_regset_or_kill(struct pink_process *current);
+
+void read_syscall_or_kill(struct pink_process *tracee, long *sysnum);
+void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error);
+void read_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long *argval);
+void read_vm_data_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len);
+void read_vm_data_nul_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len);
+void read_string_array_or_kill(struct pink_process *tracee,
+			       long arg, unsigned arr_index,
+			       char *dest, size_t dest_len,
+			       bool *nullptr);
+void read_socket_subcall_or_kill(struct pink_process *tracee,
 				 bool decode_socketcall,
 				 long *subcall);
-void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		bool decode_socketcall,
-		unsigned arg_index, unsigned long *argval);
-void read_socket_address_or_kill(pid_t pid, enum pink_abi abi,
-		const pink_regs_t *regs,
-		bool decode_socketcall,
-		unsigned arg_index, int *fd,
-		struct pink_sockaddr *sockaddr);
+void read_socket_argument_or_kill(struct pink_process *tracee, bool decode_socketcall,
+				  unsigned arg_index, unsigned long *argval);
+void read_socket_address_or_kill(struct pink_process *tracee, bool decode_socketcall,
+				 unsigned arg_index, int *fd,
+				 struct pink_sockaddr *sockaddr);
 
-void write_syscall_or_kill(pid_t pid, enum pink_abi abi, long sysnum);
-void write_retval_or_kill(pid_t pid, enum pink_abi abi, long retval, int error);
-void write_argument_or_kill(pid_t pid, enum pink_abi abi,
-		unsigned arg_index, long argval);
-void write_vm_data_or_kill(pid_t pid, enum pink_abi abi, long addr,
-		const char *src, size_t len);
+void write_syscall_or_kill(struct pink_process *tracee, long sysnum);
+void write_retval_or_kill(struct pink_process *tracee, long retval, int error);
+void write_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long argval);
+void write_vm_data_or_kill(struct pink_process *tracee, long addr, const char *src, size_t len);
 
 TCase *create_testcase_trace(void);
 TCase *create_testcase_read(void);

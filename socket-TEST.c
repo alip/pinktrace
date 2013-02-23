@@ -87,8 +87,7 @@ static const char *test_sys_name(int test_sys)
 	}
 }
 
-static void check_socketcall_equal_or_kill(pid_t pid, enum pink_abi abi,
-					   int test_sys, long subcall)
+static void check_socketcall_equal_or_kill(pid_t pid, int test_sys, long subcall)
 {
 	long subcall_expected;
 
@@ -109,16 +108,15 @@ static void check_socketcall_equal_or_kill(pid_t pid, enum pink_abi abi,
 	if (subcall == subcall_expected)
 		return;
 	kill(pid, SIGKILL);
-	fail_verbose("unexpected socketcall %ld"
-			" (name:%s expected:%ld %s)",
+	fail_verbose("unexpected socketcall %ld (name:%s expected:%ld %s)",
 			subcall,
 			SOCKDECODE ? pink_socket_subcall_name(subcall)
-				   : pink_syscall_name(subcall, abi),
+				   : pink_syscall_name(subcall, PINK_ABI_DEFAULT),
 			subcall_expected,
 			subcall_expected == PINK_SYSCALL_INVALID
 				? "PINK_SYSCALL_INVALID"
 				: (SOCKDECODE ? pink_socket_subcall_name(subcall_expected)
-					      : pink_syscall_name(subcall_expected, abi)));
+					      : pink_syscall_name(subcall_expected, PINK_ABI_DEFAULT)));
 	abort();
 }
 
@@ -130,6 +128,7 @@ static void check_socketcall_equal_or_kill(pid_t pid, enum pink_abi abi,
 START_TEST(TEST_read_socket_address_af_null)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -161,13 +160,12 @@ START_TEST(TEST_read_socket_address_af_null)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long subcall;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -177,13 +175,10 @@ START_TEST(TEST_read_socket_address_af_null)
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
-			trace_get_regs_or_kill(pid, &regs);
-			read_abi_or_kill(pid, &regs, &abi);
-			read_socket_subcall_or_kill(pid, abi, &regs, SOCKDECODE,
-						    &subcall);
-			check_socketcall_equal_or_kill(pid, abi, test_sys,
-						       subcall);
-			read_socket_address_or_kill(pid, abi, &regs, SOCKDECODE,
+			process_update_regset_or_kill(current);
+			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			check_socketcall_equal_or_kill(pid, test_sys, subcall);
+			read_socket_address_or_kill(current, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -222,6 +217,7 @@ END_TEST
 START_TEST(TEST_read_socket_address_af_unix)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -259,13 +255,12 @@ START_TEST(TEST_read_socket_address_af_unix)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long subcall;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -275,13 +270,10 @@ START_TEST(TEST_read_socket_address_af_unix)
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
-			trace_get_regs_or_kill(pid, &regs);
-			read_abi_or_kill(pid, &regs, &abi);
-			read_socket_subcall_or_kill(pid, abi, &regs, SOCKDECODE,
-						    &subcall);
-			check_socketcall_equal_or_kill(pid, abi, test_sys,
-						       subcall);
-			read_socket_address_or_kill(pid, abi, &regs, SOCKDECODE,
+			process_update_regset_or_kill(current);
+			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			check_socketcall_equal_or_kill(pid, test_sys, subcall);
+			read_socket_address_or_kill(current, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -328,6 +320,7 @@ END_TEST
 START_TEST(TEST_read_socket_address_af_unixabs)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -366,13 +359,12 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long subcall;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -382,13 +374,10 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
-			trace_get_regs_or_kill(pid, &regs);
-			read_abi_or_kill(pid, &regs, &abi);
-			read_socket_subcall_or_kill(pid, abi, &regs, SOCKDECODE,
-						    &subcall);
-			check_socketcall_equal_or_kill(pid, abi, test_sys,
-						       subcall);
-			read_socket_address_or_kill(pid, abi, &regs, SOCKDECODE,
+			process_update_regset_or_kill(current);
+			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			check_socketcall_equal_or_kill(pid, test_sys, subcall);
+			read_socket_address_or_kill(current, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -426,10 +415,8 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 	}
 
 	if (!it_worked)
-		fail_verbose("%s: Test for reading socket address"
-			     " for %s() failed",
-			     test_name,
-			     test_sys_name(test_sys));
+		fail_verbose("%s: Test for reading socket address for %s() failed",
+			     test_name, test_sys_name(test_sys));
 }
 END_TEST
 
@@ -441,6 +428,7 @@ END_TEST
 START_TEST(TEST_read_socket_address_af_inet)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -479,13 +467,12 @@ START_TEST(TEST_read_socket_address_af_inet)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long subcall;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -495,13 +482,10 @@ START_TEST(TEST_read_socket_address_af_inet)
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
-			trace_get_regs_or_kill(pid, &regs);
-			read_abi_or_kill(pid, &regs, &abi);
-			read_socket_subcall_or_kill(pid, abi, &regs, SOCKDECODE,
-						    &subcall);
-			check_socketcall_equal_or_kill(pid, abi, test_sys,
-						       subcall);
-			read_socket_address_or_kill(pid, abi, &regs, SOCKDECODE,
+			process_update_regset_or_kill(current);
+			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			check_socketcall_equal_or_kill(pid, test_sys, subcall);
+			read_socket_address_or_kill(current, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -533,10 +517,8 @@ START_TEST(TEST_read_socket_address_af_inet)
 	}
 
 	if (!it_worked)
-		fail_verbose("%s: Test for reading socket address"
-			     " for %s() failed",
-			     test_name,
-			     test_sys_name(test_sys));
+		fail_verbose("%s: Test for reading socket address for %s() failed",
+			     test_name, test_sys_name(test_sys));
 }
 END_TEST
 
@@ -552,6 +534,7 @@ START_TEST(TEST_read_socket_address_af_inet6)
 	return;
 #else
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -590,13 +573,12 @@ START_TEST(TEST_read_socket_address_af_inet6)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long subcall;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -606,13 +588,10 @@ START_TEST(TEST_read_socket_address_af_inet6)
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
-			trace_get_regs_or_kill(pid, &regs);
-			read_abi_or_kill(pid, &regs, &abi);
-			read_socket_subcall_or_kill(pid, abi, &regs, SOCKDECODE,
-						    &subcall);
-			check_socketcall_equal_or_kill(pid, abi, test_sys,
-						       subcall);
-			read_socket_address_or_kill(pid, abi, &regs, SOCKDECODE,
+			process_update_regset_or_kill(current);
+			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			check_socketcall_equal_or_kill(pid, test_sys, subcall);
+			read_socket_address_or_kill(current, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -644,10 +623,8 @@ START_TEST(TEST_read_socket_address_af_inet6)
 	}
 
 	if (!it_worked)
-		fail_verbose("%s: Test for reading socket address"
-			     " for %s() failed",
-			     test_name,
-			     test_sys_name(test_sys));
+		fail_verbose("%s: Test for reading socket address for %s() failed",
+			     test_name, test_sys_name(test_sys));
 #endif
 }
 END_TEST
@@ -664,6 +641,7 @@ START_TEST(TEST_read_socket_address_af_netlink)
 	return;
 #else
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -702,13 +680,12 @@ START_TEST(TEST_read_socket_address_af_netlink)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long subcall;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -718,13 +695,10 @@ START_TEST(TEST_read_socket_address_af_netlink)
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
-			trace_get_regs_or_kill(pid, &regs);
-			read_abi_or_kill(pid, &regs, &abi);
-			read_socket_subcall_or_kill(pid, abi, &regs, SOCKDECODE,
-						    &subcall);
-			check_socketcall_equal_or_kill(pid, abi, test_sys,
-						       subcall);
-			read_socket_address_or_kill(pid, abi, &regs, SOCKDECODE,
+			process_update_regset_or_kill(current);
+			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			check_socketcall_equal_or_kill(pid, test_sys, subcall);
+			read_socket_address_or_kill(current, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -762,10 +736,8 @@ START_TEST(TEST_read_socket_address_af_netlink)
 	}
 
 	if (!it_worked)
-		fail_verbose("%s: Test for reading socket address"
-			     " for %s() failed",
-			     test_name,
-			     test_sys_name(test_sys));
+		fail_verbose("%s: Test for reading socket address for %s() failed",
+			     test_name, test_sys_name(test_sys));
 #endif
 }
 END_TEST

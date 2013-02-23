@@ -49,6 +49,7 @@
 START_TEST(TEST_write_syscall)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	bool insyscall = false;
 
@@ -64,16 +65,16 @@ START_TEST(TEST_write_syscall)
 		test_name = "getpid";
 		errno_expected = ENOSYS;
 		change_call = PINK_SYSCALL_INVALID;
-		test_call = pink_syscall_lookup("getpid", 0);
+		test_call = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of getpid()");
 	} else if (test == TEST_LSEEK) {
 		test_name = "lseek";
 		errno_expected = EFAULT;
-		change_call = pink_syscall_lookup("open", 0);
+		change_call = pink_syscall_lookup("open", PINK_ABI_DEFAULT);
 		if (change_call == -1)
 			fail_verbose("don't know the syscall number of open()");
-		test_call = pink_syscall_lookup("lseek", 0);
+		test_call = pink_syscall_lookup("lseek", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of lseek()\n");
 	} else {
@@ -82,8 +83,8 @@ START_TEST(TEST_write_syscall)
 	}
 
 	message("test_syscall_%s: call:%ld expected errno:%d %s\n",
-			test_name, test_call,
-			errno_expected, strerror(errno_expected));
+		test_name, test_call,
+		errno_expected, strerror(errno_expected));
 
 	pid = fork_assert();
 	if (pid == 0) {
@@ -97,14 +98,13 @@ START_TEST(TEST_write_syscall)
 	}
 #undef TEST_GETPID
 #undef TEST_LSEEK
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		int error = 0;
 		long rval, sysnum;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -115,16 +115,14 @@ START_TEST(TEST_write_syscall)
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
 			if (!insyscall) {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				read_syscall_or_kill(pid, abi, &regs, &sysnum);
-				check_syscall_equal_or_kill(pid, abi, sysnum, test_call);
-				write_syscall_or_kill(pid, abi, change_call);
+				process_update_regset_or_kill(current);
+				read_syscall_or_kill(current, &sysnum);
+				check_syscall_equal_or_kill(pid, sysnum, test_call);
+				write_syscall_or_kill(current, change_call);
 				insyscall = true;
 			} else {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				read_retval_or_kill(pid, abi, &regs, &rval, &error);
+				process_update_regset_or_kill(current);
+				read_retval_or_kill(current, &rval, &error);
 				check_retval_equal_or_kill(pid, rval, -1, error, errno_expected);
 				it_worked = true;
 				kill(pid, SIGKILL);
@@ -147,6 +145,7 @@ END_TEST
 START_TEST(TEST_write_retval)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	bool insyscall = false;
 	bool write_done = false;
@@ -160,7 +159,7 @@ START_TEST(TEST_write_retval)
 	int change_error;
 	long change_retval;
 
-	sys_getpid = pink_syscall_lookup("getpid", 0);
+	sys_getpid = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 
@@ -174,9 +173,7 @@ START_TEST(TEST_write_retval)
 		change_retval = -1;
 	}
 	message("test_retval_%s: changing retval:%ld errno:%d %s\n",
-			test_name,
-			change_retval,
-			change_error, strerror(change_error));
+		test_name, change_retval, change_error, strerror(change_error));
 #undef TEST_GOOD
 #undef TEST_FAIL
 
@@ -196,12 +193,11 @@ START_TEST(TEST_write_retval)
 		}
 		_exit(EXIT_SUCCESS);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -216,9 +212,8 @@ START_TEST(TEST_write_retval)
 			if (!insyscall) {
 				insyscall = true;
 			} else {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				write_retval_or_kill(pid, abi, change_retval, change_error);
+				process_update_regset_or_kill(current);
+				write_retval_or_kill(current, change_retval, change_error);
 				write_done = true;
 			}
 		}
@@ -239,6 +234,7 @@ END_TEST
 START_TEST(TEST_write_argument)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	bool insyscall = false;
 	int arg_index = _i;
@@ -260,13 +256,12 @@ START_TEST(TEST_write_argument)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long argval, sysnum;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -277,22 +272,19 @@ START_TEST(TEST_write_argument)
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
 			if (!insyscall) {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				read_syscall_or_kill(pid, abi, &regs, &sysnum);
-				check_syscall_equal_or_kill(pid, abi, sysnum, PINK_SYSCALL_INVALID);
-				write_argument_or_kill(pid, abi, arg_index, newval);
+				process_update_regset_or_kill(current);
+				read_syscall_or_kill(current, &sysnum);
+				check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
+				write_argument_or_kill(current, arg_index, newval);
 				insyscall = true;
 			} else {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				read_argument_or_kill(pid, abi, &regs, arg_index, &argval);
+				process_update_regset_or_kill(current);
+				read_argument_or_kill(current, arg_index, &argval);
 				check_argument_equal_or_kill(pid, argval, newval);
 				it_worked = true;
 				kill(pid, SIGKILL);
 				break;
 			}
-
 		}
 		trace_syscall_or_kill(pid, 0);
 	}
@@ -311,6 +303,7 @@ END_TEST
 START_TEST(TEST_write_vm_data)
 {
 	pid_t pid;
+	struct pink_process *current;
 	bool it_worked = false;
 	bool insyscall = false;
 	int arg_index = _i;
@@ -333,13 +326,12 @@ START_TEST(TEST_write_vm_data)
 		}
 		_exit(0);
 	}
+	process_alloc_or_kill(pid, &current);
 
 	LOOP_WHILE_TRUE() {
 		int status;
 		pid_t tracee_pid;
-		enum pink_abi abi;
 		long argval, sysnum;
-		pink_regs_t regs;
 
 		tracee_pid = wait_verbose(&status);
 		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
@@ -350,29 +342,26 @@ START_TEST(TEST_write_vm_data)
 		check_stopped_or_kill(tracee_pid, status);
 		if (WSTOPSIG(status) == SIGTRAP) {
 			if (!insyscall) {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				read_syscall_or_kill(pid, abi, &regs, &sysnum);
-				check_syscall_equal_or_kill(pid, abi, sysnum, PINK_SYSCALL_INVALID);
-				read_argument_or_kill(pid, abi, &regs, arg_index, &argval);
-				write_vm_data_or_kill(pid, abi, argval, newstr, sizeof(newstr));
+				process_update_regset_or_kill(current);
+				read_syscall_or_kill(current, &sysnum);
+				check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
+				read_argument_or_kill(current, arg_index, &argval);
+				write_vm_data_or_kill(current, argval, newstr, sizeof(newstr));
 				insyscall = true;
 			} else {
-				trace_get_regs_or_kill(pid, &regs);
-				read_abi_or_kill(pid, &regs, &abi);
-				read_argument_or_kill(pid, abi, &regs, arg_index, &argval);
-				read_vm_data_or_kill(pid, abi, argval, getstr, sizeof(getstr));
+				process_update_regset_or_kill(current);
+				read_argument_or_kill(current, arg_index, &argval);
+				read_vm_data_or_kill(current, argval, getstr, sizeof(getstr));
 				if (strcmp(newstr, getstr) != 0) {
 					kill(pid, SIGKILL);
 					fail_verbose("VM data not identical"
-							" (expected:`%s' got:`%s')",
-							newstr, getstr);
+						     " (expected:`%s' got:`%s')",
+						     newstr, getstr);
 				}
 				it_worked = true;
 				kill(pid, SIGKILL);
 				break;
 			}
-
 		}
 		trace_syscall_or_kill(pid, 0);
 	}

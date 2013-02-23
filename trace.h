@@ -39,9 +39,6 @@
  * @{
  **/
 
-#include <pinktrace/regs.h>
-
-#include <stdbool.h>
 #include <sys/types.h>
 #include <signal.h>
 
@@ -53,7 +50,7 @@
  * between normal traps and those caused by a syscall. This option may not work
  * on all architectures.
  *
- * @see #PINK_HAVE_OPTION_SYSGOOD
+ * @see PINK_HAVE_OPTION_SYSGOOD
  **/
 #define PINK_TRACE_OPTION_SYSGOOD   (1 << 0)
 /**
@@ -64,7 +61,7 @@
  * a SIGSTOP. The PID for the new process can be retrieved with
  * pink_trace_geteventmsg().
  *
- * @see #PINK_HAVE_OPTION_FORK
+ * @see PINK_HAVE_OPTION_FORK
  **/
 #define PINK_TRACE_OPTION_FORK      (1 << 1)
 /**
@@ -75,7 +72,7 @@
  * a SIGSTOP. The PID for the new process can be retrieved with
  * pink_trace_geteventmsg().
  *
- * @see #PINK_HAVE_OPTION_VFORK
+ * @see PINK_HAVE_OPTION_VFORK
  **/
 #define PINK_TRACE_OPTION_VFORK     (1 << 2)
 /**
@@ -86,7 +83,7 @@
  * a SIGSTOP. The PID for the new process can be retrieved with
  * pink_trace_geteventmsg().
  *
- * @see #PINK_HAVE_OPTION_CLONE
+ * @see PINK_HAVE_OPTION_CLONE
  **/
 #define PINK_TRACE_OPTION_CLONE     (1 << 3)
 /**
@@ -94,7 +91,7 @@
  * If this flag is set in the options argument of pink_trace_setup(), stop the
  * child at the next execve(2) call with (SIGTRAP | PTRACE_EVENT_EXEC << 8)
  *
- * @see #PINK_HAVE_OPTION_EXEC
+ * @see PINK_HAVE_OPTION_EXEC
  **/
 #define PINK_TRACE_OPTION_EXEC      (1 << 4)
 /**
@@ -103,7 +100,7 @@
  * child at the completion of the next vfork(2) call with
  * (SIGTRAP | PTRACE_EVENT_VFORK_DONE << 8)
  *
- * @see #PINK_HAVE_OPTION_VFORKDONE
+ * @see PINK_HAVE_OPTION_VFORKDONE
  **/
 #define PINK_TRACE_OPTION_VFORKDONE (1 << 5)
 /**
@@ -117,7 +114,7 @@
  * context is available, the tracer cannot prevent the exit from happening at
  * this point.
  *
- * @see #PINK_HAVE_OPTION_EXIT
+ * @see PINK_HAVE_OPTION_EXIT
  **/
 #define PINK_TRACE_OPTION_EXIT      (1 << 6)
 
@@ -128,24 +125,20 @@
  * events. SECCOMP_RET_DATA portion of the BPF program return value will be
  * available to the tracer via pink_trace_geteventmsg()
  *
- * @see #PINK_HAVE_OPTION_SECCOMP
+ * @see PINK_HAVE_OPTION_SECCOMP
  **/
 #define PINK_TRACE_OPTION_SECCOMP   (1 << 7)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /**
  * Small wrapper around @e ptrace(2) addressing oddities
  *
  * @param req Ptrace request
- * @param tid Thread ID
+ * @param pid Process ID
  * @param addr Address, see "man 2 ptrace"
  * @param data Data, see "man 2 ptrace"
  * @return Same as @e ptrace(2)
  **/
-long pink_ptrace(int req, pid_t tid, void *addr, void *data);
+long pink_ptrace(int req, pid_t pid, void *addr, void *data);
 
 /**
  * Indicates that this process is to be traced by its parent. Any signal
@@ -164,53 +157,53 @@ int pink_trace_me(void);
 /**
  * Restarts the stopped child process
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param sig If this is non-zero and not SIGSTOP, it is interpreted as the
  *            signal to be delivered to the child; otherwise, no signal is
  *            delivered. Thus, for example, the parent can control whether a
  *            signal sent to the child is delivered or not.
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_resume(pid_t tid, int sig);
+int pink_trace_resume(pid_t pid, int sig);
 
 /**
  * Send signal to the tracee
  *
  * @note
- *   - If @e tgkill(2) system call is available: tgkill(tid, tgid, sig);
+ *   - If @e tgkill(2) system call is available: tgkill(tgid, tid, sig);
  *   - Otherwise if @e tkill(2) system call is available: tkill(tid, sig);
- *   - And otherwise: kill(tid, sig);
- *   is called. For #tgid <= 0 @e tgkill(2) is skipped.
+ *   - And otherwise: kill(pid, sig);
+ *   is called. For tgid <= 0 @e tgkill(2) is skipped.
  *
- * @see #PINK_HAVE_TKILL
- * @see #PINK_HAVE_TGKILL
+ * @see PINK_HAVE_TKILL
+ * @see PINK_HAVE_TGKILL
  *
  * @param tid Thread ID
  * @param tgid Thread group ID
  * @param sig Signal
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_kill(pid_t tid, pid_t tgid, int sig);
+int pink_trace_kill(pid_t pid, pid_t tgid, int sig);
 
 /**
  * Restarts the stopped child process and arranges it to be stopped after
  * execution of a single instruction.
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param sig Treated the same as the signal argument of pink_trace_cont()
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_singlestep(pid_t tid, int sig);
+int pink_trace_singlestep(pid_t pid, int sig);
 
 /**
  * Restarts the stopped child process and arranges it to be stopped after
  * the entry or exit of the next system call.
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param sig Treated the same was as the signal argument of pink_trace_cont()
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_syscall(pid_t tid, int sig);
+int pink_trace_syscall(pid_t pid, int sig);
 
 /**
  * Retrieve a message (as an unsigned long) about the trace event that just
@@ -221,22 +214,53 @@ int pink_trace_syscall(pid_t tid, int sig);
  *
  * @see PINK_HAVE_GETEVENTMSG
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param data Pointer to store the message
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_geteventmsg(pid_t tid, unsigned long *data);
+int pink_trace_geteventmsg(pid_t pid, unsigned long *data);
 
 /**
  * Copy the child's general purpose registers to the given location
  *
- * @see PINK_HAVE_REGS_T
- *
- * @param tid Thread ID
- * @param regs Pointer to the structure of registers.
+ * @param pid Process ID
+ * @param regs Pointer to the structure of registers
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_get_regs(pid_t tid, pink_regs_t *regs);
+int pink_trace_get_regs(pid_t pid, void *regs);
+
+/**
+ * Get register content
+ *
+ * @see PINK_HAVE_GETREGSET
+ *
+ * @param pid Process ID
+ * @param regset Pointer to the structure of registers
+ * @param n_type Note segment descriptor, see <elf.h>
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_get_regset(pid_t pid, void *regset, int n_type);
+
+/**
+ * Set the child's general purpose registers
+ *
+ * @param pid Process ID
+ * @param regs Same as pink_trace_get_regs()
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_set_regs(pid_t pid, const void *regs);
+
+/**
+ * Set register content
+ *
+ * @see PINK_HAVE_SETREGSET
+ *
+ * @param pid Process ID
+ * @param regset Pointer to the structure of registers
+ * @param n_type Note segment descriptor, see <elf.h>
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_trace_set_regset(pid_t pid, const void *regset, int n_type);
 
 /**
  * Retrieve information about the signal that caused the stop.
@@ -245,57 +269,46 @@ int pink_trace_get_regs(pid_t tid, pink_regs_t *regs);
  *
  * @see PINK_HAVE_GETSIGINFO
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param info Signal information
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_get_siginfo(pid_t tid, siginfo_t *info);
-
-/**
- * Set the child's general purpose registers
- *
- * @see PINK_HAVE_REGS_T
- *
- * @param tid Thread ID
- * @param regs Same as pink_trace_get_regs()
- * @return 0 on success, negated errno on failure
- **/
-int pink_trace_set_regs(pid_t tid, const pink_regs_t *regs);
+int pink_trace_get_siginfo(pid_t pid, siginfo_t *info);
 
 /*
  * Set the tracing options
  *
- * @see #PINK_HAVE_SETUP
+ * @see PINK_HAVE_SETUP
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param options Bitwise OR'ed PINK_TRACE_OPTION_* flags
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_setup(pid_t tid, int options);
+int pink_trace_setup(pid_t pid, int options);
 
 /**
  * Restarts the stopped child process and arranges it to be stopped after
  * the entry of the next system call which will *not* be executed.
  *
- * @see #PINK_HAVE_SYSEMU
+ * @see PINK_HAVE_SYSEMU
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param sig Treated same as the signal argument of pink_trace_cont()
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_sysemu(pid_t tid, int sig);
+int pink_trace_sysemu(pid_t pid, int sig);
 
 /**
  * Restarts the stopped child process like pink_trace_sysemu() but also
  * singlesteps if not a system call.
  *
- * @see #PINK_HAVE_SYSEMU_SINGLESTEP
+ * @see PINK_HAVE_SYSEMU_SINGLESTEP
  *
- * @param tid Thread ID of the child to be restarted
+ * @param pid Process ID of the child to be restarted
  * @param sig Treated same as the signal argument of pink_trace_cont()
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_sysemu_singlestep(pid_t tid, int sig);
+int pink_trace_sysemu_singlestep(pid_t pid, int sig);
 
 /**
  * Attaches to the process specified in tid, making it a traced "child" of the
@@ -304,56 +317,53 @@ int pink_trace_sysemu_singlestep(pid_t tid, int sig);
  * stopped by the completion of this call; use wait(2) to wait for the child to
  * stop.
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_attach(pid_t tid);
+int pink_trace_attach(pid_t pid);
 
 /**
  * Restarts the stopped child as for pink_trace_cont(), but first detaches from
  * the process, undoing the reparenting effect of pink_trace_attach().
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param sig Treated same as the signal argument of pink_trace_cont()
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_detach(pid_t tid, int sig);
+int pink_trace_detach(pid_t pid, int sig);
 
 /**
  * Attach to the process specified in tid, without trapping it or affecting its
  * signal and job control states.
  *
- * @see #PINK_HAVE_SEIZE
+ * @see PINK_HAVE_SEIZE
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @param options Bitwise OR'ed PINK_TRACE_OPTION_* flags
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_seize(pid_t tid, int options);
+int pink_trace_seize(pid_t pid, int options);
 
 /**
  * Trap the process without any signal or job control related side effects.
  *
- * @see #PINK_HAVE_INTERRUPT
+ * @see PINK_HAVE_INTERRUPT
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_interrupt(pid_t tid);
+int pink_trace_interrupt(pid_t pid);
 
 /**
  * Listen for ptrace events asynchronously after pink_trace_interrupt().
  *
- * @see #PINK_HAVE_LISTEN
+ * @see PINK_HAVE_LISTEN
  * @see pink_trace_interrupt()
  *
- * @param tid Thread ID
+ * @param pid Process ID
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_listen(pid_t tid);
+int pink_trace_listen(pid_t pid);
 
-#ifdef __cplusplus
-}
-#endif
 /** @} */
 #endif

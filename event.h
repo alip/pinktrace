@@ -39,8 +39,6 @@
  * @{
  **/
 
-#include <pinktrace/compiler.h>
-
 /**
  * @e ptrace(2) event constants
  *
@@ -99,10 +97,6 @@ enum pink_event {
 	PINK_EVENT_STOP = 128,
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /**
  * Calculate the event from the status argument as returned by @e waitpid(2)
  *
@@ -124,8 +118,5 @@ enum pink_event pink_event_decide(int status)
 const char *pink_event_name(enum pink_event event)
 	PINK_GCC_ATTR((pure));
 
-#ifdef __cplusplus
-}
-#endif
 /** @} */
 #endif

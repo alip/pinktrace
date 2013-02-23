@@ -71,6 +71,14 @@
 # undef pt_all_user_regs
 #endif
 
+#include <elf.h> /* NT_PRSTATUS */
+
+#if PINK_ARCH_ARM || PINK_ARCH_POWERPC
+# include <asm/ptrace.h>
+#elif PINK_ARCH_X86 || PINK_ARCH_X86_64 || PINK_ARCH_X32
+# include <sys/user.h>
+#endif
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a)	(sizeof(a) / sizeof(a[0]))
 #endif
@@ -99,6 +107,119 @@
 		abort();						\
 	} while (0)
 
-long _pink_shuffle_scno(unsigned long scno);
+#if PINK_ARCH_X86_64
+# define ABI0_WORDSIZE 8
+# define ABI1_WORDSIZE 4
+# define ABI2_WORDSIZE 4
+#endif
+
+#if PINK_ARCH_X32
+# define ABI0_WORDSIZE 4
+# define ABI1_WORDSIZE 4
+#endif
+
+#if PINK_ARCH_POWERPC64
+# define ABI0_WORDSIZE 8
+# define ABI1_WORDSIZE 4
+#endif
+
+#ifndef ABI0_WORDSIZE
+# define ABI0_WORDSIZE (int)(sizeof(long))
+#endif
+
+#if PINK_ARCH_X86_64 || PINK_ARCH_X32
+/*
+ * On i386, pt_regs and user_regs_struct are the same,
+ * but on 64 bit x86, user_regs_struct has six more fields:
+ * fs_base, gs_base, ds, es, fs, gs.
+ * PTRACE_GETREGS fills them too, so struct pt_regs would overflow.
+ */
+struct i386_user_regs_struct {
+	uint32_t ebx;
+	uint32_t ecx;
+	uint32_t edx;
+	uint32_t esi;
+	uint32_t edi;
+	uint32_t ebp;
+	uint32_t eax;
+	uint32_t xds;
+	uint32_t xes;
+	uint32_t xfs;
+	uint32_t xgs;
+	uint32_t orig_eax;
+	uint32_t eip;
+	uint32_t xcs;
+	uint32_t eflags;
+	uint32_t esp;
+	uint32_t xss;
+};
+#endif
+
+struct pink_regset {
+#if PINK_ABIS_SUPPORTED > 1
+	short abi;
+#endif
+
+#if PINK_ARCH_ARM
+	struct pt_regs arm_regs;
+#elif PINK_ARCH_POWERPC
+	struct pt_regs ppc_regs;
+#elif PINK_ARCH_I386
+	struct user_regs_struct i386_regs;
+#elif PINK_ARCH_X86_64 || PINK_ARCH_X32
+# ifndef __X32_SYSCALL_BIT
+#  define __X32_SYSCALL_BIT	0x40000000
+# endif
+	struct iovec x86_io;
+	union {
+		struct user_regs_struct x86_64_r;
+		struct i386_user_regs_struct i386_r;
+	} x86_regs_union;
+#elif PINK_ARCH_IA64
+	bool ia32;
+#else
+#error "unsupported architecture"
+#endif
+};
+
+struct pink_process {
+	pid_t pid;
+	struct pink_regset regset;
+};
+
+/* Shuffle syscall numbers so that we don't have huge gaps in syscall table.
+ * The shuffling should be reversible: shuffle_scno(shuffle_scno(n)) == n.
+ */
+#if PINK_ARCH_ARM /* So far only ARM needs this */
+static inline long shuffle_scno(unsigned long scno)
+{
+	if (scno <= ARM_LAST_ORDINARY_SYSCALL)
+		return scno;
+
+	/* __ARM_NR_cmpxchg? Swap with LAST_ORDINARY+1 */
+	if (scno == 0x000ffff0)
+		return ARM_LAST_ORDINARY_SYSCALL+1;
+	if (scno == ARM_LAST_ORDINARY_SYSCALL+1)
+		return 0x000ffff0;
+
+	/* Is it ARM specific syscall?
+	 * Swap with [LAST_ORDINARY+2, LAST_ORDINARY+2 + LAST_SPECIAL] range.
+	 */
+	if (scno >= 0x000f0000
+	 && scno <= 0x000f0000 + ARM_LAST_SPECIAL_SYSCALL
+	) {
+		return scno - 0x000f0000 + (ARM_LAST_ORDINARY_SYSCALL+2);
+	}
+	if (/* scno >= ARM_LAST_ORDINARY_SYSCALL+2 - always true */ 1
+	 && scno <= (ARM_LAST_ORDINARY_SYSCALL+2) + ARM_LAST_SPECIAL_SYSCALL
+	) {
+		return scno + 0x000f0000 - (ARM_LAST_ORDINARY_SYSCALL+2);
+	}
+
+	return scno;
+}
+#else
+# define shuffle_scno(scno) (long)(scno)
+#endif
 
 #endif

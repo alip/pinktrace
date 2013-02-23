@@ -47,21 +47,30 @@
  * @file pinktrace/pink.h
  * @brief A header file including all other header files part of pinktrace
  * @defgroup pinktrace Pink's Tracing Library
+ * @{
  **/
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+#include <sys/types.h>
 #include <pinktrace/about.h>
 #include <pinktrace/compat.h>
 #include <pinktrace/compiler.h>
 #include <pinktrace/system.h>
+#include <pinktrace/pipe.h>
 #include <pinktrace/abi.h>
-#include <pinktrace/regs.h>
 #include <pinktrace/event.h>
 #include <pinktrace/syscall.h>
 #include <pinktrace/trace.h>
+#include <pinktrace/process.h>
+#include <pinktrace/vm.h>
 #include <pinktrace/read.h>
 #include <pinktrace/write.h>
-#include <pinktrace/vm.h>
 #include <pinktrace/socket.h>
-#include <pinktrace/pipe.h>
 
+#ifdef __cplusplus
+}
+#endif
+/** @} */
 #endif

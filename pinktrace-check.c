@@ -104,7 +104,7 @@ int pprintf(int pretty, const char *format, ...)
 	return r;
 }
 
-void dump_basic_hex(const void *addr, size_t len)
+static void dump_basic_hex(const void *addr, size_t len)
 {
 #define BYTES_IN_LINE 16
 	unsigned off;
@@ -137,87 +137,91 @@ void dump_basic_hex(const void *addr, size_t len)
 	debug("\t --8< DUMPEND %p >8--\n", addr);
 }
 
-void dump_regs_struct(const pink_regs_t *regs)
+static void dump_regset(const struct pink_regset *regset)
 {
-	debug("\t --8< REGDUMP %p >8--\n", (void *)regs);
-#if !PINK_HAVE_REGS_T
-	debug("\t\tregs = %p (not supported)\n", (void *)regs);
-#elif PINK_ARCH_ARM
-	debug("\t\tregs->ARM_cpsr = %#lx\n", regs->ARM_cpsr);
-	debug("\t\tregs->ARM_pc = %#lx\n", regs->ARM_pc);
-	debug("\t\tregs->ARM_lr = %#lx\n", regs->ARM_lr);
-	debug("\t\tregs->ARM_sp = %#lx\n", regs->ARM_sp);
-	debug("\t\tregs->ARM_ip = %#lx\n", regs->ARM_ip);
-	debug("\t\tregs->ARM_fp = %#lx\n", regs->ARM_fp);
-	debug("\t\tregs->ARM_r10 = %#lx\n", regs->ARM_r10);
-	debug("\t\tregs->ARM_r9 = %#lx\n", regs->ARM_r9);
-	debug("\t\tregs->ARM_r8 = %#lx\n", regs->ARM_r8);
-	debug("\t\tregs->ARM_r7 = %#lx\n", regs->ARM_r7);
-	debug("\t\tregs->ARM_r6 = %#lx\n", regs->ARM_r6);
-	debug("\t\tregs->ARM_r5 = %#lx\n", regs->ARM_r5);
-	debug("\t\tregs->ARM_r4 = %#lx\n", regs->ARM_r4);
-	debug("\t\tregs->ARM_r3 = %#lx\n", regs->ARM_r3);
-	debug("\t\tregs->ARM_r2 = %#lx\n", regs->ARM_r2);
-	debug("\t\tregs->ARM_r1 = %#lx\n", regs->ARM_r1);
-	debug("\t\tregs->ARM_r0 = %#lx\n", regs->ARM_r0);
-	debug("\t\tregs->ARM_ORIG_r0 = %#lx\n", regs->ARM_ORIG_r0);
+	debug("\t --8< REGSET DUMP %p >8--\n", (void *)regset);
+#if PINK_ABIS_SUPPORTED > 1
+	debug("\t\tregset->abi = %d\n", regset->abi);
+#endif
+#if PINK_ARCH_ARM
+	struct pt_regs regs = regset->arm_regs;
+	debug("\t\tregs.ARM_cpsr = %#lx\n", regs.ARM_cpsr);
+	debug("\t\tregs.ARM_pc = %#lx\n", regs.ARM_pc);
+	debug("\t\tregs.ARM_lr = %#lx\n", regs.ARM_lr);
+	debug("\t\tregs.ARM_sp = %#lx\n", regs.ARM_sp);
+	debug("\t\tregs.ARM_ip = %#lx\n", regs.ARM_ip);
+	debug("\t\tregs.ARM_fp = %#lx\n", regs.ARM_fp);
+	debug("\t\tregs.ARM_r10 = %#lx\n", regs.ARM_r10);
+	debug("\t\tregs.ARM_r9 = %#lx\n", regs.ARM_r9);
+	debug("\t\tregs.ARM_r8 = %#lx\n", regs.ARM_r8);
+	debug("\t\tregs.ARM_r7 = %#lx\n", regs.ARM_r7);
+	debug("\t\tregs.ARM_r6 = %#lx\n", regs.ARM_r6);
+	debug("\t\tregs.ARM_r5 = %#lx\n", regs.ARM_r5);
+	debug("\t\tregs.ARM_r4 = %#lx\n", regs.ARM_r4);
+	debug("\t\tregs.ARM_r3 = %#lx\n", regs.ARM_r3);
+	debug("\t\tregs.ARM_r2 = %#lx\n", regs.ARM_r2);
+	debug("\t\tregs.ARM_r1 = %#lx\n", regs.ARM_r1);
+	debug("\t\tregs.ARM_r0 = %#lx\n", regs.ARM_r0);
+	debug("\t\tregs.ARM_ORIG_r0 = %#lx\n", regs.ARM_ORIG_r0);
 #elif PINK_ARCH_IA64
-	/* TODO */;
+	debug("\t\tregset->ia32 = %d\n", regset->ia32);
 #elif PINK_ARCH_POWERPC
 	debug("\t\tregs = TODO\n");
 #elif PINK_ARCH_I386
-	debug("\t\tregs->ebx = %#lx\n", regs->ebx);
-	debug("\t\tregs->ecx = %#lx\n", regs->ecx);
-	debug("\t\tregs->edx = %#lx\n", regs->edx);
-	debug("\t\tregs->esi = %#lx\n", regs->esi);
-	debug("\t\tregs->edi = %#lx\n", regs->edi);
-	debug("\t\tregs->ebp = %#lx\n", regs->ebp);
-	debug("\t\tregs->eax = %#lx\n", regs->eax);
-	debug("\t\tregs->xds = %#x\n", regs->xds);
-	debug("\t\tregs->xes = %#x\n", regs->xes);
-	debug("\t\tregs->xfs = %#x\n", regs->xfs);
-	debug("\t\tregs->xgs = %#x\n", regs->xgs);
-	debug("\t\tregs->orig_eax = %#lx\n", regs->orig_eax);
-	debug("\t\tregs->eip = %#lx\n", regs->eip);
-	debug("\t\tregs->xcs = %#x\n", regs->xcs);
-	debug("\t\tregs->eflags = %#lx\n", regs->eflags);
-	debug("\t\tregs->esp = %#lx\n", regs->esp);
-	debug("\t\tregs->xss = %#lx\n", regs->xss);
+	struct user_regs_struct regs = regset->i386_regs;
+	debug("\t\tregs.ebx = %#lx\n", regs.ebx);
+	debug("\t\tregs.ecx = %#lx\n", regs.ecx);
+	debug("\t\tregs.edx = %#lx\n", regs.edx);
+	debug("\t\tregs.esi = %#lx\n", regs.esi);
+	debug("\t\tregs.edi = %#lx\n", regs.edi);
+	debug("\t\tregs.ebp = %#lx\n", regs.ebp);
+	debug("\t\tregs.eax = %#lx\n", regs.eax);
+	debug("\t\tregs.xds = %#x\n", regs.xds);
+	debug("\t\tregs.xes = %#x\n", regs.xes);
+	debug("\t\tregs.xfs = %#x\n", regs.xfs);
+	debug("\t\tregs.xgs = %#x\n", regs.xgs);
+	debug("\t\tregs.orig_eax = %#lx\n", regs.orig_eax);
+	debug("\t\tregs.eip = %#lx\n", regs.eip);
+	debug("\t\tregs.xcs = %#x\n", regs.xcs);
+	debug("\t\tregs.eflags = %#lx\n", regs.eflags);
+	debug("\t\tregs.esp = %#lx\n", regs.esp);
+	debug("\t\tregs.xss = %#lx\n", regs.xss);
 #elif PINK_ARCH_X86_64 || PINK_ARCH_X32
-	debug("\t\tregs->r15 = %llx\n", regs->r15);
-	debug("\t\tregs->r14 = %llx\n", regs->r14);
-	debug("\t\tregs->r13 = %llx\n", regs->r13);
-	debug("\t\tregs->r12 = %llx\n", regs->r12);
-	debug("\t\tregs->rbp = %llx\n", regs->rbp);
-	debug("\t\tregs->rbx = %llx\n", regs->rbx);
-	debug("\t\tregs->r11 = %llx\n", regs->r11);
-	debug("\t\tregs->r10 = %llx\n", regs->r10);
-	debug("\t\tregs->r9 = %llx\n", regs->r9);
-	debug("\t\tregs->r8 = %llx\n", regs->r8);
-	debug("\t\tregs->rax = %llx\n", regs->rax);
-	debug("\t\tregs->rcx = %llx\n", regs->rcx);
-	debug("\t\tregs->rdx = %llx\n", regs->rdx);
-	debug("\t\tregs->rsi = %llx\n", regs->rsi);
-	debug("\t\tregs->rdi = %llx\n", regs->rdi);
-	debug("\t\tregs->orig_rax = %llx\n", regs->orig_rax);
-	debug("\t\tregs->rip = %llx\n", regs->rip);
-	debug("\t\tregs->cs = %llx\n", regs->cs);
-	debug("\t\tregs->eflags = %llx\n", regs->eflags);
-	debug("\t\tregs->rsp = %llx\n", regs->rsp);
-	debug("\t\tregs->ss = %llx\n", regs->ss);
-	debug("\t\tregs->fs_base = %llx\n", regs->fs_base);
-	debug("\t\tregs->gs_base = %llx\n", regs->gs_base);
-	debug("\t\tregs->ds = %llx\n", regs->ds);
-	debug("\t\tregs->es = %llx\n", regs->es);
-	debug("\t\tregs->fs = %llx\n", regs->fs);
-	debug("\t\tregs->gs = %llx\n", regs->gs);
+	struct user_regs_struct regs = regset->x86_regs_union.x86_64_r;
+	debug("\t\tregs.r15 = %llx\n", regs.r15);
+	debug("\t\tregs.r14 = %llx\n", regs.r14);
+	debug("\t\tregs.r13 = %llx\n", regs.r13);
+	debug("\t\tregs.r12 = %llx\n", regs.r12);
+	debug("\t\tregs.rbp = %llx\n", regs.rbp);
+	debug("\t\tregs.rbx = %llx\n", regs.rbx);
+	debug("\t\tregs.r11 = %llx\n", regs.r11);
+	debug("\t\tregs.r10 = %llx\n", regs.r10);
+	debug("\t\tregs.r9 = %llx\n", regs.r9);
+	debug("\t\tregs.r8 = %llx\n", regs.r8);
+	debug("\t\tregs.rax = %llx\n", regs.rax);
+	debug("\t\tregs.rcx = %llx\n", regs.rcx);
+	debug("\t\tregs.rdx = %llx\n", regs.rdx);
+	debug("\t\tregs.rsi = %llx\n", regs.rsi);
+	debug("\t\tregs.rdi = %llx\n", regs.rdi);
+	debug("\t\tregs.orig_rax = %llx\n", regs.orig_rax);
+	debug("\t\tregs.rip = %llx\n", regs.rip);
+	debug("\t\tregs.cs = %llx\n", regs.cs);
+	debug("\t\tregs.eflags = %llx\n", regs.eflags);
+	debug("\t\tregs.rsp = %llx\n", regs.rsp);
+	debug("\t\tregs.ss = %llx\n", regs.ss);
+	debug("\t\tregs.fs_base = %llx\n", regs.fs_base);
+	debug("\t\tregs.gs_base = %llx\n", regs.gs_base);
+	debug("\t\tregs.ds = %llx\n", regs.ds);
+	debug("\t\tregs.es = %llx\n", regs.es);
+	debug("\t\tregs.fs = %llx\n", regs.fs);
+	debug("\t\tregs.gs = %llx\n", regs.gs);
 #else
 #error unsupported architecture
 #endif
-	debug("\t --8< REGDUMP END %p >8--\n", (void *)regs);
+	debug("\t --8< REGSET DUMP END %p >8--\n", (void *)regset);
 }
 
-void dump_socket_address(const struct pink_sockaddr *sockaddr)
+static void dump_socket_address(struct pink_sockaddr *sockaddr)
 {
 	char ip[64];
 
@@ -391,8 +395,7 @@ bool check_stopped_or_kill(pid_t pid, int status)
 	abort();
 }
 
-void check_syscall_equal_or_kill(pid_t pid, enum pink_abi abi,
-				 long sysnum, long sysnum_expected)
+void check_syscall_equal_or_kill(pid_t pid, long sysnum, long sysnum_expected)
 {
 	if (sysnum == sysnum_expected)
 		return;
@@ -400,11 +403,12 @@ void check_syscall_equal_or_kill(pid_t pid, enum pink_abi abi,
 	fail_verbose("unexpected syscall %ld"
 			" (name:%s expected:%ld %s)",
 			sysnum,
-			pink_syscall_name(sysnum, abi),
+			pink_syscall_name(sysnum, PINK_ABI_DEFAULT),
 			sysnum_expected,
 			sysnum_expected == PINK_SYSCALL_INVALID
 				? "PINK_SYSCALL_INVALID"
-				: pink_syscall_name(sysnum_expected, abi));
+				: pink_syscall_name(sysnum_expected,
+						    PINK_ABI_DEFAULT));
 	abort();
 }
 
@@ -576,47 +580,6 @@ void trace_geteventmsg_or_kill(pid_t pid, unsigned long *data)
 	}
 }
 
-void trace_get_regs_or_kill(pid_t pid, pink_regs_t *regs)
-{
-	int r;
-	int saved_errno;
-
-	r = pink_trace_get_regs(pid, regs);
-
-	saved_errno = errno;
-	info("\ttrace_get_regs(%u, %p) = %d (errno:%d %s)\n",
-	     pid, (r < 0) ? (void *)0xbad : regs, r, errno, strerror(errno));
-	errno = saved_errno;
-
-	if (r == 0) {
-		dump_regs_struct(regs);
-	} else {
-		kill_save_errno(pid, SIGKILL);
-		fail_verbose("PTRACE_GETREGS (pid:%u errno:%d %s)",
-			     pid, errno, strerror(errno));
-	}
-}
-
-void trace_set_regs_or_kill(pid_t pid, const pink_regs_t *regs)
-{
-	int r;
-	int saved_errno;
-
-	r = pink_trace_set_regs(pid, regs);
-
-	saved_errno = errno;
-	info("\ttrace_set_regs(%u, %p) = %d (errno:%d %s)\n",
-	     pid, (void *)regs, r, errno, strerror(errno));
-	dump_regs_struct(regs);
-	errno = saved_errno;
-
-	if (r < 0) {
-		kill_save_errno(pid, SIGKILL);
-		fail_verbose("PTRACE_SETREGS (pid:%u regs:%p errno:%d %s)",
-			     pid, (void *)regs, errno, strerror(errno));
-	}
-}
-
 enum pink_event event_decide_and_print(int status)
 {
 	enum pink_event e;
@@ -629,457 +592,259 @@ enum pink_event event_decide_and_print(int status)
 	return e;
 }
 
-void read_abi_or_kill(pid_t pid, const pink_regs_t *regs, enum pink_abi *abi)
+void process_alloc_or_kill(pid_t pid, struct pink_process **p)
 {
 	int r;
-	int saved_errno;
 
-	r = pink_read_abi(pid, regs, abi);
-
-	saved_errno = errno;
-	info("\tread_abi(%u, %p, %#x) = %d (errno:%d %s)\n",
-	     pid, (void *)regs, (r < 0) ? 0xbad : (unsigned)*abi, r,
-	     errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_process_alloc(pid, p);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_abi (pid:%u errno:%d %s)",
+		fail_verbose("pink_process_alloc (pid:%u errno:%d %s)",
 			     pid, errno, strerror(errno));
 	}
-
-	if (*abi != 0)
-		warning("%s@%d: abi:%d != def:%d", __func__, __LINE__, *abi, 0);
 }
 
-void read_syscall_or_kill(pid_t pid, enum pink_abi abi, const pink_regs_t *regs,
-			  long *sysnum)
+void process_update_regset_or_kill(struct pink_process *current)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(current);
 
-	r = pink_read_syscall(pid, abi, regs, sysnum);
-
-	saved_errno = errno;
-	info("\tread_syscall(%u, %d, %p, %ld) = %d (errno:%d %s)\n",
-	     pid, abi, (void *)regs,
-	     (r < 0) ? PINK_SYSCALL_INVALID : *sysnum,
-	     r,
-	     errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_process_update_regset(current);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_syscall "
-			     "(pid:%u abi:%d"
-			     " regs:%p"
-			     " errno:%d %s)",
-			     pid, abi,
-			     (void *)regs,
-			     errno, strerror(errno));
+		fail_verbose("pink_process_update_regset (pid:%u errno:%d %s)",
+			     pid, errno, strerror(errno));
+	}
+	dump_regset(&current->regset);
+}
+
+void read_syscall_or_kill(struct pink_process *tracee, long *sysnum)
+{
+	int r;
+	pid_t pid = pink_process_get_pid(tracee);
+
+	r = pink_read_syscall(tracee, sysnum);
+	if (r == 0) {
+		info("\tread_syscall (pid:%u) = %ld", pid, *sysnum);
+	} else if (r < 0) {
+		kill_save_errno(pid, SIGKILL);
+		fail_verbose("pink_read_syscall (pid:%u, errno:%d %s)",
+			     pid, errno, strerror(errno));
 	}
 }
 
-void read_retval_or_kill(pid_t pid, enum pink_abi abi, const pink_regs_t *regs,
-			 long *retval, int *error)
+void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_retval(pid, abi, regs, retval, error);
-
-	saved_errno = errno;
-	info("\tread_retval(%u, %d, %p, %ld, %d %s) = %d (errno:%d %s)\n",
-			pid, abi, (void *)regs,
-			(r < 0) ? -1L : *retval,
-			(r < 0) ? -1 : *error,
-			(r < 0) ? "?" : strerror(*error),
-			r, errno, strerror(errno));
-	errno = saved_errno;
-
-	if (r < 0) {
+	r = pink_read_retval(tracee, retval, error);
+	if (r == 0) {
+		info("\tread_retval (pid:%u) = %ld,%d", pid,
+		     *retval, *error);
+	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_retval "
-			      "(pid:%u abi:%d,"
-			      " regs:%p"
-			      " errno:%d %s)",
-			      pid, abi, (void *)regs, errno, strerror(errno));
+		fail_verbose("pink_read_retval (pid:%u, errno:%d %s)",
+			     pid, errno, strerror(errno));
 	}
 }
 
-void read_argument_or_kill(pid_t pid, enum pink_abi abi,
-			   const pink_regs_t *regs,
-			   unsigned arg_index, long *argval)
+void read_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long *argval)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_argument(pid, abi, regs, arg_index, argval);
-
-	saved_errno = errno;
-	info("\tread_argument(%u, %d, %p, %d, %ld) = %d (errno:%d %s)\n",
-			pid, abi, (void *)regs,
-			arg_index,
-			(r < 0) ? -1L : *argval,
-			r, errno, strerror(errno));
-	errno = saved_errno;
-
-	if (r < 0) {
+	r = pink_read_argument(tracee, arg_index, argval);
+	if (r == 0) {
+		info("\tread_argument (pid:%u, index:%u) = %ld", pid,
+		     arg_index, *argval);
+	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_argument "
-			     "(pid:%u abi:%d"
-			     " regs:%p"
-			     " arg_index:%d"
-			     " errno:%d %s)",
-			     pid, abi,
-			     (void *)regs,
-			     arg_index,
-			     errno, strerror(errno));
+		fail_verbose("pink_read_argument (pid:%u, index:%u, errno:%d %s)",
+			     pid, arg_index, errno, strerror(errno));
 	}
 }
 
-void read_vm_data_or_kill(pid_t pid, enum pink_abi abi, long addr, char *dest,
-			  size_t len)
+void read_vm_data_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len)
 {
 	ssize_t r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_vm_data(pid, abi, addr, dest, len);
-
-	saved_errno = errno;
-	info("\tread_vm_data(%u, %d, %lu, %p, %zu) = %zd (errno:%d %s)\n",
-	     pid, abi, addr, dest, len, r, errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_read_vm_data(tracee, addr, dest, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_vm_data "
-			     "(pid:%u abi:%d addr:%lu"
-			     " dest:%p len:%zd"
-			     " errno:%d %s)",
-			     pid, abi, addr,
-			     dest, len,
-			     errno, strerror(errno));
+		fail_verbose("pink_read_vm_data (pid:%u, addr:%ld, len:%zd errno:%d %s)",
+			     pid, addr, len, errno, strerror(errno));
 	} else if ((size_t)r < len) {
-		message("\tread_vm_data partial read, expected:%zu got:%zu\n",
+		message("\tpink_read_vm_data partial read, expected:%zu got:%zd\n",
 			len, r);
 	}
-
-	dump_basic_hex(dest, len);
+	info("\tread_vm_data (pid:%u, addr:%ld len:%zd) = %zd", pid, addr, len, r);
+	dump_basic_hex(dest, r);
 }
 
-void read_vm_data_nul_or_kill(pid_t pid, enum pink_abi abi, long addr,
-			      char *dest, size_t len)
+void read_vm_data_nul_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len)
 {
 	ssize_t r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_vm_data_nul(pid, abi, addr, dest, len);
-
-	saved_errno = errno;
-	info("\tread_vm_data_nul(%u, %d, %lu, %p, %zu) = %zd (errno:%d %s)\n",
-	     pid, abi, addr, dest, len, r, errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_read_vm_data_nul(tracee, addr, dest, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_vm_data_nul "
-			     "(pid:%u abi:%d addr:%lu"
-			     " dest:%p len:%zu"
-			     " errno:%d %s)",
-			     pid, abi, addr,
-			     dest, len,
-			     errno, strerror(errno));
+		fail_verbose("pink_read_vm_data_nul (pid:%u, addr:%ld, len:%zd errno:%d %s)",
+			     pid, addr, len, errno, strerror(errno));
 	} else if ((size_t)r < len) {
-		message("\tread_vm_data_nul partial read, "
-			"expected:%zu got:%zd\n",
+		message("\tpink_read_vm_data_nul partial read, expected:%zu got:%zd\n",
 			len, r);
 	}
-
-	dump_basic_hex(dest, len);
+	info("\tread_vm_data_nul (pid:%u, addr:%ld len:%zd) = %zd", pid, addr, len, r);
+	dump_basic_hex(dest, r);
 }
 
-void read_string_array_or_kill(pid_t pid, enum pink_abi abi, long arg,
-			       unsigned arr_index, char *dest, size_t dest_len,
+void read_string_array_or_kill(struct pink_process *tracee,
+			       long arg, unsigned arr_index,
+			       char *dest, size_t dest_len,
 			       bool *nullptr)
 {
 	ssize_t r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_string_array(pid, abi, arg, arr_index, dest, dest_len,
-				   nullptr);
-
-	saved_errno = errno;
-	info("\tread_string_array"
-	     "(%u, %d,"
-	     " %lu, %u,"
-	     " %p, %zu,"
-	     " %p)"
-	     " = %zd (errno:%d %s)\n",
-	     pid, abi,
-	     arg, arr_index,
-	     (void *)dest, dest_len,
-	     (void *)nullptr,
-	     r, errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_read_string_array(tracee, arg, arr_index, dest, dest_len, nullptr);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_string_array "
-			     "(pid:%u abi:%d"
-			     " arg:%lu argr_index:%u"
-			     " dest:%p dest_len:%zu"
-			     " nullptr:%p "
-			     " errno:%d %s)",
-			     pid, abi,
-			     arg, arr_index,
-			     (void *)dest, dest_len,
-			     (void *)nullptr,
-			     errno, strerror(errno));
+		fail_verbose("pink_read_string_array (pid:%u, arg:%ld, arr_index:%u dest_len:%zu errno:%d %s)",
+			     pid, arg, arr_index, dest_len, errno,
+			     strerror(errno));
 	} else if ((size_t)r < dest_len) {
 		message("\tpink_read_string_array partial read,"
 				" expected:%zu got:%zd\n",
 				dest_len, r);
 	}
-
-	dump_basic_hex(dest, dest_len);
+	info("read_string_array (pid:%u arg:%ld arr_index:%u, dest_len:%zd) = %zd",
+	     pid, arg, arr_index, dest_len, r);
+	dump_basic_hex(dest, r);
 }
 
-void read_socket_subcall_or_kill(pid_t pid, enum pink_abi abi,
-				 const pink_regs_t *regs,
+void read_socket_subcall_or_kill(struct pink_process *tracee,
 				 bool decode_socketcall,
 				 long *subcall)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_socket_subcall(pid, abi, regs, decode_socketcall,
-				     subcall);
-
-	saved_errno = errno;
-	info("\tread_socket_subcall "
-	     "(%u, %d,"
-	     " %p,"
-	     " %s,"
-	     " %p)"
-	     " = %d (errno:%d %s)\n",
-	     pid, abi,
-	     (void *)regs,
-	     decode_socketcall ? "true" : "false",
-	     (void *)subcall,
-	     r,
-	     errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_read_socket_subcall(tracee, decode_socketcall, subcall);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_socket_subcall "
-			     "(pid:%u abi:%d"
-			     " regs:%p"
-			     " decode_socketcall:%s"
-			     " subcall:%p"
-			     " errno:%d %s)",
-			     pid, abi,
-			     (void *)regs,
-			     decode_socketcall ? "true" : "false",
-			     (void *)subcall,
+		fail_verbose("pink_read_socket_subcall (pid:%u decode:%d errno:%d %s)",
+			     pid, decode_socketcall,
 			     errno, strerror(errno));
 	}
+	info("\tread_socket_subcall (pid:%u decode:%d) = %ld",
+	     pid, decode_socketcall, *subcall);
 }
 
-void read_socket_argument_or_kill(pid_t pid, enum pink_abi abi, const
-				  pink_regs_t *regs, bool decode_socketcall,
+void read_socket_argument_or_kill(struct pink_process *tracee, bool decode_socketcall,
 				  unsigned arg_index, unsigned long *argval)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_socket_argument(pid, abi, regs, decode_socketcall,
-				      arg_index, argval);
-
-	saved_errno = errno;
-	info("\tread_socket_argument "
-	     "(%u, %d,"
-	     " %p,"
-	     " %s,"
-	     " %u, %p)"
-	     " = %d (errno:%d %s)\n",
-	     pid, abi,
-	     (void *)regs,
-	     decode_socketcall ? "true" : "false",
-	     arg_index, (void *)argval,
-	     r,
-	     errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_read_socket_argument(tracee, decode_socketcall, arg_index, argval);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_socket_argument "
-			     "(pid:%u abi:%d"
-			     " regs:%p"
-			     " decode_socketcall:%s"
-			     " arg_index:%u"
-			     " argval:%p"
-			     " errno:%d %s)",
-			     pid, abi,
-			     (void *)regs,
-			     decode_socketcall ? "true" : "false",
-			     arg_index, (void *)argval,
+		fail_verbose("pink_read_socket_argument (pid:%u decode:%d arg_index:%u errno:%d %s",
+			     pid, decode_socketcall, arg_index,
 			     errno, strerror(errno));
 	}
+	info("\tread_socket_argument (pid:%u decode:%d arg_index:%u) = %ld",
+	     pid, decode_socketcall, arg_index, *argval);
 }
 
-void read_socket_address_or_kill(pid_t pid, enum pink_abi abi,
-				 const pink_regs_t *regs,
-				 bool decode_socketcall, unsigned arg_index,
-				 int *fd, struct pink_sockaddr *sockaddr)
+void read_socket_address_or_kill(struct pink_process *tracee, bool decode_socketcall,
+				 unsigned arg_index, int *fd,
+				 struct pink_sockaddr *sockaddr)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_socket_address(pid, abi, regs, decode_socketcall,
-				     arg_index, fd, sockaddr);
-
-	saved_errno = errno;
-	info("\tread_socket_address "
-	     "(%u, %d,"
-	     " %p,"
-	     " %s,"
-	     " %u, %p,"
-	     " %p)"
-	     " = %d (errno:%d %s)\n",
-	     pid, abi,
-	     (void *)regs,
-	     decode_socketcall ? "true" : "false",
-	     arg_index, (void *)fd,
-	     (void *)sockaddr,
-	     r,
-	     errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_read_socket_address(tracee, decode_socketcall, arg_index, fd, sockaddr);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_read_socket_address "
-			     "(pid:%u abi:%d"
-			     " regs:%p"
-			     " decode_socketcall:%s"
-			     " arg_index:%u"
-			     " fd:%p sockaddr:%p"
-			     " errno:%d %s)",
-			     pid, abi,
-			     (void *)regs,
-			     decode_socketcall ? "true" : "false",
-			     arg_index,
-			     (void *)fd, (void *)sockaddr,
+		fail_verbose("pink_read_socket_address (pid:%u decode:%d arg_index:%u errno:%d %s)",
+			     pid, decode_socketcall, arg_index,
 			     errno, strerror(errno));
 	}
 
+	info("\tread_socket_address (pid:%u decode:%d arg_index:%u) = %d,%p",
+	     pid, decode_socketcall, arg_index, fd ? *fd : -1, (void *)sockaddr);
 	dump_socket_address(sockaddr);
 }
 
-void write_syscall_or_kill(pid_t pid, enum pink_abi abi, long sysnum)
+void write_syscall_or_kill(struct pink_process *tracee, long sysnum)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_syscall(pid, abi, sysnum);
-
-	saved_errno = errno;
-	info("\twrite_syscall(%u, %d, %ld) = %d (errno:%d %s)\n",
-	     pid, abi, sysnum,
-	     r, errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_write_syscall(tracee, sysnum);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_write_syscall "
-			     "(pid:%u abi:%d sysnum:%ld"
-			     " errno:%d %s)",
-			     pid, abi, sysnum,
-			     errno, strerror(errno));
+		fail_verbose("pink_write_syscall (pid:%u sysnum:%ld errno:%d %s)",
+			     pid, sysnum, errno, strerror(errno));
 	}
+	info("\twrite_syscall (pid:%u sysnum:%ld) = 0",
+	     pid, sysnum);
 }
 
-void write_retval_or_kill(pid_t pid, enum pink_abi abi, long retval, int error)
+void write_retval_or_kill(struct pink_process *tracee, long retval, int error)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_retval(pid, abi, retval, error);
-
-	saved_errno = errno;
-	info("\twrite_retval(%u, %d, %ld, %d %s) = %d (errno:%d %s)\n",
-	     pid, abi, retval,
-	     error, strerror(error),
-	     r, errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_write_retval(tracee, retval, error);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_write_retval "
-			     "(pid:%u abi:%d retval:%ld"
-			     " errno:%d %s)",
-			     pid, abi, retval,
-			     errno, strerror(errno));
+		fail_verbose("pink_write_retval (pid:%u retval:%ld error:%d errno:%d %s)",
+			     pid, retval, error, errno,
+			     strerror(errno));
 	}
+	info("\twrite_syscall (pid:%u retval:%ld error:%d) = 0",
+	     pid, retval, error);
 }
 
-void write_argument_or_kill(pid_t pid, enum pink_abi abi,
-		unsigned arg_index, long argval)
+void write_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long argval)
 {
 	int r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_argument(pid, abi, arg_index, argval);
-
-	saved_errno = errno;
-	info("\twrite_retval(%u, %d, %u, %ld) = %d (errno:%d %s)\n",
-			pid, abi,
-			arg_index, argval,
-			r, errno, strerror(errno));
-	errno = saved_errno;
-
+	r = pink_write_argument(tracee, arg_index, argval);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_write_argument "
-			     "(pid:%u abi:%d"
-			     " arg_index:%u retval:%ld"
-			     " errno:%d %s)",
-			     pid, abi,
-			     arg_index, argval,
-			     errno, strerror(errno));
+		fail_verbose("pink_write_argument (pid:%u arg_index:%u argval:%ld errno:%d %s)",
+			     pid, arg_index, argval, errno,
+			     strerror(errno));
 	}
+	info("\twrite_argument (pid:%u arg_index:%u argval:%ld) = 0",
+	     pid, arg_index, argval);
 }
 
-void write_vm_data_or_kill(pid_t pid, enum pink_abi abi, long addr,
-			   const char *src, size_t len)
+void write_vm_data_or_kill(struct pink_process *tracee, long addr, const char *src, size_t len)
 {
 	ssize_t r;
-	int saved_errno;
+	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_vm_data(pid, abi, addr, src, len);
-
-	saved_errno = errno;
-	info("\twrite_vm_data(%u, %d, %lu, %p, %zd) = %zd (errno:%d %s)\n",
-	     pid, abi, addr,
-	     src, len,
-	     r, errno, strerror(errno));
-	errno = saved_errno;
-
+	errno = 0;
+	r = pink_write_vm_data(tracee, addr, src, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_write_vm_data "
-			     "(pid:%u abi:%d addr:%lu"
-			     " src:%p len:%zd"
-			     " errno:%d %s)",
-			     pid, abi, addr,
-			     src, len,
-			     errno, strerror(errno));
+		fail_verbose("pink_write_vm_data (pid:%u addr:%ld src:%p len:%zd errno:%d %s)",
+			     pid, addr, (void *)src, len, errno,
+			     strerror(errno));
 	} else if ((size_t)r < len) {
-		message("\twrite_vm_data partial write, "
-			"expected:%zd got:%zd\n",
+		message("\twrite_vm_data partial write, expected:%zd got:%zd\n",
 			len, r);
 	}
+	info("\twrite_vm_data (pid:%u addr:%ld src:%p len:%zd) = %zu",
+	     pid, addr, (void *)src, len, r);
 }
 
 int main(void)

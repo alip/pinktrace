@@ -28,12 +28,12 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-long pink_ptrace(int req, pid_t tid, void *addr, void *data)
+long pink_ptrace(int req, pid_t pid, void *addr, void *data)
 {
 	long val;
 
 	errno = 0;
-	val = ptrace(req, tid, addr, (long)data);
+	val = ptrace(req, pid, addr, (long)data);
 	if (val == -1 && errno) {
 		/* "Unfortunately, under Linux, different variations of this
 		 * fault will return EIO or EFAULT more or less arbitrarily."
@@ -53,9 +53,9 @@ int pink_trace_me(void)
 	return 0;
 }
 
-int pink_trace_resume(pid_t tid, int sig)
+int pink_trace_resume(pid_t pid, int sig)
 {
-	if (pink_ptrace(PTRACE_CONT, tid, NULL, (void *)(long)sig) < 0)
+	if (pink_ptrace(PTRACE_CONT, pid, NULL, (void *)(long)sig) < 0)
 		return -errno;
 	return 0;
 }
@@ -73,7 +73,7 @@ int pink_trace_kill(pid_t tid, pid_t tgid, int sig)
 #endif
 	} else {
 #if PINK_HAVE_TGKILL
-		return syscall(__NR_tgkill, tid, tgid, sig) ? -errno : 0;
+		return syscall(__NR_tgkill, tgid, tid, sig) ? -errno : 0;
 #elif PINK_HAVE_TKILL
 		return syscall(__NR_tkill, tid, sig) < 0 ? -errno : 0;
 #else
@@ -82,24 +82,24 @@ int pink_trace_kill(pid_t tid, pid_t tgid, int sig)
 	}
 }
 
-int pink_trace_singlestep(pid_t tid, int sig)
+int pink_trace_singlestep(pid_t pid, int sig)
 {
-	if (pink_ptrace(PTRACE_SINGLESTEP, tid, NULL, (void *)(long)sig) < 0)
+	if (pink_ptrace(PTRACE_SINGLESTEP, pid, NULL, (void *)(long)sig) < 0)
 		return -errno;
 	return 0;
 }
 
-int pink_trace_syscall(pid_t tid, int sig)
+int pink_trace_syscall(pid_t pid, int sig)
 {
-	if (pink_ptrace(PTRACE_SYSCALL, tid, NULL, (void *)(long)sig) < 0)
+	if (pink_ptrace(PTRACE_SYSCALL, pid, NULL, (void *)(long)sig) < 0)
 		return -errno;
 	return 0;
 }
 
-int pink_trace_geteventmsg(pid_t tid, unsigned long *data)
+int pink_trace_geteventmsg(pid_t pid, unsigned long *data)
 {
 #if PINK_HAVE_GETEVENTMSG
-	if (pink_ptrace(PTRACE_GETEVENTMSG, tid, NULL, data) < 0)
+	if (pink_ptrace(PTRACE_GETEVENTMSG, pid, NULL, data) < 0)
 		return -errno;
 	return 0;
 #else
@@ -107,21 +107,46 @@ int pink_trace_geteventmsg(pid_t tid, unsigned long *data)
 #endif
 }
 
-int pink_trace_get_regs(pid_t tid, pink_regs_t *regs)
+int pink_trace_get_regs(pid_t pid, void *regs)
 {
-#if PINK_HAVE_REGS_T
-	if (pink_ptrace(PTRACE_GETREGS, tid, NULL, regs) < 0)
+	if (pink_ptrace(PTRACE_GETREGS, pid, NULL, regs) < 0)
+		return -errno;
+	return 0;
+}
+
+int pink_trace_get_regset(pid_t pid, void *regset, int n_type)
+{
+#if PINK_HAVE_GETREGSET
+	if (pink_ptrace(PTRACE_GETREGSET, pid, (void *)(long)n_type, regset) < 0)
 		return -errno;
 	return 0;
 #else
-	return -ENOTSUP;
+	return -ENOSYS;
 #endif
 }
 
-int pink_trace_get_siginfo(pid_t tid, siginfo_t *info)
+int pink_trace_set_regs(pid_t pid, const void *regs)
+{
+	if (pink_ptrace(PTRACE_SETREGS, pid, NULL, (void *)regs) < 0)
+		return -errno;
+	return 0;
+}
+
+int pink_trace_set_regset(pid_t pid, const void *regset, int n_type)
+{
+#if PINK_HAVE_SETREGSET
+	if (pink_ptrace(PTRACE_SETREGSET, pid, (void *)(long)n_type, (void *)regset) < 0)
+		return -errno;
+	return 0;
+#else
+	return -ENOSYS;
+#endif
+}
+
+int pink_trace_get_siginfo(pid_t pid, siginfo_t *info)
 {
 #if PINK_HAVE_GETSIGINFO
-	if (pink_ptrace(PTRACE_GETSIGINFO, tid, NULL, info) < 0)
+	if (pink_ptrace(PTRACE_GETSIGINFO, pid, NULL, info) < 0)
 		return -errno;
 	return 0;
 #else
@@ -129,18 +154,7 @@ int pink_trace_get_siginfo(pid_t tid, siginfo_t *info)
 #endif
 }
 
-int pink_trace_set_regs(pid_t tid, const pink_regs_t *regs)
-{
-#if PINK_HAVE_REGS_T
-	if (pink_ptrace(PTRACE_SETREGS, tid, NULL, (void *)regs) < 0)
-		return -errno;
-	return 0;
-#else
-	return -ENOTSUP;
-#endif
-}
-
-int pink_trace_setup(pid_t tid, int options)
+int pink_trace_setup(pid_t pid, int options)
 {
 #if PINK_HAVE_SETUP
 	int ptrace_options;
@@ -210,7 +224,7 @@ int pink_trace_setup(pid_t tid, int options)
 #endif
 	}
 
-	if (pink_ptrace(PTRACE_SETOPTIONS, tid, NULL,
+	if (pink_ptrace(PTRACE_SETOPTIONS, pid, NULL,
 			(void *)(long)ptrace_options) < 0)
 		return -errno;
 	return 0;
@@ -219,10 +233,10 @@ int pink_trace_setup(pid_t tid, int options)
 #endif
 }
 
-int pink_trace_sysemu(pid_t tid, int sig)
+int pink_trace_sysemu(pid_t pid, int sig)
 {
 #if PINK_HAVE_SYSEMU
-	if (pink_ptrace(PTRACE_SYSEMU, tid, NULL, (void *)(long)sig) < 0)
+	if (pink_ptrace(PTRACE_SYSEMU, pid, NULL, (void *)(long)sig) < 0)
 		return -errno;
 	return 0;
 #else
@@ -230,10 +244,10 @@ int pink_trace_sysemu(pid_t tid, int sig)
 #endif
 }
 
-int pink_trace_sysemu_singlestep(pid_t tid, int sig)
+int pink_trace_sysemu_singlestep(pid_t pid, int sig)
 {
 #if PINK_HAVE_SYSEMU
-	if (pink_ptrace(PTRACE_SYSEMU_SINGLESTEP, tid, NULL,
+	if (pink_ptrace(PTRACE_SYSEMU_SINGLESTEP, pid, NULL,
 			(void *)(long)sig) < 0)
 		return -errno;
 	return 0;
@@ -242,24 +256,24 @@ int pink_trace_sysemu_singlestep(pid_t tid, int sig)
 #endif
 }
 
-int pink_trace_attach(pid_t tid)
+int pink_trace_attach(pid_t pid)
 {
-	if (pink_ptrace(PTRACE_ATTACH, tid, NULL, NULL) < 0)
+	if (pink_ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0)
 		return -errno;
 	return 0;
 }
 
-int pink_trace_detach(pid_t tid, int sig)
+int pink_trace_detach(pid_t pid, int sig)
 {
-	if (pink_ptrace(PTRACE_DETACH, tid, NULL, (void *)(long)sig) < 0)
+	if (pink_ptrace(PTRACE_DETACH, pid, NULL, (void *)(long)sig) < 0)
 		return -errno;
 	return 0;
 }
 
-int pink_trace_seize(pid_t tid, int options)
+int pink_trace_seize(pid_t pid, int options)
 {
 #if PINK_HAVE_SEIZE
-	if (pink_ptrace(PTRACE_SEIZE, tid, NULL, (void *)(long)options) < 0)
+	if (pink_ptrace(PTRACE_SEIZE, pid, NULL, (void *)(long)options) < 0)
 		return -errno;
 	return 0;
 #else
@@ -267,10 +281,10 @@ int pink_trace_seize(pid_t tid, int options)
 #endif
 }
 
-int pink_trace_interrupt(pid_t tid)
+int pink_trace_interrupt(pid_t pid)
 {
 #if PINK_HAVE_INTERRUPT
-	if (pink_ptrace(PTRACE_INTERRUPT, tid, NULL, NULL) < 0)
+	if (pink_ptrace(PTRACE_INTERRUPT, pid, NULL, NULL) < 0)
 		return -errno;
 	return 0;
 #else
@@ -278,10 +292,10 @@ int pink_trace_interrupt(pid_t tid)
 #endif
 }
 
-int pink_trace_listen(pid_t tid)
+int pink_trace_listen(pid_t pid)
 {
 #if PINK_HAVE_LISTEN
-	if (pink_ptrace(PTRACE_LISTEN, tid, NULL, NULL) < 0)
+	if (pink_ptrace(PTRACE_LISTEN, pid, NULL, NULL) < 0)
 		return -errno;
 	return 0;
 #else

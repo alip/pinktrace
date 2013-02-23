@@ -32,34 +32,20 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-PINK_GCC_ATTR((nonnull(2)))
-int pink_abi_wordsize(enum pink_abi abi, size_t *wsize)
+PINK_GCC_ATTR((pure))
+size_t pink_abi_wordsize(short abi)
 {
-	if (wsize == NULL)
-		return -EINVAL;
 #if PINK_ABIS_SUPPORTED == 1
-	if (abi == 0) {
-		*wsize = (int)(sizeof(long));
-		return 0;
-	}
-#elif PINK_ARCH_X86_64
-	switch (abi) {
-	case 0: *wsize = 8; return 0;
-	case 1: /* fall through */
-	case 2: *wsize = 4; return 0;
-	}
-#elif PINK_ARCH_X32
-	switch (abi) {
-	case 0: /* fall through */
-	case 1: *wsize = 4; return 0;
-	}
-#elif PINK_ARCH_POWERPC64
-	switch (abi) {
-	case 0: *wsize = 8; return 0;
-	case 1: *wsize = 4; return 0;
-	}
+	return ABI0_WORDSIZE;
 #else
-#error unsupported architecture
+	static const int abi_wordsize[PINK_ABIS_SUPPORTED] = {
+		ABI0_WORDSIZE,
+		ABI1_WORDSIZE,
+# if PINK_ABIS_SUPPORTED > 2
+		ABI2_WORDSIZE,
+# endif
+	};
+
+	return abi_wordsize[abi];
 #endif
-	return -EINVAL;
 }

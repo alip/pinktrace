@@ -80,10 +80,8 @@ const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
 	}
 }
 
-PINK_GCC_ATTR((nonnull(6)))
-int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
-			      const pink_regs_t *regs,
-			      bool decode_socketcall,
+PINK_GCC_ATTR((nonnull(4)))
+int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)
 {
 	int r;
@@ -96,7 +94,7 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 
 	if (!decode_socketcall) {
 		long arg;
-		r = pink_read_argument(tid, abi, regs, arg_index, &arg);
+		r = pink_read_argument(tracee, arg_index, &arg);
 		if (r < 0)
 			return r;
 		*argval = arg;
@@ -108,22 +106,20 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 	 * int socketcall(int call, unsigned long *args);
 	 */
 
-	r = pink_read_argument(tid, abi, regs, 1, &addr);
+	r = pink_read_argument(tracee, 1, &addr);
 	if (r < 0)
 		return r;
 	u_addr = addr;
-	r = pink_abi_wordsize(abi, &wsize);
-	if (r < 0)
-		return r;
+	wsize = pink_abi_wordsize(pink_process_get_abi(tracee));
 	u_addr += arg_index * wsize;
 	if (wsize == sizeof(int)) {
 		unsigned int arg;
-		if (pink_read_vm_object(tid, abi, u_addr, &arg) < 0)
+		if (pink_read_vm_object(tracee, u_addr, &arg) < 0)
 			return -errno;
 		*argval = arg;
 	} else {
 		unsigned long arg;
-		if (pink_read_vm_object(tid, abi, u_addr, &arg) < 0)
+		if (pink_read_vm_object(tracee, u_addr, &arg) < 0)
 			return -errno;
 		*argval = arg;
 	}
@@ -131,10 +127,8 @@ int pink_read_socket_argument(pid_t tid, enum pink_abi abi,
 	return true;
 }
 
-PINK_GCC_ATTR((nonnull(7)))
-int pink_read_socket_address(pid_t tid, enum pink_abi abi,
-			     const pink_regs_t *regs,
-			     bool decode_socketcall,
+PINK_GCC_ATTR((nonnull(5)))
+int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall,
 			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
 {
@@ -143,17 +137,14 @@ int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 	unsigned long addr, addrlen;
 
 	if (fd) {
-		r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-					      0, &myfd);
+		r = pink_read_socket_argument(tracee, decode_socketcall, 0, &myfd);
 		if (r < 0)
 			return r;
 		*fd = (int)myfd;
 	}
-	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-					   arg_index, &addr)) < 0)
+	if ((r = pink_read_socket_argument(tracee, decode_socketcall, arg_index, &addr)) < 0)
 		return r;
-	if ((r = pink_read_socket_argument(tid, abi, regs, decode_socketcall,
-					   arg_index + 1, &addrlen)) < 0)
+	if ((r = pink_read_socket_argument(tracee, decode_socketcall, arg_index + 1, &addrlen)) < 0)
 		return r;
 
 	if (addr == 0) {
@@ -165,8 +156,7 @@ int pink_read_socket_address(pid_t tid, enum pink_abi abi,
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));
-	/* FIXME: Check for partial write! */
-	if (pink_read_vm_data(tid, abi, addr, sockaddr->u.pad, addrlen) < 0)
+	if (pink_read_vm_data(tracee, addr, sockaddr->u.pad, addrlen) < 0)
 		return -errno;
 	sockaddr->u.pad[sizeof(sockaddr->u.pad) - 1] = '\0';
 
