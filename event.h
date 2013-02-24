@@ -109,14 +109,5 @@ enum pink_event {
 enum pink_event pink_event_decide(int status)
 	PINK_GCC_ATTR((pure));
 
-/**
- * Return a string representation of the event
- *
- * @param event Event
- * @return String representation of the event
- **/
-const char *pink_event_name(enum pink_event event)
-	PINK_GCC_ATTR((pure));
-
 /** @} */
 #endif

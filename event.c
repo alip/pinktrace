@@ -32,26 +32,3 @@ inline enum pink_event pink_event_decide(int status)
 {
 	return (unsigned)status >> 16;
 }
-
-const char *pink_event_name(enum pink_event event)
-{
-	switch (event) {
-	case PINK_EVENT_FORK:
-		return "fork";
-	case PINK_EVENT_VFORK:
-		return "vfork";
-	case PINK_EVENT_CLONE:
-		return "clone";
-	case PINK_EVENT_VFORK_DONE:
-		return "vfork_done";
-	case PINK_EVENT_EXEC:
-		return "exec";
-	case PINK_EVENT_EXIT:
-		return "exit";
-	case PINK_EVENT_STOP:
-		return "stop";
-	case PINK_EVENT_NONE:
-	default:
-		return NULL;
-	}
-}

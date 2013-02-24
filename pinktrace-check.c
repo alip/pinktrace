@@ -403,11 +403,11 @@ void check_syscall_equal_or_kill(pid_t pid, long sysnum, long sysnum_expected)
 	fail_verbose("unexpected syscall %ld"
 			" (name:%s expected:%ld %s)",
 			sysnum,
-			pink_syscall_name(sysnum, PINK_ABI_DEFAULT),
+			pink_name_syscall(sysnum, PINK_ABI_DEFAULT),
 			sysnum_expected,
 			sysnum_expected == PINK_SYSCALL_INVALID
 				? "PINK_SYSCALL_INVALID"
-				: pink_syscall_name(sysnum_expected,
+				: pink_name_syscall(sysnum_expected,
 						    PINK_ABI_DEFAULT));
 	abort();
 }
@@ -585,10 +585,7 @@ enum pink_event event_decide_and_print(int status)
 	enum pink_event e;
 
 	e = pink_event_decide(status);
-
-	info("\tevent_decide(%#x) = %u %s\n", (unsigned)status,
-	     e, pink_event_name(e));
-
+	info("\tevent_decide(%#x) = %u %s\n", (unsigned)status, e, pink_name_event(e));
 	return e;
 }
 

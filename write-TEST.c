@@ -65,16 +65,16 @@ START_TEST(TEST_write_syscall)
 		test_name = "getpid";
 		errno_expected = ENOSYS;
 		change_call = PINK_SYSCALL_INVALID;
-		test_call = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
+		test_call = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of getpid()");
 	} else if (test == TEST_LSEEK) {
 		test_name = "lseek";
 		errno_expected = EFAULT;
-		change_call = pink_syscall_lookup("open", PINK_ABI_DEFAULT);
+		change_call = pink_lookup_syscall("open", PINK_ABI_DEFAULT);
 		if (change_call == -1)
 			fail_verbose("don't know the syscall number of open()");
-		test_call = pink_syscall_lookup("lseek", PINK_ABI_DEFAULT);
+		test_call = pink_lookup_syscall("lseek", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of lseek()\n");
 	} else {
@@ -159,7 +159,7 @@ START_TEST(TEST_write_retval)
 	int change_error;
 	long change_retval;
 
-	sys_getpid = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
+	sys_getpid = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 

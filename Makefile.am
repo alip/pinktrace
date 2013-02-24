@@ -18,7 +18,7 @@ libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= \
 					     trace.c \
 					     event.c \
 					     abi.c \
-					     syscall.c \
+					     name.c \
 					     process.c \
 					     read.c \
 					     write.c \
@@ -37,7 +37,7 @@ pinktrace_include_HEADERS= \
 			   event.h \
 			   trace.h \
 			   abi.h \
-			   syscall.h \
+			   name.h \
 			   process.h \
 			   vm.h \
 			   read.h \

@@ -36,50 +36,6 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
-{
-	switch (subcall) {
-	case PINK_SOCKET_SUBCALL_SOCKET:
-		return "socket";
-	case PINK_SOCKET_SUBCALL_BIND:
-		return "bind";
-	case PINK_SOCKET_SUBCALL_CONNECT:
-		return "connect";
-	case PINK_SOCKET_SUBCALL_LISTEN:
-		return "listen";
-	case PINK_SOCKET_SUBCALL_ACCEPT:
-		return "accept";
-	case PINK_SOCKET_SUBCALL_GETSOCKNAME:
-		return "getsockname";
-	case PINK_SOCKET_SUBCALL_GETPEERNAME:
-		return "getpeername";
-	case PINK_SOCKET_SUBCALL_SOCKETPAIR:
-		return "socketpair";
-	case PINK_SOCKET_SUBCALL_SEND:
-		return "send";
-	case PINK_SOCKET_SUBCALL_RECV:
-		return "recv";
-	case PINK_SOCKET_SUBCALL_SENDTO:
-		return "sendto";
-	case PINK_SOCKET_SUBCALL_RECVFROM:
-		return "recvfrom";
-	case PINK_SOCKET_SUBCALL_SHUTDOWN:
-		return "shutdown";
-	case PINK_SOCKET_SUBCALL_SETSOCKOPT:
-		return "setsockopt";
-	case PINK_SOCKET_SUBCALL_GETSOCKOPT:
-		return "getsockopt";
-	case PINK_SOCKET_SUBCALL_SENDMSG:
-		return "sendmsg";
-	case PINK_SOCKET_SUBCALL_RECVMSG:
-		return "recvmsg";
-	case PINK_SOCKET_SUBCALL_ACCEPT4:
-		return "accept4";
-	default:
-		return NULL;
-	}
-}
-
 PINK_GCC_ATTR((nonnull(4)))
 int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)

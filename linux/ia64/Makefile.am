@@ -1,2 +1,4 @@
 SUBDIRS= .
-noinst_HEADERS= syscallent.h
+noinst_HEADERS= \
+		signalent.h
+		syscallent.h

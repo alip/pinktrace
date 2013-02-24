@@ -58,16 +58,17 @@ extern "C" {
 #include <pinktrace/compat.h>
 #include <pinktrace/compiler.h>
 #include <pinktrace/system.h>
-#include <pinktrace/pipe.h>
 #include <pinktrace/abi.h>
 #include <pinktrace/event.h>
-#include <pinktrace/syscall.h>
 #include <pinktrace/trace.h>
 #include <pinktrace/process.h>
 #include <pinktrace/vm.h>
 #include <pinktrace/read.h>
 #include <pinktrace/write.h>
 #include <pinktrace/socket.h>
+
+#include <pinktrace/name.h>
+#include <pinktrace/pipe.h>
 
 #ifdef __cplusplus
 }

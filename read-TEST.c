@@ -57,7 +57,7 @@ START_TEST(TEST_read_syscall)
 	bool it_worked = false;
 	long sys_getpid;
 
-	sys_getpid = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
+	sys_getpid = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 
@@ -115,7 +115,7 @@ START_TEST(TEST_read_syscall_sysgood)
 	bool it_worked = false;
 	long sys_getpid;
 
-	sys_getpid = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
+	sys_getpid = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 
@@ -172,7 +172,7 @@ START_TEST(TEST_read_retval_good)
 	bool insyscall = false;
 	long sys_getpid;
 
-	sys_getpid = pink_syscall_lookup("getpid", PINK_ABI_DEFAULT);
+	sys_getpid = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 
@@ -233,7 +233,7 @@ START_TEST(TEST_read_retval_fail)
 	bool insyscall = false;
 	long sys_open;
 
-	sys_open = pink_syscall_lookup("open", PINK_ABI_DEFAULT);
+	sys_open = pink_lookup_syscall("open", PINK_ABI_DEFAULT);
 	if (sys_open == -1)
 		fail_verbose("don't know the syscall number of open()");
 

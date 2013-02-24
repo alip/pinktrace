@@ -135,17 +135,6 @@ enum pink_socket_subcall {
 };
 
 /**
- * Name socket subcall
- *
- * @note Availability: Linux
- *
- * @param subcall Socket subcall
- * @return The name of the subcall
- **/
-const char *pink_socket_subcall_name(enum pink_socket_subcall subcall)
-	PINK_GCC_ATTR((pure));
-
-/**
  * Convenience macro to read socket subcall
  *
  * @see pink_socket_subcall

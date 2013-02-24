@@ -110,13 +110,13 @@ static void check_socketcall_equal_or_kill(pid_t pid, int test_sys, long subcall
 	kill(pid, SIGKILL);
 	fail_verbose("unexpected socketcall %ld (name:%s expected:%ld %s)",
 			subcall,
-			SOCKDECODE ? pink_socket_subcall_name(subcall)
-				   : pink_syscall_name(subcall, PINK_ABI_DEFAULT),
+			SOCKDECODE ? pink_name_socket_subcall(subcall)
+				   : pink_name_syscall(subcall, PINK_ABI_DEFAULT),
 			subcall_expected,
 			subcall_expected == PINK_SYSCALL_INVALID
 				? "PINK_SYSCALL_INVALID"
-				: (SOCKDECODE ? pink_socket_subcall_name(subcall_expected)
-					      : pink_syscall_name(subcall_expected, PINK_ABI_DEFAULT)));
+				: (SOCKDECODE ? pink_name_socket_subcall(subcall_expected)
+					      : pink_name_syscall(subcall_expected, PINK_ABI_DEFAULT)));
 	abort();
 }
 
