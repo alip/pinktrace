@@ -41,6 +41,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
+
 /*
  * Test whether writing syscall works.
  * 0: Change getpid() to PINK_SYSCALL_INVALID and expect -ENOSYS.
@@ -113,7 +115,9 @@ START_TEST(TEST_write_syscall)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
 				process_update_regset_or_kill(current);
 				read_syscall_or_kill(current, &sysnum);
@@ -208,7 +212,9 @@ START_TEST(TEST_write_retval)
 		}
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (!write_done && WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (!write_done && WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
 				insyscall = true;
 			} else {
@@ -270,7 +276,9 @@ START_TEST(TEST_write_argument)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
 				process_update_regset_or_kill(current);
 				read_syscall_or_kill(current, &sysnum);
@@ -340,7 +348,9 @@ START_TEST(TEST_write_vm_data)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
 				process_update_regset_or_kill(current);
 				read_syscall_or_kill(current, &sysnum);

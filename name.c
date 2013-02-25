@@ -269,6 +269,41 @@ static const struct xlat addrfams[] = {
 	{ 0,		NULL		},
 };
 
+/* Shuffle syscall numbers so that we don't have huge gaps in syscall table.
+ * The shuffling should be reversible: shuffle_scno(shuffle_scno(n)) == n.
+ */
+#if PINK_ARCH_ARM /* So far only ARM needs this */
+static long shuffle_scno(unsigned long scno)
+{
+	if (scno <= ARM_LAST_ORDINARY_SYSCALL)
+		return scno;
+
+	/* __ARM_NR_cmpxchg? Swap with LAST_ORDINARY+1 */
+	if (scno == 0x000ffff0)
+		return ARM_LAST_ORDINARY_SYSCALL+1;
+	if (scno == ARM_LAST_ORDINARY_SYSCALL+1)
+		return 0x000ffff0;
+
+	/* Is it ARM specific syscall?
+	 * Swap with [LAST_ORDINARY+2, LAST_ORDINARY+2 + LAST_SPECIAL] range.
+	 */
+	if (scno >= 0x000f0000
+	 && scno <= 0x000f0000 + ARM_LAST_SPECIAL_SYSCALL
+	) {
+		return scno - 0x000f0000 + (ARM_LAST_ORDINARY_SYSCALL+2);
+	}
+	if (/* scno >= ARM_LAST_ORDINARY_SYSCALL+2 - always true */ 1
+	 && scno <= (ARM_LAST_ORDINARY_SYSCALL+2) + ARM_LAST_SPECIAL_SYSCALL
+	) {
+		return scno + 0x000f0000 - (ARM_LAST_ORDINARY_SYSCALL+2);
+	}
+
+	return scno;
+}
+#else
+# define shuffle_scno(scno) (long)(scno)
+#endif
+
 PINK_GCC_ATTR((pure))
 static const char *xname(const struct xlat *xlat, int val)
 {
@@ -341,6 +376,7 @@ const char *pink_name_syscall(long scno, short abi)
 	scno -= SYSCALL_OFFSET;
 #endif
 
+	scno = shuffle_scno(scno);
 	if (scno < 0 || scno >= nsyscalls)
 		return NULL;
 	return sysent[scno];
@@ -366,7 +402,7 @@ long pink_lookup_syscall(const char *name, short abi)
 #ifdef SYSCALL_OFFSET
 			return scno + SYSCALL_OFFSET;
 #else
-			return scno;
+			return shuffle_scno(scno);
 #endif
 		}
 	}

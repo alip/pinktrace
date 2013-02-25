@@ -41,7 +41,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-
+#include <sys/utsname.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -52,6 +52,8 @@
 #define ANSI_GREEN		"[00;32m"
 #define ANSI_YELLOW		"[00;33m"
 #define ANSI_CYAN		"[00;36m"
+
+unsigned os_release;
 
 PINK_GCC_ATTR((format (printf, 2, 0)))
 int pprintf_va(int pretty, const char *format, va_list ap)
@@ -526,57 +528,46 @@ void trace_me_and_stop(void)
 void trace_syscall_or_kill(pid_t pid, int sig)
 {
 	int r;
-	int saved_errno;
 
 	r = pink_trace_syscall(pid, sig);
-	saved_errno = errno;
 	info("\ttrace_syscall(%u, %d) = %d (errno:%d %s)\n",
 	     pid, sig, r, errno, strerror(errno));
-	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("PTRACE_SYSCALL (pid:%u sig:%d errno:%d %s)",
-			     pid, sig, errno, strerror(errno));
+			     pid, sig, -r, strerror(-r));
 	}
 }
 
 void trace_setup_or_kill(pid_t pid, int options)
 {
 	int r;
-	int saved_errno;
 
 	r = pink_trace_setup(pid, options);
-
-	saved_errno = errno;
 	info("\ttrace_setup(%u, %#x) = %d (errno:%d %s)\n",
 			pid, (unsigned)options, r,
 			errno, strerror(errno));
-	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("PTRACE_SETOPTIONS (pid:%u opts:%#x errno:%d %s)",
-			     pid, (unsigned)options, errno, strerror(errno));
+			     pid, (unsigned)options, -r, strerror(-r));
 	}
 }
 
 void trace_geteventmsg_or_kill(pid_t pid, unsigned long *data)
 {
 	int r;
-	int saved_errno;
 
 	r = pink_trace_geteventmsg(pid, data);
-
-	saved_errno = errno;
 	info("\ttrace_geteventmsg(%u, %#lx) = %d (errno:%d %s)\n",
 	     pid, (r < 0) ? 0xbad : *data, r, errno, strerror(errno));
-	errno = saved_errno;
 
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("PTRACE_GETEVENTMSG (pid:%u errno:%d %s)",
-			     pid, errno, strerror(errno));
+			     pid, -r, strerror(-r));
 	}
 }
 
@@ -597,7 +588,7 @@ void process_alloc_or_kill(pid_t pid, struct pink_process **p)
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_process_alloc (pid:%u errno:%d %s)",
-			     pid, errno, strerror(errno));
+			     pid, -r, strerror(-r));
 	}
 }
 
@@ -610,7 +601,7 @@ void process_update_regset_or_kill(struct pink_process *current)
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_process_update_regset (pid:%u errno:%d %s)",
-			     pid, errno, strerror(errno));
+			     pid, -r, strerror(-r));
 	}
 	dump_regset(&current->regset);
 }
@@ -626,7 +617,7 @@ void read_syscall_or_kill(struct pink_process *tracee, long *sysnum)
 	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_syscall (pid:%u, errno:%d %s)",
-			     pid, errno, strerror(errno));
+			     pid, -r, strerror(-r));
 	}
 }
 
@@ -642,7 +633,7 @@ void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error)
 	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_retval (pid:%u, errno:%d %s)",
-			     pid, errno, strerror(errno));
+			     pid, -r, strerror(-r));
 	}
 }
 
@@ -658,7 +649,7 @@ void read_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long
 	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_argument (pid:%u, index:%u, errno:%d %s)",
-			     pid, arg_index, errno, strerror(errno));
+			     pid, arg_index, -r, strerror(-r));
 	}
 }
 
@@ -667,6 +658,7 @@ void read_vm_data_or_kill(struct pink_process *tracee, long addr, char *dest, si
 	ssize_t r;
 	pid_t pid = pink_process_get_pid(tracee);
 
+	errno = 0;
 	r = pink_read_vm_data(tracee, addr, dest, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
@@ -685,6 +677,7 @@ void read_vm_data_nul_or_kill(struct pink_process *tracee, long addr, char *dest
 	ssize_t r;
 	pid_t pid = pink_process_get_pid(tracee);
 
+	errno = 0;
 	r = pink_read_vm_data_nul(tracee, addr, dest, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
@@ -710,8 +703,7 @@ void read_string_array_or_kill(struct pink_process *tracee,
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_string_array (pid:%u, arg:%ld, arr_index:%u dest_len:%zu errno:%d %s)",
-			     pid, arg, arr_index, dest_len, errno,
-			     strerror(errno));
+			     pid, arg, arr_index, dest_len, errno, strerror(errno));
 	} else if ((size_t)r < dest_len) {
 		message("\tpink_read_string_array partial read,"
 				" expected:%zu got:%zd\n",
@@ -733,8 +725,7 @@ void read_socket_subcall_or_kill(struct pink_process *tracee,
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_socket_subcall (pid:%u decode:%d errno:%d %s)",
-			     pid, decode_socketcall,
-			     errno, strerror(errno));
+			     pid, decode_socketcall, -r, strerror(-r));
 	}
 	info("\tread_socket_subcall (pid:%u decode:%d) = %ld",
 	     pid, decode_socketcall, *subcall);
@@ -750,8 +741,7 @@ void read_socket_argument_or_kill(struct pink_process *tracee, bool decode_socke
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_socket_argument (pid:%u decode:%d arg_index:%u errno:%d %s",
-			     pid, decode_socketcall, arg_index,
-			     errno, strerror(errno));
+			     pid, decode_socketcall, arg_index, -r, strerror(-r));
 	}
 	info("\tread_socket_argument (pid:%u decode:%d arg_index:%u) = %ld",
 	     pid, decode_socketcall, arg_index, *argval);
@@ -768,8 +758,7 @@ void read_socket_address_or_kill(struct pink_process *tracee, bool decode_socket
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_socket_address (pid:%u decode:%d arg_index:%u errno:%d %s)",
-			     pid, decode_socketcall, arg_index,
-			     errno, strerror(errno));
+			     pid, decode_socketcall, arg_index, -r, strerror(-r));
 	}
 
 	info("\tread_socket_address (pid:%u decode:%d arg_index:%u) = %d,%p",
@@ -786,7 +775,7 @@ void write_syscall_or_kill(struct pink_process *tracee, long sysnum)
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_syscall (pid:%u sysnum:%ld errno:%d %s)",
-			     pid, sysnum, errno, strerror(errno));
+			     pid, sysnum, -r, strerror(-r));
 	}
 	info("\twrite_syscall (pid:%u sysnum:%ld) = 0",
 	     pid, sysnum);
@@ -801,8 +790,7 @@ void write_retval_or_kill(struct pink_process *tracee, long retval, int error)
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_retval (pid:%u retval:%ld error:%d errno:%d %s)",
-			     pid, retval, error, errno,
-			     strerror(errno));
+			     pid, retval, error, -r, strerror(-r));
 	}
 	info("\twrite_syscall (pid:%u retval:%ld error:%d) = 0",
 	     pid, retval, error);
@@ -817,8 +805,7 @@ void write_argument_or_kill(struct pink_process *tracee, unsigned arg_index, lon
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_argument (pid:%u arg_index:%u argval:%ld errno:%d %s)",
-			     pid, arg_index, argval, errno,
-			     strerror(errno));
+			     pid, arg_index, argval, -r, strerror(-r));
 	}
 	info("\twrite_argument (pid:%u arg_index:%u argval:%ld) = 0",
 	     pid, arg_index, argval);
@@ -834,8 +821,7 @@ void write_vm_data_or_kill(struct pink_process *tracee, long addr, const char *s
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_vm_data (pid:%u addr:%ld src:%p len:%zd errno:%d %s)",
-			     pid, addr, (void *)src, len, errno,
-			     strerror(errno));
+			     pid, addr, (void *)src, len, errno, strerror(errno));
 	} else if ((size_t)r < len) {
 		message("\twrite_vm_data partial write, expected:%zd got:%zd\n",
 			len, r);
@@ -844,11 +830,55 @@ void write_vm_data_or_kill(struct pink_process *tracee, long addr, const char *s
 	     pid, addr, (void *)src, len, r);
 }
 
+static unsigned get_os_release(void)
+{
+	unsigned rel;
+	const char *p;
+	struct utsname u;
+
+	if (uname(&u) < 0) {
+		fprintf(stderr, "uname failed (errno:%d %s)\n",
+			errno, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	/* u.release has this form: "3.2.9[-some-garbage]" */
+	rel = 0;
+	p = u.release;
+	for (;;) {
+		if (!(*p >= '0' && *p <= '9')) {
+			fprintf(stderr, "Bad OS release string: '%s'\n",
+				u.release);
+			exit(EXIT_FAILURE);
+		}
+		/* Note: this open-codes KERNEL_VERSION(): */
+		rel = (rel << 8) | atoi(p);
+		if (rel >= KERNEL_VERSION(1,0,0))
+			break;
+		while (*p >= '0' && *p <= '9')
+			p++;
+		if (*p != '.') {
+			if (rel >= KERNEL_VERSION(0,1,0)) {
+				/* "X.Y-something" means "X.Y.0" */
+				rel <<= 8;
+				break;
+			}
+			fprintf(stderr, "Bad OS release string: '%s'\n",
+				u.release);
+			exit(EXIT_FAILURE);
+		}
+		p++;
+	}
+
+	return rel;
+}
+
 int main(void)
 {
 	int number_failed;
 	SRunner *sr;
 	Suite *s;
+
+	os_release = get_os_release();
 
 	s = suite_create("pink-core");
 	if (getenv("PINK_CHECK_SKIP_TRACE") == NULL)

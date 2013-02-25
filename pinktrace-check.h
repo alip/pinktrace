@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -56,6 +56,12 @@
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
+
+#ifdef KERNEL_VERSION
+# undef KERNEL_VERSION
+#endif
+#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+extern unsigned os_release;
 
 #define DEBUG	0
 #define INFO	1

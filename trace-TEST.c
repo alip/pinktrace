@@ -205,11 +205,15 @@ START_TEST(TEST_trace_exec)
 		}
 		if (WSTOPSIG(status) == SIGTRAP) {
 			if (event_decide_and_print(status) == PINK_EVENT_EXEC) {
+				if (os_release < KERNEL_VERSION(3,0,0)) {
+					it_worked = true;
+					kill(pid, SIGKILL);
+					break;
+				}
 				trace_geteventmsg_or_kill(pid, &old_pid);
 				if ((pid_t)old_pid != pid) {
 					kill(pid, SIGKILL);
-					fail_verbose("PINK_TRACE_OPTION_EXEC works but can't tell the old pid"
-						     " (Ignore if Linux version is older than 3.0.0)");
+					fail_verbose("PINK_TRACE_OPTION_EXEC works but can't tell the old pid");
 				}
 				it_worked = true;
 				kill(pid, SIGKILL);

@@ -47,7 +47,7 @@ int pink_read_word_user(pid_t pid, long off, long *res)
 	val = pink_ptrace(PTRACE_PEEKUSER, pid, (void *)off, NULL);
 	if (val < 0)
 		return -errno;
-	if (res != NULL)
+	if (res)
 		*res = val;
 	return 0;
 }
@@ -56,8 +56,9 @@ int pink_read_word_data(pid_t pid, long off, long *res)
 {
 	long val;
 
+	errno = 0;
 	val = pink_ptrace(PTRACE_PEEKDATA, pid, (void *)off, NULL);
-	if (val < 0)
+	if (errno)
 		return -errno;
 	if (res)
 		*res = val;
@@ -72,19 +73,18 @@ int pink_read_syscall(struct pink_process *tracee, long *sysnum)
 	long sysval;
 	struct pt_regs regs = tracee->regset.arm_regs;
 
-	/*
-	 * Note: we only deal with only 32-bit CPUs here.
-	 */
+	if (regs.ARM_ip != 0) {
+		/* It is not a syscall entry */
+		return -EFAULT;
+	}
+	/* Note: we support only 32-bit CPUs, not 26-bit */
+
 	if (regs.ARM_cpsr & 0x20) {
-		/*
-		 * Get the Thumb-mode system call number
-		 */
+		/* Thumb mode */
 		sysval = regs.ARM_r7;
 	} else {
-		/*
-		 * Get the ARM-mode system call number
-		 */
-		if ((r = pink_read_word_data(tracee->pid, regs.ARM_pc - 4, &sysval)) < 0)
+		/* ARM mode */
+		if ((r = pink_read_word_data(tracee->pid, (long)(regs.ARM_pc - 4), &sysval)) < 0)
 			return r;
 
 		/* EABI syscall convention? */
@@ -92,14 +92,15 @@ int pink_read_syscall(struct pink_process *tracee, long *sysnum)
 			sysval = regs.ARM_r7; /* yes */
 		} else {
 			if ((sysval & 0x0ff00000) != 0x0f900000) {
-				/* unknown syscall trap: 0x%08lx (sysval) */
-				return -EFAULT;
+				fprintf(stderr, "pid %d unknown syscall trap 0x%08lx\n",
+					tracee->pid, sysval);
+				return -1;
 			}
 			/* Fixup the syscall number */
 			sysval &= 0x000fffff;
 		}
 	}
-	sysval = _pink_syscall_shuffle(sysval);
+
 	*sysnum = sysval;
 	return 0;
 #elif PINK_ARCH_IA64

@@ -53,6 +53,8 @@
 #define SYS_socketcall	PINK_SYSCALL_INVALID
 #endif
 
+static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
+
 enum {
 	TEST_SYS_BIND,
 	TEST_SYS_CONNECT,
@@ -174,7 +176,9 @@ START_TEST(TEST_read_socket_address_af_null)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
@@ -269,7 +273,9 @@ START_TEST(TEST_read_socket_address_af_unix)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
@@ -373,7 +379,9 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
@@ -481,7 +489,9 @@ START_TEST(TEST_read_socket_address_af_inet)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
@@ -587,7 +597,9 @@ START_TEST(TEST_read_socket_address_af_inet6)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
@@ -694,7 +706,9 @@ START_TEST(TEST_read_socket_address_af_netlink)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);

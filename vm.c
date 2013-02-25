@@ -174,7 +174,7 @@ ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, 
 	return count_written;
 }
 
-
+#if PINK_HAVE_PROCESS_VM_READV
 static ssize_t _pink_process_vm_readv(pid_t pid,
 				      const struct iovec *local_iov,
 				      unsigned long liovcnt,
@@ -183,23 +183,22 @@ static ssize_t _pink_process_vm_readv(pid_t pid,
 				      unsigned long flags)
 {
 	ssize_t r;
-#if defined(HAVE_PROCESS_VM_READV)
+# if defined(HAVE_PROCESS_VM_READV)
 	r = process_vm_readv(pid,
 			     local_iov, liovcnt,
 			     remote_iov, riovcnt,
 			     flags);
-#elif defined(__NR_process_vm_readv)
+# elif defined(__NR_process_vm_readv)
 	r = syscall(__NR_process_vm_readv, (long)pid,
 		    local_iov, liovcnt,
 		    remote_iov, riovcnt, flags);
-#else
+# else
 	errno = ENOSYS;
 	return -1;
-#endif
+# endif
 	return r;
 }
 
-#if PINK_HAVE_PROCESS_VM_READV
 # define process_vm_readv _pink_process_vm_readv
 #else
 # define process_vm_readv(...) (errno = ENOSYS, -1)
@@ -264,6 +263,7 @@ ssize_t pink_vm_cread_nul(struct pink_process *tracee, long addr, char *dest, si
 	return count_read;
 }
 
+#if PINK_HAVE_PROCESS_VM_WRITEV
 static ssize_t _pink_process_vm_writev(pid_t pid,
 				       const struct iovec *local_iov,
 				       unsigned long liovcnt,
@@ -272,24 +272,23 @@ static ssize_t _pink_process_vm_writev(pid_t pid,
 				       unsigned long flags)
 {
 	ssize_t r;
-#if defined(HAVE_PROCESS_VM_WRITEV)
+# if defined(HAVE_PROCESS_VM_WRITEV)
 	r = process_vm_writev(pid,
 			      local_iov, liovcnt,
 			      remote_iov, riovcnt,
 			      flags);
-#elif defined(__NR_process_vm_writev)
+# elif defined(__NR_process_vm_writev)
 	r = syscall(__NR_process_vm_writev, (long)pid,
 		    local_iov, liovcnt,
 		    remote_iov, riovcnt,
 		    flags);
-#else
+# else
 	errno = ENOSYS;
 	return -1;
-#endif
+# endif
 	return r;
 }
 
-#if PINK_HAVE_PROCESS_VM_WRITEV
 # define process_vm_writev _pink_process_vm_writev
 #else
 # define process_vm_writev(...) (errno = ENOSYS, -1)

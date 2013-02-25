@@ -41,12 +41,15 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
+
 /*
  * Test whether reading system call number works with OPTION_SYSGOOD.
- * First fork a new child and call syscall(SYS_getpid) and then when it stops
- * with SIGTRAP, call pink_read_syscall().
+ * First fork a new child and call syscall(SYS_getpid), call
+ * ptrace(PTRACE_SETOPTIONS) on it, and then when it stops with
+ * (SIGTRAP|0x80) call pink_read_syscall().
  *
- * Note: we don't call getpid() but use syscall() here instead because C
+ * Note: we don't call getpid() here but use syscall() instead because C
  * libraries like glibc may cache the result of getpid() thus returning without
  * calling the actual system call.
  */
@@ -81,68 +84,9 @@ START_TEST(TEST_read_syscall)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
-			process_update_regset_or_kill(current);
-			read_syscall_or_kill(current, &sysnum);
-			check_syscall_equal_or_kill(pid, sysnum, sys_getpid);
-			it_worked = true;
-			kill(pid, SIGKILL);
-			break;
-		}
-		trace_syscall_or_kill(pid, 0);
-	}
-
-	if (!it_worked)
-		fail_verbose("Test for reading system call number failed");
-}
-END_TEST
-
-/*
- * Test whether reading system call number works with OPTION_SYSGOOD.
- * First fork a new child and call syscall(SYS_getpid), call
- * ptrace(PTRACE_SETOPTIONS) on it, and then when it stops with
- * (SIGTRAP | 0x80) call pink_read_syscall().
- *
- * Note: we don't call getpid() here but use syscall() instead because C
- * libraries like glibc may cache the result of getpid() thus returning without
- * calling the actual system call.
- */
-START_TEST(TEST_read_syscall_sysgood)
-{
-	const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
-	pid_t pid;
-	struct pink_process *current;
-	bool it_worked = false;
-	long sys_getpid;
-
-	sys_getpid = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
-	if (sys_getpid == -1)
-		fail_verbose("don't know the syscall number of getpid()");
-
-	pid = fork_assert();
-	if (pid == 0) {
-		trace_me_and_stop();
-		syscall(sys_getpid); /* glibc may cache getpid() */
-		_exit(0);
-	}
-	process_alloc_or_kill(pid, &current);
-
-	LOOP_WHILE_TRUE() {
-		int status;
-		pid_t tracee_pid;
-		long sysnum;
-
-		tracee_pid = wait_verbose(&status);
-		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
-			break;
-		if (check_exit_code_or_fail(status, 0))
-			break;
-		check_signal_or_fail(status, 0);
-		check_stopped_or_kill(pid, status);
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
-		}
-		if (WSTOPSIG(status) == (SIGTRAP | 0x80)) {
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_syscall_or_kill(current, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, sys_getpid);
@@ -197,7 +141,9 @@ START_TEST(TEST_read_retval_good)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
 				process_update_regset_or_kill(current);
 				read_syscall_or_kill(current, &sysnum);
@@ -258,7 +204,9 @@ START_TEST(TEST_read_retval_fail)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
 				process_update_regset_or_kill(current);
 				read_syscall_or_kill(current, &sysnum);
@@ -323,7 +271,9 @@ START_TEST(TEST_read_argument)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_syscall_or_kill(current, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
@@ -384,7 +334,9 @@ START_TEST(TEST_read_vm_data)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_syscall_or_kill(current, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
@@ -448,7 +400,9 @@ START_TEST(TEST_read_vm_data_nul)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_syscall_or_kill(current, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
@@ -520,7 +474,9 @@ START_TEST(TEST_read_string_array)
 			break;
 		check_signal_or_fail(status, 0);
 		check_stopped_or_kill(tracee_pid, status);
-		if (WSTOPSIG(status) == SIGTRAP) {
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			process_update_regset_or_kill(current);
 			read_syscall_or_kill(current, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
@@ -560,7 +516,6 @@ TCase *create_testcase_read(void)
 	TCase *tc = tcase_create("read");
 
 	tcase_add_test(tc, TEST_read_syscall);
-	tcase_add_test(tc, TEST_read_syscall_sysgood);
 	tcase_add_test(tc, TEST_read_retval_good);
 	tcase_add_test(tc, TEST_read_retval_fail);
 	tcase_add_loop_test(tc, TEST_read_argument, 0, PINK_MAX_ARGS);
