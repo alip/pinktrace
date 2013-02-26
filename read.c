@@ -235,7 +235,12 @@ int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *ar
 		return -EINVAL;
 
 #if PINK_ARCH_ARM
-	*argval = tracee->regset.arm_regs.uregs[arg_index];
+	struct pt_regs r = tracee->regset.arm_regs;
+
+	if (arg_index == 0)
+		*argval = r.ARM_ORIG_r0;
+	else
+		*argval = r.uregs[arg_index];
 	return 0;
 #elif PINK_ARCH_IA64
 	int r;

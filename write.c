@@ -128,11 +128,16 @@ int pink_write_argument(struct pink_process *tracee, unsigned arg_index, long ar
 {
 	if (arg_index >= PINK_MAX_ARGS)
 		return -EINVAL;
+
 #if PINK_ARCH_ARM
-	if (arg_index < 5)
+	if (arg_index == 0) {
+		/* TODO: do this with pink_write_word_user() */
+		struct pt_regs r = tracee->regset.arm_regs;
+		r.ARM_ORIG_r0 = argval;
+		return pink_trace_set_regs(tracee->pid, &r);
+	} else {
 		return pink_write_word_user(tracee->pid, sizeof(long) * arg_index, argval);
-	/* TODO: how to write arg_index=5? on ARM? */
-	return -ENOTSUP;
+	}
 #elif PINK_ARCH_IA64
 	/* TODO: Implement pink_write_argument() on IA64 */
 	return -ENOTSUP;
