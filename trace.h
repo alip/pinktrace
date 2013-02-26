@@ -130,15 +130,16 @@
 #define PINK_TRACE_OPTION_SECCOMP   (1 << 7)
 
 /**
- * Small wrapper around @e ptrace(2) addressing oddities
+ * Wrapper function for @e ptrace(2) function, addressing oddities.
  *
  * @param req Ptrace request
  * @param pid Process ID
  * @param addr Address, see "man 2 ptrace"
  * @param data Data, see "man 2 ptrace"
- * @return Same as @e ptrace(2)
+ * @param retval Pointer to store the return value of @e ptrace(2) or NULL
+ * @return 0 on success, negated errno on failure
  **/
-long pink_ptrace(int req, pid_t pid, void *addr, void *data);
+int pink_ptrace(int req, pid_t pid, void *addr, void *data, long *retval);
 
 /**
  * Indicates that this process is to be traced by its parent. Any signal

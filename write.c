@@ -40,16 +40,12 @@
 
 int pink_write_word_user(pid_t pid, long off, long val)
 {
-	if (pink_ptrace(PTRACE_POKEUSER, pid, (void *)off, (void *)val) < 0)
-		return -errno;
-	return 0;
+	return pink_ptrace(PTRACE_POKEUSER, pid, (void *)off, (void *)val, NULL);
 }
 
 int pink_write_word_data(pid_t pid, long off, long val)
 {
-	if (pink_ptrace(PTRACE_POKEDATA, pid, (void *)off, (void *)val) < 0)
-		return -errno;
-	return 0;
+	return pink_ptrace(PTRACE_POKEDATA, pid, (void *)off, (void *)val, NULL);
 }
 
 int pink_write_syscall(struct pink_process *tracee, long sysnum)
@@ -59,10 +55,8 @@ int pink_write_syscall(struct pink_process *tracee, long sysnum)
 # ifndef PTRACE_SET_SYSCALL
 #  define PTRACE_SET_SYSCALL 23
 # endif
-	r = pink_ptrace(PTRACE_SET_SYSCALL, tracee->pid,
-			NULL, (void *)(long)(sysnum & 0xffff));
-	if (r < 0)
-		r = -errno;
+	r = pink_ptrace(PTRACE_SET_SYSCALL, tracee->pid, NULL,
+			(void *)(long)(sysnum & 0xffff), NULL);
 #elif PINK_ARCH_IA64
 	if (tracee->regset.abi == 1) /* ia32 */
 		r = pink_write_word_user(tracee->pid, PT_R1, sysnum);

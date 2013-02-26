@@ -42,27 +42,12 @@
 
 int pink_read_word_user(pid_t pid, long off, long *res)
 {
-	long val;
-
-	val = pink_ptrace(PTRACE_PEEKUSER, pid, (void *)off, NULL);
-	if (val < 0)
-		return -errno;
-	if (res)
-		*res = val;
-	return 0;
+	return pink_ptrace(PTRACE_PEEKUSER, pid, (void *)off, NULL, res);
 }
 
 int pink_read_word_data(pid_t pid, long off, long *res)
 {
-	long val;
-
-	errno = 0;
-	val = pink_ptrace(PTRACE_PEEKDATA, pid, (void *)off, NULL);
-	if (errno)
-		return -errno;
-	if (res)
-		*res = val;
-	return 0;
+	return pink_ptrace(PTRACE_PEEKDATA, pid, (void *)off, NULL, res);
 }
 
 PINK_GCC_ATTR((nonnull(2)))
@@ -171,11 +156,9 @@ int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
 	int r;
 	long r8, r10;
 
-	r = pink_read_word_user(tracee->pid, PT_R8, &r8);
-	if (r < 0)
+	if ((r = pink_read_word_user(tracee->pid, PT_R8, &r8)) < 0)
 		return r;
-	r = pink_read_word_user(tracee->pid, PT_R10, &r10);
-	if (r < 0)
+	if ((r = pink_read_word_user(tracee->pid, PT_R10, &r10)) < 0)
 		return r;
 
 	if (tracee->regset.abi == 1) { /* ia32 */

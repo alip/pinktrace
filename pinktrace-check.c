@@ -628,7 +628,7 @@ void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error)
 
 	r = pink_read_retval(tracee, retval, error);
 	if (r == 0) {
-		info("\tread_retval (pid:%u) = %ld,%d", pid,
+		info("\tread_retval (pid:%u) = %ld,%d\n", pid,
 		     *retval, *error);
 	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
