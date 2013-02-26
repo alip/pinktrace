@@ -58,7 +58,7 @@ int pink_write_syscall(struct pink_process *tracee, long sysnum)
 	r = pink_ptrace(PTRACE_SET_SYSCALL, tracee->pid, NULL,
 			(void *)(long)(sysnum & 0xffff), NULL);
 #elif PINK_ARCH_IA64
-	if (tracee->regset.abi == 1) /* ia32 */
+	if (tracee->regset.ia32)
 		r = pink_write_word_user(tracee->pid, PT_R1, sysnum);
 	else
 		r = pink_write_word_user(tracee->pid, PT_R15, sysnum);
@@ -139,8 +139,33 @@ int pink_write_argument(struct pink_process *tracee, unsigned arg_index, long ar
 		return pink_write_word_user(tracee->pid, sizeof(long) * arg_index, argval);
 	}
 #elif PINK_ARCH_IA64
-	/* TODO: Implement pink_write_argument() on IA64 */
-	return -ENOTSUP;
+	if (tracee->regset.ia32) {
+		static const int argreg[PINK_MAX_ARGS] = { PT_R11 /* EBX = out0 */,
+						           PT_R9  /* ECX = out1 */,
+						           PT_R10 /* EDX = out2 */,
+						           PT_R14 /* ESI = out3 */,
+						           PT_R15 /* EDI = out4 */,
+						           PT_R13 /* EBP = out5 */};
+		return pink_write_word_user(tracee->pid, argreg[arg_index], argval);
+	} else {
+		unsigned long cfm, sof, sol;
+		long bsp;
+		unsigned long arg_state;
+
+		if ((r = pink_read_word_user(tracee->pid, PT_AR_BSP, &bsp)) < 0)
+			return r;
+		if ((r = pink_read_word_user(tracee->pid, PT_CFM, (long *)&cfm)) < 0)
+			return r;
+
+		sof = (cfm >> 0) & 0x7f;
+		sol = (cfm >> 7) & 0x7f;
+		bsp = (long) ia64_rse_skip_regs((unsigned long *) bsp, -sof + sol);
+		state = (unsigned long)bsp;
+
+		return pink_write_vm_data(tracee->pid,
+					  (unsigned long)ia64_rse_skip_regs(state, arg_index),
+					  (const char *) &argval, sizeof(long));
+	}
 #elif PINK_ARCH_POWERPC
 	return pink_write_word_user(tracee->pid,
 				    (arg_index == 0) ? (sizeof(unsigned long) * PT_ORIG_R3)

@@ -161,7 +161,7 @@ int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
 	if ((r = pink_read_word_user(tracee->pid, PT_R10, &r10)) < 0)
 		return r;
 
-	if (tracee->regset.abi == 1) { /* ia32 */
+	if (tracee->regset.ia32) {
 		int err;
 
 		err = (int)r8;
@@ -171,7 +171,7 @@ int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
 		} else {
 			myrval = err;
 		}
-	} else {
+	} else { /* !ia32 */
 		if (r10) {
 			myrval = -1;
 			myerror = r8;
@@ -246,7 +246,7 @@ int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *ar
 	int r;
 	long myval;
 
-	if (tracee->regset.abi == 0) { /* !ia32 */
+	if (!tracee->regset.ia32) {
 		unsigned long *out0, cfm, sof, sol, addr;
 		long rbs_end;
 #		ifndef PT_RBS_END
