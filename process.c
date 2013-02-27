@@ -32,7 +32,7 @@ int pink_process_alloc(pid_t pid, struct pink_process **procptr)
 {
 	struct pink_process *p;
 
-	p = malloc(sizeof(struct pink_process));
+	p = calloc(1, sizeof(struct pink_process));
 	if (!p)
 		return -errno;
 
