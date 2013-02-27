@@ -136,7 +136,7 @@ static inline int is_negated_errno(unsigned long int val, size_t current_wordsiz
 	return val > max;
 }
 
-PINK_GCC_ATTR((nonnull(2,3)))
+PINK_GCC_ATTR((nonnull(2)))
 int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
 {
 	long myrval;

@@ -89,11 +89,11 @@ int pink_read_syscall(struct pink_process *tracee, long *sysnum)
  *
  * @param tracee Traced process
  * @param retval Pointer to store the return value, must @b not be @e NULL
- * @param error Pointer to store the error condition, must @b not be @e NULL
+ * @param error Pointer to store the error condition
  * @return 0 on success, negated errno on failure
  **/
 int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
-	PINK_GCC_ATTR((nonnull(2,3)));
+	PINK_GCC_ATTR((nonnull(2)));
 
 /**
  * Read the specified system call argument
