@@ -53,7 +53,9 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include <sys/types.h>
+
 #include <pinktrace/about.h>
 #include <pinktrace/compat.h>
 #include <pinktrace/compiler.h>

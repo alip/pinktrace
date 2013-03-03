@@ -38,6 +38,7 @@ pinktrace_include_HEADERS= \
 			   trace.h \
 			   abi.h \
 			   name.h \
+			   pipe.h \
 			   process.h \
 			   vm.h \
 			   read.h \

@@ -128,7 +128,7 @@ int pink_trace_set_regset(pid_t pid, const void *regset, int n_type)
 #endif
 }
 
-int pink_trace_get_siginfo(pid_t pid, siginfo_t *info)
+int pink_trace_get_siginfo(pid_t pid, void *info)
 {
 #if PINK_HAVE_GETSIGINFO
 	return pink_ptrace(PTRACE_GETSIGINFO, pid, NULL, info, NULL);

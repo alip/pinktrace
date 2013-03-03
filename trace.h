@@ -274,7 +274,7 @@ int pink_trace_set_regset(pid_t pid, const void *regset, int n_type);
  * @param info Signal information
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_get_siginfo(pid_t pid, siginfo_t *info);
+int pink_trace_get_siginfo(pid_t pid, void *info);
 
 /*
  * Set the tracing options
