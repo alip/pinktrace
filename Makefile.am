@@ -19,6 +19,7 @@ libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= \
 					     event.c \
 					     abi.c \
 					     name.c \
+					     pipe.c \
 					     process.c \
 					     read.c \
 					     write.c \
