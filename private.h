@@ -76,7 +76,7 @@
 
 #if PINK_ARCH_ARM || PINK_ARCH_POWERPC
 # include <asm/ptrace.h>
-#elif PINK_ARCH_X86 || PINK_ARCH_X86_64 || PINK_ARCH_X32
+#elif PINK_ARCH_I386 || PINK_ARCH_X86_64 || PINK_ARCH_X32
 # include <sys/user.h>
 #endif
 
