@@ -46,8 +46,8 @@
 #if PINK_ARCH_X86_64
 # define PINK_ABIS_SUPPORTED 3
 # define PINK_ABI_X86_64 0
-# define PINK_ABI_X32 1
-# define PINK_ABI_I386 2
+# define PINK_ABI_I386 1
+# define PINK_ABI_X32 2
 #endif
 
 #if PINK_ARCH_X32
