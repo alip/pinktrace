@@ -28,48 +28,37 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-int pink_process_alloc(pid_t pid, struct pink_process **procptr)
+static void pink_regset_zero(struct pink_regset *regset)
 {
-	struct pink_process *p;
+	memset(regset, 0, sizeof(struct pink_regset));
+}
 
-	p = calloc(1, sizeof(struct pink_process));
-	if (!p)
+PINK_GCC_ATTR((nonnull(1)))
+int pink_regset_alloc(struct pink_regset **regptr)
+{
+	struct pink_regset *r;
+
+	r = malloc(sizeof(struct pink_regset));
+	if (!r)
 		return -errno;
+	pink_regset_zero(r);
 
-	p->pid = pid;
-	*procptr = p;
+	*regptr = r;
 	return 0;
 }
 
-void pink_process_free(struct pink_process *proc)
+void pink_regset_free(struct pink_regset *regset)
 {
-	free(proc);
+	free(regset);
 }
 
-pid_t pink_process_get_pid(const struct pink_process *proc)
-{
-	return proc->pid;
-}
-
-void pink_process_set_pid(struct pink_process *proc, pid_t pid)
-{
-	proc->pid = pid;
-}
-
-short pink_process_get_abi(const struct pink_process *proc)
-{
-#if PINK_ABIS_SUPPORTED == 1
-	return PINK_ABI_DEFAULT;
-#else
-	return proc->regset.abi;
-#endif
-}
-
-int pink_process_update_regset(struct pink_process *proc)
+int pink_regset_fill(pid_t pid, struct pink_regset *regset)
 {
 	int r;
-	pid_t pid = proc->pid;
-	struct pink_regset *regset = &proc->regset;
+
+#if PINK_ABIS_SUPPORTED == 1
+	regset->abi = PINK_ABI_DEFAULT;
+#endif
 
 #if PINK_ARCH_ARM
 	if ((r = pink_trace_get_regs(pid, &regset->arm_regs)) < 0)

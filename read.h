@@ -75,36 +75,50 @@ int pink_read_word_user(pid_t pid, long off, long *res);
 int pink_read_word_data(pid_t pid, long off, long *res);
 
 /**
+ * Read the system call ABI
+ *
+ * @param pid Process ID
+ * @param regset Registry set
+ * @param abi Pointer to store the system call ABI, must @b not be @e NULL
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_read_abi(pid_t pid, struct pink_regset *regset, short *abi)
+	PINK_GCC_ATTR((nonnull(3)));
+
+/**
  * Read the system call number
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param sysnum Pointer to store the system call, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_syscall(struct pink_process *tracee, long *sysnum)
-	PINK_GCC_ATTR((nonnull(2)));
+int pink_read_syscall(pid_t pid, struct pink_regset *regset, long *sysnum)
+	PINK_GCC_ATTR((nonnull(3)));
 
 /**
  * Read the return value
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param retval Pointer to store the return value, must @b not be @e NULL
  * @param error Pointer to store the error condition
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_retval(struct pink_process *tracee, long *retval, int *error)
-	PINK_GCC_ATTR((nonnull(2)));
+int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *error)
+	PINK_GCC_ATTR((nonnull(3)));
 
 /**
  * Read the specified system call argument
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param arg_index Index of the argument, first argument is 0
  * @param argval Pointer to store the value of the argument, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *argval)
-	PINK_GCC_ATTR((nonnull(3)));
+int pink_read_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index, long *argval)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Read len bytes of data of tracee at address @b addr, to our address
@@ -118,7 +132,8 @@ int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *ar
  * @see pink_vm_lread()
  * @see PINK_HAVE_PROCESS_VM_READV
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param addr Address in tracee's address space
  * @param dest Pointer to store the data, must @b not be @e NULL
  * @param len Number of bytes of data to read
@@ -126,8 +141,8 @@ int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *ar
  *         On error, -1 is returned and errno is set appropriately.
  *         Check the return value for partial reads.
  **/
-ssize_t pink_read_vm_data(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_read_vm_data(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Like pink_read_vm_data() but instead of setting errno, this function returns
@@ -135,22 +150,23 @@ ssize_t pink_read_vm_data(struct pink_process *tracee, long addr, char *dest, si
  *
  * @see pink_read_vm_data()
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param addr Address in tracee's address space
  * @param dest Pointer to store the data, must @b not be @e NULL
  * @param len Number of bytes of data to read
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_vm_data_full(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+int pink_read_vm_data_full(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Convenience macro to read an object
  *
  * @see pink_read_vm_data()
  **/
-#define pink_read_vm_object(tracee, addr, objp) \
-		pink_read_vm_data((tracee), (addr), \
+#define pink_read_vm_object(pid, regset, addr, objp) \
+		pink_read_vm_data((pid), (regset), (addr), \
 				  (char *)(objp), sizeof(*(objp)))
 
 /**
@@ -158,9 +174,9 @@ int pink_read_vm_data_full(struct pink_process *tracee, long addr, char *dest, s
  *
  * @see pink_read_vm_data_full()
  **/
-#define pink_read_vm_object_full(tracee, addr, objp) \
-		pink_read_vm_data_full((tracee), (addr), \
-				  (char *)(objp), sizeof(*(objp)))
+#define pink_read_vm_object_full(pid, regset, addr, objp) \
+		pink_read_vm_data_full((pid), (regset), (addr), \
+				       (char *)(objp), sizeof(*(objp)))
 
 /**
  * Like pink_read_vm_data() but make the additional effort of looking for a
@@ -168,16 +184,16 @@ int pink_read_vm_data_full(struct pink_process *tracee, long addr, char *dest, s
  *
  * @see pink_read_vm_data()
  **/
-ssize_t pink_read_vm_data_nul(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_read_vm_data_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Synonym for pink_read_vm_data_nul()
  *
  * @see pink_read_vm_data_nul()
  **/
-#define pink_read_string(tracee, addr, dest, len) \
-		pink_read_vm_data_nul((tracee), (addr), (dest), (len))
+#define pink_read_string(pid, regset, addr, dest, len) \
+		pink_read_vm_data_nul((pid), (regset), (addr), (dest), (len))
 
 /**
  * Read the requested member of a NULL-terminated string array
@@ -185,7 +201,8 @@ ssize_t pink_read_vm_data_nul(struct pink_process *tracee, long addr, char *dest
  * @see pink_read_string()
  * @see pink_read_vm_data_nul()
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param arg Address of the argument, see pink_read_argument()
  * @param arr_index Array index
  * @param dest Pointer to store the result, must @b not be @e NULL
@@ -195,11 +212,11 @@ ssize_t pink_read_vm_data_nul(struct pink_process *tracee, long addr, char *dest
  *                @e NULL, in which case the dest argument is left unmodified.
  * @return Same as pink_read_vm_data_nul()
  **/
-ssize_t pink_read_string_array(struct pink_process *tracee,
+ssize_t pink_read_string_array(pid_t pid, struct pink_regset *regset,
 			       long arg, unsigned arr_index,
 			       char *dest, size_t dest_len,
 			       bool *nullptr)
-	PINK_GCC_ATTR((nonnull(4)));
+	PINK_GCC_ATTR((nonnull(5)));
 
 /** @} */
 #endif

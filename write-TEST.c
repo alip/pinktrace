@@ -51,7 +51,7 @@ static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
 START_TEST(TEST_write_syscall)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 
@@ -100,7 +100,7 @@ START_TEST(TEST_write_syscall)
 	}
 #undef TEST_GETPID
 #undef TEST_LSEEK
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -119,14 +119,14 @@ START_TEST(TEST_write_syscall)
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
-				process_update_regset_or_kill(current);
-				read_syscall_or_kill(current, &sysnum);
+				regset_fill_or_kill(pid, regset);
+				read_syscall_or_kill(pid, regset, &sysnum);
 				check_syscall_equal_or_kill(pid, sysnum, test_call);
-				write_syscall_or_kill(current, change_call);
+				write_syscall_or_kill(pid, regset, change_call);
 				insyscall = true;
 			} else {
-				process_update_regset_or_kill(current);
-				read_retval_or_kill(current, &rval, &error);
+				regset_fill_or_kill(pid, regset);
+				read_retval_or_kill(pid, regset, &rval, &error);
 				check_retval_equal_or_kill(pid, rval, -1, error, errno_expected);
 				it_worked = true;
 				kill(pid, SIGKILL);
@@ -149,7 +149,7 @@ END_TEST
 START_TEST(TEST_write_retval)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 	bool write_done = false;
@@ -197,7 +197,7 @@ START_TEST(TEST_write_retval)
 		}
 		_exit(EXIT_SUCCESS);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -218,8 +218,8 @@ START_TEST(TEST_write_retval)
 			if (!insyscall) {
 				insyscall = true;
 			} else {
-				process_update_regset_or_kill(current);
-				write_retval_or_kill(current, change_retval, change_error);
+				regset_fill_or_kill(pid, regset);
+				write_retval_or_kill(pid, regset, change_retval, change_error);
 				write_done = true;
 			}
 		}
@@ -240,7 +240,7 @@ END_TEST
 START_TEST(TEST_write_argument)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 	int arg_index = _i;
@@ -262,7 +262,7 @@ START_TEST(TEST_write_argument)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -280,14 +280,14 @@ START_TEST(TEST_write_argument)
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
-				process_update_regset_or_kill(current);
-				read_syscall_or_kill(current, &sysnum);
+				regset_fill_or_kill(pid, regset);
+				read_syscall_or_kill(pid, regset, &sysnum);
 				check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
-				write_argument_or_kill(current, arg_index, newval);
+				write_argument_or_kill(pid, regset, arg_index, newval);
 				insyscall = true;
 			} else {
-				process_update_regset_or_kill(current);
-				read_argument_or_kill(current, arg_index, &argval);
+				regset_fill_or_kill(pid, regset);
+				read_argument_or_kill(pid, regset, arg_index, &argval);
 				check_argument_equal_or_kill(pid, argval, newval);
 				it_worked = true;
 				kill(pid, SIGKILL);
@@ -311,7 +311,7 @@ END_TEST
 START_TEST(TEST_write_vm_data)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 	int arg_index = _i;
@@ -334,7 +334,7 @@ START_TEST(TEST_write_vm_data)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -352,16 +352,16 @@ START_TEST(TEST_write_vm_data)
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
-				process_update_regset_or_kill(current);
-				read_syscall_or_kill(current, &sysnum);
+				regset_fill_or_kill(pid, regset);
+				read_syscall_or_kill(pid, regset, &sysnum);
 				check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
-				read_argument_or_kill(current, arg_index, &argval);
-				write_vm_data_or_kill(current, argval, newstr, sizeof(newstr));
+				read_argument_or_kill(pid, regset, arg_index, &argval);
+				write_vm_data_or_kill(pid, regset, argval, newstr, sizeof(newstr));
 				insyscall = true;
 			} else {
-				process_update_regset_or_kill(current);
-				read_argument_or_kill(current, arg_index, &argval);
-				read_vm_data_or_kill(current, argval, getstr, sizeof(getstr));
+				regset_fill_or_kill(pid, regset);
+				read_argument_or_kill(pid, regset, arg_index, &argval);
+				read_vm_data_or_kill(pid, regset, argval, getstr, sizeof(getstr));
 				if (strcmp(newstr, getstr) != 0) {
 					kill(pid, SIGKILL);
 					fail_verbose("VM data not identical"

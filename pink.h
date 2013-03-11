@@ -63,7 +63,7 @@ extern "C" {
 #include <pinktrace/abi.h>
 #include <pinktrace/event.h>
 #include <pinktrace/trace.h>
-#include <pinktrace/process.h>
+#include <pinktrace/regset.h>
 #include <pinktrace/vm.h>
 #include <pinktrace/read.h>
 #include <pinktrace/write.h>

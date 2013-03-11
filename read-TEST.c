@@ -56,7 +56,7 @@ static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
 START_TEST(TEST_read_syscall)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	long sys_getpid;
 
@@ -70,7 +70,7 @@ START_TEST(TEST_read_syscall)
 		syscall(sys_getpid); /* glibc may cache getpid() */
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -87,8 +87,8 @@ START_TEST(TEST_read_syscall)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_syscall_or_kill(current, &sysnum);
+			regset_fill_or_kill(pid, regset);
+			read_syscall_or_kill(pid, regset, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, sys_getpid);
 			it_worked = true;
 			kill(pid, SIGKILL);
@@ -111,7 +111,7 @@ END_TEST
 START_TEST(TEST_read_retval_good)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 	long sys_getpid;
@@ -126,7 +126,7 @@ START_TEST(TEST_read_retval_good)
 		syscall(sys_getpid); /* glibc may cache getpid() */
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -145,13 +145,13 @@ START_TEST(TEST_read_retval_good)
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
-				process_update_regset_or_kill(current);
-				read_syscall_or_kill(current, &sysnum);
+				regset_fill_or_kill(pid, regset);
+				read_syscall_or_kill(pid, regset, &sysnum);
 				check_syscall_equal_or_kill(pid, sysnum, sys_getpid);
 				insyscall = true;
 			} else {
-				process_update_regset_or_kill(current);
-				read_retval_or_kill(current, &rval, &error);
+				regset_fill_or_kill(pid, regset);
+				read_retval_or_kill(pid, regset, &rval, &error);
 				check_retval_equal_or_kill(pid, rval, pid, error, 0);
 				it_worked = true;
 				kill(pid, SIGKILL);
@@ -174,7 +174,7 @@ END_TEST
 START_TEST(TEST_read_retval_fail)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 	long sys_open;
@@ -189,7 +189,7 @@ START_TEST(TEST_read_retval_fail)
 		syscall(sys_open, 0, 0);
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -208,13 +208,13 @@ START_TEST(TEST_read_retval_fail)
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
 			if (!insyscall) {
-				process_update_regset_or_kill(current);
-				read_syscall_or_kill(current, &sysnum);
+				regset_fill_or_kill(pid, regset);
+				read_syscall_or_kill(pid, regset, &sysnum);
 				check_syscall_equal_or_kill(pid, sysnum, sys_open);
 				insyscall = true;
 			} else {
-				process_update_regset_or_kill(current);
-				read_retval_or_kill(current, &rval, &error);
+				regset_fill_or_kill(pid, regset);
+				read_retval_or_kill(pid, regset, &rval, &error);
 				check_retval_equal_or_kill(pid, rval, -1, error, EFAULT);
 				it_worked = true;
 				kill(pid, SIGKILL);
@@ -237,7 +237,7 @@ END_TEST
 START_TEST(TEST_read_argument)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int arg_index = _i;
 	long expval = 0xbad;
@@ -257,7 +257,7 @@ START_TEST(TEST_read_argument)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -274,10 +274,10 @@ START_TEST(TEST_read_argument)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_syscall_or_kill(current, &sysnum);
+			regset_fill_or_kill(pid, regset);
+			read_syscall_or_kill(pid, regset, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
-			read_argument_or_kill(current, arg_index, &argval);
+			read_argument_or_kill(pid, regset, arg_index, &argval);
 			check_argument_equal_or_kill(pid, argval, expval);
 			it_worked = true;
 			kill(pid, SIGKILL);
@@ -299,7 +299,7 @@ END_TEST
 START_TEST(TEST_read_vm_data)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int arg_index = _i;
 	char expstr[] = "pinktrace";
@@ -320,7 +320,7 @@ START_TEST(TEST_read_vm_data)
 		}
 		_exit(1); /* expect to be killed */
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -337,11 +337,11 @@ START_TEST(TEST_read_vm_data)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_syscall_or_kill(current, &sysnum);
+			regset_fill_or_kill(pid, regset);
+			read_syscall_or_kill(pid, regset, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
-			read_argument_or_kill(current, arg_index, &argval);
-			read_vm_data_or_kill(current, argval, newstr, sizeof(expstr));
+			read_argument_or_kill(pid, regset, arg_index, &argval);
+			read_vm_data_or_kill(pid, regset, argval, newstr, sizeof(expstr));
 			check_memory_equal_or_kill(pid, newstr, expstr, sizeof(expstr));
 			it_worked = true;
 			kill(pid, SIGKILL);
@@ -364,7 +364,7 @@ END_TEST
 START_TEST(TEST_read_vm_data_nul)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int arg_index = _i;
 	char expstr[] = "trace\0pink"; /* Pink hiding behind the wall again... */
@@ -386,7 +386,7 @@ START_TEST(TEST_read_vm_data_nul)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -403,11 +403,11 @@ START_TEST(TEST_read_vm_data_nul)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_syscall_or_kill(current, &sysnum);
+			regset_fill_or_kill(pid, regset);
+			read_syscall_or_kill(pid, regset, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
-			read_argument_or_kill(current, arg_index, &argval);
-			read_vm_data_nul_or_kill(current, argval, newstr, sizeof(expstr));
+			read_argument_or_kill(pid, regset, arg_index, &argval);
+			read_vm_data_nul_or_kill(pid, regset, argval, newstr, sizeof(expstr));
 			check_string_equal_or_kill(pid, newstr, expstr, EXPSTR_LEN);
 			it_worked = true;
 			kill(pid, SIGKILL);
@@ -432,7 +432,7 @@ END_TEST
 START_TEST(TEST_read_string_array)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int arg_index = _i;
 #undef EXPSTR_LEN
@@ -459,7 +459,7 @@ START_TEST(TEST_read_string_array)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int i, status;
@@ -477,13 +477,13 @@ START_TEST(TEST_read_string_array)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_syscall_or_kill(current, &sysnum);
+			regset_fill_or_kill(pid, regset);
+			read_syscall_or_kill(pid, regset, &sysnum);
 			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
-			read_argument_or_kill(current, arg_index, &argval);
+			read_argument_or_kill(pid, regset, arg_index, &argval);
 			for (i = 0; i < EXPARR_SIZ; i++) {
 				info("\tChecking array index %d\n", i);
-				read_string_array_or_kill(current,
+				read_string_array_or_kill(pid, regset,
 							  argval, i,
 							  newarr[i], sizeof(newarr[i]),
 							  &nullptr);

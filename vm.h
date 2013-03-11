@@ -48,34 +48,34 @@
  **/
 
 /**
- * Read len bytes of data of tracee, at address @b addr, to our address
+ * Read len bytes of data of pid, regset, at address @b addr, to our address
  * space @b dest (ptrace way, one long at a time)
  *
  * @see pink_vm_read()
  **/
-ssize_t pink_vm_lread(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Convenience macro to read an object (ptrace way, one long at a time)
  *
  * @see pink_vm_lread()
  **/
-#define pink_vm_lread_object(tracee, addr, objp) \
-		pink_vm_lread((tracee), (addr), (char *)(objp), sizeof(*(objp)))
+#define pink_vm_lread_object(pid, regset, addr, objp) \
+		pink_vm_lread((pid), (regset), (addr), (char *)(objp), sizeof(*(objp)))
 
 /**
  * Like pink_vm_lread() but make the additional effort of looking for a
  * terminating zero-byte
  **/
-ssize_t pink_vm_lread_nul(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Synonym for pink_vm_lread_nul()
  **/
-#define pink_vm_lread_string(tracee, addr, dest, len) \
-		pink_vm_lread_nul((tracee), (addr), (dest), (len))
+#define pink_vm_lread_string(pid, regset, addr, dest, len) \
+		pink_vm_lread_nul((pid), (regset), (addr), (dest), (len))
 
 /**
  * Write the given data argument @b src to address @b addr (ptrace way one long
@@ -83,19 +83,19 @@ ssize_t pink_vm_lread_nul(struct pink_process *tracee, long addr, char *dest, si
  *
  * @see pink_vm_write()
  **/
-ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Convenience macro to write an object (ptrace way one long at a time)
  *
  * @see pink_vm_lwrite()
  **/
-#define pink_vm_lwrite_object(tracee, addr, objp) \
-		pink_vm_lwrite((tracee), (addr), (char *)(objp), sizeof(*(objp)))
+#define pink_vm_lwrite_object(pid, regset, addr, objp) \
+		pink_vm_lwrite((pid), (regset), (addr), (char *)(objp), sizeof(*(objp)))
 
 /**
- * Read len bytes of data of tracee, at address @b addr, to our address
+ * Read len bytes of data of pid, regset, at address @b addr, to our address
  * space @b dest using cross memory attach
  *
  * @attention If #PINK_HAVE_PROCESS_VM_READV is defined to 0, this function
@@ -105,29 +105,29 @@ ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, 
  * @see pink_vm_read()
  * @see pink_vm_lread()
  **/
-ssize_t pink_vm_cread(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Convenience macro to read an object using cross memory attach
  *
  * @see pink_vm_cread
  **/
-#define pink_vm_cread_object(tracee, addr, objp) \
-		pink_vm_cread((tracee), (addr), (char *)(objp), sizeof(*(objp)))
+#define pink_vm_cread_object(pid, regset, addr, objp) \
+		pink_vm_cread((pid), (regset), (addr), (char *)(objp), sizeof(*(objp)))
 
 /**
  * Like pink_vm_cread() but make the additional effort of looking for a
  * terminating zero-byte
  **/
-ssize_t pink_vm_cread_nul(struct pink_process *tracee, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_vm_cread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Synonym for pink_vm_cread_nul()
  **/
-#define pink_vm_cread_string(tracee, addr, dest, len) \
-		pink_vm_cread_string((tracee), (addr), (dest), (len))
+#define pink_vm_cread_string(pid, regset, addr, dest, len) \
+		pink_vm_cread_string((pid), (regset), (addr), (dest), (len))
 
 /**
  * Write the given data argument @b src to address @b addr using cross memory
@@ -140,16 +140,16 @@ ssize_t pink_vm_cread_nul(struct pink_process *tracee, long addr, char *dest, si
  * @see pink_vm_lwrite()
  * @see pink_vm_write()
  **/
-ssize_t pink_vm_cwrite(struct pink_process *tracee, long addr, const char *src, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_vm_cwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Convenience macro to write an object using cross memory attach
  *
  * @see pink_vm_cwrite()
  **/
-#define pink_vm_cwrite_object(tracee, addr, objp) \
-		pink_vm_cwrite((tracee), (addr), (char *)(objp), sizeof(*(objp)))
+#define pink_vm_cwrite_object(pid, regset, addr, objp) \
+		pink_vm_cwrite((pid), (regset), (addr), (char *)(objp), sizeof(*(objp)))
 
 /** @} */
 #endif

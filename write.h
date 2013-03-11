@@ -69,31 +69,34 @@ int pink_write_word_data(pid_t pid, long off, long val);
  *
  * @note On ARM architecture, this only works for EABI system calls.
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param sysnum System call number
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_syscall(struct pink_process *tracee, long sysnum);
+int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum);
 
 /**
  * Set the system call return value
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param retval Return value
  * @param error Error condition (errno)
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_retval(struct pink_process *tracee, long retval, int error);
+int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error);
 
 /**
  * Write the specified value to the specified system call argument
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param arg_index Index of the argument, first argument is 0
  * @param argval Value of the argument
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_argument(struct pink_process *tracee, unsigned arg_index, long argval);
+int pink_write_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index, long argval);
 
 /**
  * Write the given data argument @b src to address @b addr
@@ -106,7 +109,8 @@ int pink_write_argument(struct pink_process *tracee, unsigned arg_index, long ar
  * @see pink_vm_lwrite()
  * @see #PINK_HAVE_PROCESS_VM_WRITEV
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param addr Address in tracee's address space
  * @param src Pointer to the data, must @b not be @e NULL
  * @param len Number of bytes of data to write
@@ -114,8 +118,8 @@ int pink_write_argument(struct pink_process *tracee, unsigned arg_index, long ar
  *         On error, -1 is returned and errno is set appropriately.
  *         Check the return value for partial writes.
  **/
-ssize_t pink_write_vm_data(struct pink_process *tracee, long addr, const char *src, size_t len)
-	PINK_GCC_ATTR((nonnull(3)));
+ssize_t pink_write_vm_data(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(4)));
 
 /**
  * Convenience macro to write an object

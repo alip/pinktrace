@@ -157,9 +157,7 @@ struct i386_user_regs_struct {
 #endif
 
 struct pink_regset {
-#if PINK_ABIS_SUPPORTED > 1
 	short abi;
-#endif
 
 #if PINK_ARCH_ARM
 	struct pt_regs arm_regs;
@@ -181,11 +179,6 @@ struct pink_regset {
 #else
 #error "unsupported architecture"
 #endif
-};
-
-struct pink_process {
-	pid_t pid;
-	struct pink_regset regset;
 };
 
 #endif

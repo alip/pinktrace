@@ -580,38 +580,35 @@ enum pink_event event_decide_and_print(int status)
 	return e;
 }
 
-void process_alloc_or_kill(pid_t pid, struct pink_process **p)
+void regset_alloc_or_kill(pid_t pid, struct pink_regset **regptr)
 {
 	int r;
 
-	r = pink_process_alloc(pid, p);
+	r = pink_regset_alloc(regptr);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_process_alloc (pid:%u errno:%d %s)",
-			     pid, -r, strerror(-r));
+		fail_verbose("pink_regset_alloc (errno:%d %s)", -r, strerror(-r));
 	}
 }
 
-void process_update_regset_or_kill(struct pink_process *current)
+void regset_fill_or_kill(pid_t pid, struct pink_regset *regset)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(current);
 
-	r = pink_process_update_regset(current);
+	r = pink_regset_fill(pid, regset);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
-		fail_verbose("pink_process_update_regset (pid:%u errno:%d %s)",
+		fail_verbose("pink_regset_fill (pid:%u errno:%d %s)",
 			     pid, -r, strerror(-r));
 	}
-	dump_regset(&current->regset);
+	dump_regset(regset);
 }
 
-void read_syscall_or_kill(struct pink_process *tracee, long *sysnum)
+void read_syscall_or_kill(pid_t pid, struct pink_regset *regset, long *sysnum)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_syscall(tracee, sysnum);
+	r = pink_read_syscall(pid, regset, sysnum);
 	if (r == 0) {
 		info("\tread_syscall (pid:%u) = %ld", pid, *sysnum);
 	} else if (r < 0) {
@@ -621,12 +618,11 @@ void read_syscall_or_kill(struct pink_process *tracee, long *sysnum)
 	}
 }
 
-void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error)
+void read_retval_or_kill(pid_t pid, struct pink_regset *regset, long *retval, int *error)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_retval(tracee, retval, error);
+	r = pink_read_retval(pid, regset, retval, error);
 	if (r == 0) {
 		info("\tread_retval (pid:%u) = %ld,%d\n", pid,
 		     *retval, *error);
@@ -637,12 +633,11 @@ void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error)
 	}
 }
 
-void read_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long *argval)
+void read_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long *argval)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_argument(tracee, arg_index, argval);
+	r = pink_read_argument(pid, regset, arg_index, argval);
 	if (r == 0) {
 		info("\tread_argument (pid:%u, index:%u) = %ld", pid,
 		     arg_index, *argval);
@@ -653,13 +648,12 @@ void read_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long
 	}
 }
 
-void read_vm_data_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len)
+void read_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	ssize_t r;
-	pid_t pid = pink_process_get_pid(tracee);
 
 	errno = 0;
-	r = pink_read_vm_data(tracee, addr, dest, len);
+	r = pink_read_vm_data(pid, regset, addr, dest, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_vm_data (pid:%u, addr:%ld, len:%zd errno:%d %s)",
@@ -672,13 +666,12 @@ void read_vm_data_or_kill(struct pink_process *tracee, long addr, char *dest, si
 	dump_basic_hex(dest, r);
 }
 
-void read_vm_data_nul_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len)
+void read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	ssize_t r;
-	pid_t pid = pink_process_get_pid(tracee);
 
 	errno = 0;
-	r = pink_read_vm_data_nul(tracee, addr, dest, len);
+	r = pink_read_vm_data_nul(pid, regset, addr, dest, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_vm_data_nul (pid:%u, addr:%ld, len:%zd errno:%d %s)",
@@ -691,15 +684,14 @@ void read_vm_data_nul_or_kill(struct pink_process *tracee, long addr, char *dest
 	dump_basic_hex(dest, r);
 }
 
-void read_string_array_or_kill(struct pink_process *tracee,
+void read_string_array_or_kill(pid_t pid, struct pink_regset *regset,
 			       long arg, unsigned arr_index,
 			       char *dest, size_t dest_len,
 			       bool *nullptr)
 {
 	ssize_t r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_string_array(tracee, arg, arr_index, dest, dest_len, nullptr);
+	r = pink_read_string_array(pid, regset, arg, arr_index, dest, dest_len, nullptr);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_string_array (pid:%u, arg:%ld, arr_index:%u dest_len:%zu errno:%d %s)",
@@ -714,14 +706,13 @@ void read_string_array_or_kill(struct pink_process *tracee,
 	dump_basic_hex(dest, r);
 }
 
-void read_socket_subcall_or_kill(struct pink_process *tracee,
+void read_socket_subcall_or_kill(pid_t pid, struct pink_regset *regset,
 				 bool decode_socketcall,
 				 long *subcall)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_socket_subcall(tracee, decode_socketcall, subcall);
+	r = pink_read_socket_subcall(pid, regset, decode_socketcall, subcall);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_socket_subcall (pid:%u decode:%d errno:%d %s)",
@@ -731,13 +722,12 @@ void read_socket_subcall_or_kill(struct pink_process *tracee,
 	     pid, decode_socketcall, *subcall);
 }
 
-void read_socket_argument_or_kill(struct pink_process *tracee, bool decode_socketcall,
+void read_socket_argument_or_kill(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 				  unsigned arg_index, unsigned long *argval)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_socket_argument(tracee, decode_socketcall, arg_index, argval);
+	r = pink_read_socket_argument(pid, regset, decode_socketcall, arg_index, argval);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_socket_argument (pid:%u decode:%d arg_index:%u errno:%d %s",
@@ -747,14 +737,13 @@ void read_socket_argument_or_kill(struct pink_process *tracee, bool decode_socke
 	     pid, decode_socketcall, arg_index, *argval);
 }
 
-void read_socket_address_or_kill(struct pink_process *tracee, bool decode_socketcall,
+void read_socket_address_or_kill(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 				 unsigned arg_index, int *fd,
 				 struct pink_sockaddr *sockaddr)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_read_socket_address(tracee, decode_socketcall, arg_index, fd, sockaddr);
+	r = pink_read_socket_address(pid, regset, decode_socketcall, arg_index, fd, sockaddr);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_socket_address (pid:%u decode:%d arg_index:%u errno:%d %s)",
@@ -766,12 +755,11 @@ void read_socket_address_or_kill(struct pink_process *tracee, bool decode_socket
 	dump_socket_address(sockaddr);
 }
 
-void write_syscall_or_kill(struct pink_process *tracee, long sysnum)
+void write_syscall_or_kill(pid_t pid, struct pink_regset *regset, long sysnum)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_syscall(tracee, sysnum);
+	r = pink_write_syscall(pid, regset, sysnum);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_syscall (pid:%u sysnum:%ld errno:%d %s)",
@@ -781,12 +769,11 @@ void write_syscall_or_kill(struct pink_process *tracee, long sysnum)
 	     pid, sysnum);
 }
 
-void write_retval_or_kill(struct pink_process *tracee, long retval, int error)
+void write_retval_or_kill(pid_t pid, struct pink_regset *regset, long retval, int error)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_retval(tracee, retval, error);
+	r = pink_write_retval(pid, regset, retval, error);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_retval (pid:%u retval:%ld error:%d errno:%d %s)",
@@ -796,12 +783,11 @@ void write_retval_or_kill(struct pink_process *tracee, long retval, int error)
 	     pid, retval, error);
 }
 
-void write_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long argval)
+void write_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long argval)
 {
 	int r;
-	pid_t pid = pink_process_get_pid(tracee);
 
-	r = pink_write_argument(tracee, arg_index, argval);
+	r = pink_write_argument(pid, regset, arg_index, argval);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_argument (pid:%u arg_index:%u argval:%ld errno:%d %s)",
@@ -811,13 +797,12 @@ void write_argument_or_kill(struct pink_process *tracee, unsigned arg_index, lon
 	     pid, arg_index, argval);
 }
 
-void write_vm_data_or_kill(struct pink_process *tracee, long addr, const char *src, size_t len)
+void write_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
 {
 	ssize_t r;
-	pid_t pid = pink_process_get_pid(tracee);
 
 	errno = 0;
-	r = pink_write_vm_data(tracee, addr, src, len);
+	r = pink_write_vm_data(pid, regset, addr, src, len);
 	if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_write_vm_data (pid:%u addr:%ld src:%p len:%zd errno:%d %s)",

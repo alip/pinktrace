@@ -20,7 +20,7 @@ libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES= \
 					     abi.c \
 					     name.c \
 					     pipe.c \
-					     process.c \
+					     regset.c \
 					     read.c \
 					     write.c \
 					     vm.c \
@@ -40,7 +40,7 @@ pinktrace_include_HEADERS= \
 			   abi.h \
 			   name.h \
 			   pipe.h \
-			   process.h \
+			   regset.h \
 			   vm.h \
 			   read.h \
 			   write.h \

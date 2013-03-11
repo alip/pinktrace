@@ -36,8 +36,8 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-PINK_GCC_ATTR((nonnull(4)))
-int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcall,
+PINK_GCC_ATTR((nonnull(5)))
+int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)
 {
 	int r;
@@ -50,7 +50,7 @@ int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcal
 
 	if (!decode_socketcall) {
 		long arg;
-		r = pink_read_argument(tracee, arg_index, &arg);
+		r = pink_read_argument(pid, regset, arg_index, &arg);
 		if (r < 0)
 			return r;
 		*argval = arg;
@@ -62,19 +62,19 @@ int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcal
 	 * int socketcall(int call, unsigned long *args);
 	 */
 
-	if ((r = pink_read_argument(tracee, 1, &addr)) < 0)
+	if ((r = pink_read_argument(pid, regset, 1, &addr)) < 0)
 		return r;
 	u_addr = addr;
-	wsize = pink_abi_wordsize(pink_process_get_abi(tracee));
+	wsize = pink_abi_wordsize(regset->abi);
 	u_addr += arg_index * wsize;
 	if (wsize == sizeof(int)) {
 		unsigned int arg;
-		if ((r = pink_read_vm_object_full(tracee, u_addr, &arg)) < 0)
+		if ((r = pink_read_vm_object_full(pid, regset, u_addr, &arg)) < 0)
 			return r;
 		*argval = arg;
 	} else {
 		unsigned long arg;
-		if ((r = pink_read_vm_object_full(tracee, u_addr, &arg)) < 0)
+		if ((r = pink_read_vm_object_full(pid, regset, u_addr, &arg)) < 0)
 			return r;
 		*argval = arg;
 	}
@@ -82,8 +82,8 @@ int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcal
 	return true;
 }
 
-PINK_GCC_ATTR((nonnull(5)))
-int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall,
+PINK_GCC_ATTR((nonnull(6)))
+int pink_read_socket_address(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
 {
@@ -92,14 +92,14 @@ int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall
 	unsigned long addr, addrlen;
 
 	if (fd) {
-		r = pink_read_socket_argument(tracee, decode_socketcall, 0, &myfd);
+		r = pink_read_socket_argument(pid, regset, decode_socketcall, 0, &myfd);
 		if (r < 0)
 			return r;
 		*fd = (int)myfd;
 	}
-	if ((r = pink_read_socket_argument(tracee, decode_socketcall, arg_index, &addr)) < 0)
+	if ((r = pink_read_socket_argument(pid, regset, decode_socketcall, arg_index, &addr)) < 0)
 		return r;
-	if ((r = pink_read_socket_argument(tracee, decode_socketcall, arg_index + 1, &addrlen)) < 0)
+	if ((r = pink_read_socket_argument(pid, regset, decode_socketcall, arg_index + 1, &addrlen)) < 0)
 		return r;
 
 	if (addr == 0) {
@@ -111,7 +111,7 @@ int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));
-	if ((r = pink_read_vm_data_full(tracee, addr, sockaddr->u.pad, addrlen)) < 0)
+	if ((r = pink_read_vm_data_full(pid, regset, addr, sockaddr->u.pad, addrlen)) < 0)
 		return r;
 	sockaddr->u.pad[sizeof(sockaddr->u.pad) - 1] = '\0';
 

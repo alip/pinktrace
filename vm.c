@@ -40,20 +40,20 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-static inline long setup_addr(struct pink_process *tracee, long addr)
+static inline long setup_addr(pid_t pid, struct pink_regset *regset, long addr)
 {
 #if PINK_ABIS_SUPPORTED > 1 && SIZEOF_LONG > 4
 	size_t wsize;
 
-	wsize = pink_abi_wordsize(pink_process_get_abi(tracee));
+	wsize = pink_abi_wordsize(regset->abi);
 	if (wsize < sizeof(addr))
 		addr &= (1ul << 8 * wsize) - 1;
 #endif
 	return addr;
 }
 
-PINK_GCC_ATTR((nonnull(3)))
-ssize_t pink_vm_lread(struct pink_process *tracee, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	int n, m, r;
 	union {
@@ -62,13 +62,13 @@ ssize_t pink_vm_lread(struct pink_process *tracee, long addr, char *dest, size_t
 	} u;
 	ssize_t count_read;
 
-	addr = setup_addr(tracee, addr);
+	addr = setup_addr(pid, regset, addr);
 	count_read = 0;
 	if (addr & (sizeof(long) - 1)) {
 		/* addr not a multiple of sizeof(long) */
 		n = addr - (addr & -sizeof(long)); /* residue */
 		addr &= -sizeof(long); /* residue */
-		if ((r = pink_read_word_data(tracee->pid, addr, &u.val)) < 0) {
+		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
 			/* Not started yet, thus we had a bogus address. */
 			errno = -r;
 			return count_read > 0 ? count_read : -1;
@@ -78,7 +78,7 @@ ssize_t pink_vm_lread(struct pink_process *tracee, long addr, char *dest, size_t
 		addr += sizeof(long), dest += m, len -= m, count_read += m;
 	}
 	while (len > 0) {
-		if ((r = pink_read_word_data(tracee->pid, addr, &u.val)) < 0) {
+		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
 			errno = -r;
 			return count_read > 0 ? count_read : -1;
 		}
@@ -89,8 +89,8 @@ ssize_t pink_vm_lread(struct pink_process *tracee, long addr, char *dest, size_t
 	return count_read;
 }
 
-PINK_GCC_ATTR((nonnull(3)))
-ssize_t pink_vm_lread_nul(struct pink_process *tracee, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	unsigned i;
 	int n, m, r;
@@ -100,13 +100,13 @@ ssize_t pink_vm_lread_nul(struct pink_process *tracee, long addr, char *dest, si
 	} u;
 	ssize_t count_read;
 
-	addr = setup_addr(tracee, addr);
+	addr = setup_addr(pid, regset, addr);
 	count_read = 0;
 	if (addr & (sizeof(long) - 1)) {
 		/* addr not a multiple of sizeof(long) */
 		n = addr - (addr & -sizeof(long)); /* residue */
 		addr &= -sizeof(long); /* residue */
-		if ((r = pink_read_word_data(tracee->pid, addr, &u.val)) < 0) {
+		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
 			/* Not started yet, thus we had a bogus address. */
 			errno = -r;
 			return -1;
@@ -120,7 +120,7 @@ ssize_t pink_vm_lread_nul(struct pink_process *tracee, long addr, char *dest, si
 		count_read += m;
 	}
 	while (len > 0) {
-		if ((r = pink_read_word_data(tracee->pid, addr, &u.val)) < 0) {
+		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
 			errno = -r;
 			return count_read > 0 ? count_read : -1;
 		}
@@ -135,8 +135,8 @@ ssize_t pink_vm_lread_nul(struct pink_process *tracee, long addr, char *dest, si
 	return count_read;
 }
 
-PINK_GCC_ATTR((nonnull(3)))
-ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, size_t len)
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
 {
 	int r;
 	int n, m;
@@ -146,7 +146,7 @@ ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, 
 	} u;
 	ssize_t count_written;
 
-	addr = setup_addr(tracee, addr);
+	addr = setup_addr(pid, regset, addr);
 	count_written = 0;
 	if (addr & (sizeof(long) - 1)) {
 		/* addr not a multiple of sizeof(long) */
@@ -154,7 +154,7 @@ ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, 
 		addr &= -sizeof(long); /* residue */
 		m = MIN(sizeof(long) - n, len);
 		memcpy(u.x, &src[n], m);
-		if ((r = pink_write_word_data(tracee->pid, addr, u.val)) < 0) {
+		if ((r = pink_write_word_data(pid, addr, u.val)) < 0) {
 			/* Not started yet, thus we had a bogus address. */
 			errno = -r;
 			return -1;
@@ -164,7 +164,7 @@ ssize_t pink_vm_lwrite(struct pink_process *tracee, long addr, const char *src, 
 	while (len > 0) {
 		m = MIN(sizeof(long), len);
 		memcpy(u.x, src, m);
-		if ((r = pink_write_word_data(tracee->pid, addr, u.val)) < 0) {
+		if ((r = pink_write_word_data(pid, addr, u.val)) < 0) {
 			errno = -r;
 			return count_written > 0 ? count_written : -1;
 		}
@@ -204,26 +204,26 @@ static ssize_t _pink_process_vm_readv(pid_t pid,
 # define process_vm_readv(...) (errno = ENOSYS, -1)
 #endif
 
-PINK_GCC_ATTR((nonnull(3)))
-ssize_t pink_vm_cread(struct pink_process *tracee, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	struct iovec local[1], remote[1];
 
-	addr = setup_addr(tracee, addr);
+	addr = setup_addr(pid, regset, addr);
 	local[0].iov_base = dest;
 	remote[0].iov_base = (void *)addr;
 	local[0].iov_len = remote[0].iov_len = len;
 
-	return process_vm_readv(tracee->pid, local, 1, remote, 1, /*flags:*/0);
+	return process_vm_readv(pid, local, 1, remote, 1, /*flags:*/0);
 }
 
-PINK_GCC_ATTR((nonnull(3)))
-ssize_t pink_vm_cread_nul(struct pink_process *tracee, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_vm_cread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	ssize_t count_read;
 	struct iovec local[1], remote[1];
 
-	addr = setup_addr(tracee, addr);
+	addr = setup_addr(pid, regset, addr);
 	count_read = 0;
 	local[0].iov_base = dest;
 	remote[0].iov_base = (void *)addr;
@@ -249,7 +249,7 @@ ssize_t pink_vm_cread_nul(struct pink_process *tracee, long addr, char *dest, si
 			chunk_len = r; /* chunk_len -= end_in_page */
 
 		local[0].iov_len = remote[0].iov_len = chunk_len;
-		r = process_vm_readv(tracee->pid, local, 1, remote, 1, /*flags:*/ 0);
+		r = process_vm_readv(pid, local, 1, remote, 1, /*flags:*/ 0);
 		if (r < 0)
 			return count_read > 0 ? count_read : -1;
 
@@ -294,15 +294,15 @@ static ssize_t _pink_process_vm_writev(pid_t pid,
 # define process_vm_writev(...) (errno = ENOSYS, -1)
 #endif
 
-PINK_GCC_ATTR((nonnull(3)))
-ssize_t pink_vm_cwrite(struct pink_process *tracee, long addr, const char *src, size_t len)
+PINK_GCC_ATTR((nonnull(4)))
+ssize_t pink_vm_cwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
 {
 	struct iovec local[1], remote[1];
 
-	addr = setup_addr(tracee, addr);
+	addr = setup_addr(pid, regset, addr);
 	local[0].iov_base = (void *)src;
 	remote[0].iov_base = (void *)addr;
 	local[0].iov_len = remote[0].iov_len = len;
 
-	return process_vm_writev(tracee->pid, local, 1, remote, 1, /*flags:*/ 0);
+	return process_vm_writev(pid, local, 1, remote, 1, /*flags:*/ 0);
 }

@@ -25,71 +25,52 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PINK_PROCESS_H
-#define PINK_PROCESS_H
+#ifndef PINK_REGSET_H
+#define PINK_REGSET_H
 
 /**
- * @file pinktrace/process.h
- * @brief Pink's process abstraction
+ * @file pinktrace/regset.h
+ * @brief Pink's process registry set
  *
  * Do not include this file directly. Use pinktrace/pink.h instead.
  *
- * @defgroup pink_processess Pink's process abstraction
+ * @defgroup pink_regset Pink's process registry set
  * @ingroup pinktrace
  * @{
  **/
 
 #include <sys/types.h>
 
-/** This opaque structure represents a traced process. */
-struct pink_process;
+/** This opaque structure represents a registry set of a traced process */
+struct pink_regset;
 
 /**
- * Allocate and initialise traced process data
+ * Allocate a registry set
+ *
+ * @param regptr Pointer to store the dynamically allocated registry set,
+ *		 Use pink_regset_free() to free after use.
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_regset_alloc(struct pink_regset **regptr)
+	PINK_GCC_ATTR((nonnull(1)));
+
+/**
+ * Free the memory allocated for the registry set
+ *
+ * @param regset Registry set
+ **/
+void pink_regset_free(struct pink_regset *regset);
+
+/**
+ * Fill the given regset structure with the registry information of the given
+ * process ID
  *
  * @param pid Process ID
- * @param procptr Pointer to store the allocated structure
+ * @param regset Registry set
  * @return 0 on success, negated errno on failure
  **/
-int pink_process_alloc(pid_t pid, struct pink_process **procptr);
-
-/**
- * Free traced process data
- *
- * @param proc Traced process
- **/
-void pink_process_free(struct pink_process *proc);
-
-/**
- * Return process ID of the traced process
- *
- * @param proc Traced process
- * @return Process ID
- **/
-pid_t pink_process_get_pid(const struct pink_process *proc);
-/**
- * Set the process ID of the traced process
- *
- * @param proc Traced process
- * @param pid New process ID
- **/
-void pink_process_set_pid(struct pink_process *proc, pid_t pid);
-
-/**
- * Return the system call ABI of the traced process
- *
- * @param proc Traced process
- * @return System call ABI
- **/
-short pink_process_get_abi(const struct pink_process *proc);
-
-/**
- * Update registry set of the traced process
- *
- * @param proc Traced process
- * @return 0 on success, negated errno on failure
- **/
-int pink_process_update_regset(struct pink_process *proc);
+int pink_regset_fill(pid_t pid, struct pink_regset *regset)
+	PINK_GCC_ATTR((nonnull(2)));
 
 /** @} */
 #endif

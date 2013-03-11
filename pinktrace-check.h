@@ -142,31 +142,31 @@ void trace_geteventmsg_or_kill(pid_t pid, unsigned long *data);
 
 enum pink_event event_decide_and_print(int status);
 
-void process_alloc_or_kill(pid_t pid, struct pink_process **p);
-void process_update_regset_or_kill(struct pink_process *current);
+void regset_alloc_or_kill(pid_t pid, struct pink_regset **regptr);
+void regset_fill_or_kill(pid_t pid, struct pink_regset *regset);
 
-void read_syscall_or_kill(struct pink_process *tracee, long *sysnum);
-void read_retval_or_kill(struct pink_process *tracee, long *retval, int *error);
-void read_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long *argval);
-void read_vm_data_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len);
-void read_vm_data_nul_or_kill(struct pink_process *tracee, long addr, char *dest, size_t len);
-void read_string_array_or_kill(struct pink_process *tracee,
+void read_syscall_or_kill(pid_t pid, struct pink_regset *regset, long *sysnum);
+void read_retval_or_kill(pid_t pid, struct pink_regset *regset, long *retval, int *error);
+void read_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long *argval);
+void read_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
+void read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
+void read_string_array_or_kill(pid_t pid, struct pink_regset *regset,
 			       long arg, unsigned arr_index,
 			       char *dest, size_t dest_len,
 			       bool *nullptr);
-void read_socket_subcall_or_kill(struct pink_process *tracee,
+void read_socket_subcall_or_kill(pid_t pid, struct pink_regset *regset,
 				 bool decode_socketcall,
 				 long *subcall);
-void read_socket_argument_or_kill(struct pink_process *tracee, bool decode_socketcall,
+void read_socket_argument_or_kill(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 				  unsigned arg_index, unsigned long *argval);
-void read_socket_address_or_kill(struct pink_process *tracee, bool decode_socketcall,
+void read_socket_address_or_kill(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 				 unsigned arg_index, int *fd,
 				 struct pink_sockaddr *sockaddr);
 
-void write_syscall_or_kill(struct pink_process *tracee, long sysnum);
-void write_retval_or_kill(struct pink_process *tracee, long retval, int error);
-void write_argument_or_kill(struct pink_process *tracee, unsigned arg_index, long argval);
-void write_vm_data_or_kill(struct pink_process *tracee, long addr, const char *src, size_t len);
+void write_syscall_or_kill(pid_t pid, struct pink_regset *regset, long sysnum);
+void write_retval_or_kill(pid_t pid, struct pink_regset *regset, long retval, int error);
+void write_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long argval);
+void write_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len);
 
 TCase *create_testcase_trace(void);
 TCase *create_testcase_read(void);

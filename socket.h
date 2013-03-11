@@ -141,15 +141,16 @@ enum pink_socket_subcall {
  * @see pink_read_argument
  * @see pink_read_syscall
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param decode_socketcall Boolean to specify decoding @e socketcall(2)
  * @param subcall Pointer to store the result, must not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-#define pink_read_socket_subcall(tracee, decode_socketcall, subcall) \
+#define pink_read_socket_subcall(pid, regset, decode_socketcall, subcall) \
 		((decode_socketcall) \
-			? pink_read_argument((tracee), 0, (subcall)) \
-			: pink_read_syscall((tracee), (subcall)))
+			? pink_read_argument((pid), (regset), 0, (subcall)) \
+			: pink_read_syscall((pid), (regset), (subcall)))
 
 /**
  * Read the specified socket call argument.
@@ -158,17 +159,16 @@ enum pink_socket_subcall {
  *       pink_read_argument(). For decode_socketcall == `true' this function
  *       decodes the second argument of the @e socketcall(2) system call.
  *
- * @param tid Thread ID
- * @param abi System call ABI; see pink_read_abi()
- * @param regs Pointer to the structure of registers; see pink_trace_get_regs()
+ * @param pid Process ID
+ * @param regset Registry set
  * @param decode_socketcall Boolean to specify decoding @e socketcall(2)
  * @param arg_index Index of the argument, first argument is 0
  * @param argval Pointer to store the value, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcall,
+int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)
-	PINK_GCC_ATTR((nonnull(4)));
+	PINK_GCC_ATTR((nonnull(5)));
 
 /**
  * Read the specified socket call address
@@ -176,7 +176,8 @@ int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcal
  * @note If the address argument of the system call was NULL, this function
  *       returns true and sets sockaddr->family to -1.
  *
- * @param tracee Traced process
+ * @param pid Process ID
+ * @param regset Registry set
  * @param decode_socketcall Boolean to specify decoding @e socketcall(2)
  * @param arg_index The index of the argument. One of:
  *  - 1 (for connect, bind etc.)
@@ -187,10 +188,10 @@ int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcal
  * @param sockaddr Pointer to store the socket address, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall,
+int pink_read_socket_address(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
 			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
-	PINK_GCC_ATTR((nonnull(5)));
+	PINK_GCC_ATTR((nonnull(6)));
 
 /** @} */
 #endif

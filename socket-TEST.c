@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -130,7 +130,7 @@ static void check_socketcall_equal_or_kill(pid_t pid, int test_sys, long subcall
 START_TEST(TEST_read_socket_address_af_null)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -162,7 +162,7 @@ START_TEST(TEST_read_socket_address_af_null)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -179,10 +179,10 @@ START_TEST(TEST_read_socket_address_af_null)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			regset_fill_or_kill(pid, regset);
+			read_socket_subcall_or_kill(pid, regset, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
-			read_socket_address_or_kill(current, SOCKDECODE,
+			read_socket_address_or_kill(pid, regset, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -221,7 +221,7 @@ END_TEST
 START_TEST(TEST_read_socket_address_af_unix)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -259,7 +259,7 @@ START_TEST(TEST_read_socket_address_af_unix)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -276,10 +276,10 @@ START_TEST(TEST_read_socket_address_af_unix)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			regset_fill_or_kill(pid, regset);
+			read_socket_subcall_or_kill(pid, regset, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
-			read_socket_address_or_kill(current, SOCKDECODE,
+			read_socket_address_or_kill(pid, regset, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -326,7 +326,7 @@ END_TEST
 START_TEST(TEST_read_socket_address_af_unixabs)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -365,7 +365,7 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -382,10 +382,10 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			regset_fill_or_kill(pid, regset);
+			read_socket_subcall_or_kill(pid, regset, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
-			read_socket_address_or_kill(current, SOCKDECODE,
+			read_socket_address_or_kill(pid, regset, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -436,7 +436,7 @@ END_TEST
 START_TEST(TEST_read_socket_address_af_inet)
 {
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -475,7 +475,7 @@ START_TEST(TEST_read_socket_address_af_inet)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -492,10 +492,10 @@ START_TEST(TEST_read_socket_address_af_inet)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			regset_fill_or_kill(pid, regset);
+			read_socket_subcall_or_kill(pid, regset, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
-			read_socket_address_or_kill(current, SOCKDECODE,
+			read_socket_address_or_kill(pid, regset, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -544,7 +544,7 @@ START_TEST(TEST_read_socket_address_af_inet6)
 	return;
 #else
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -583,7 +583,7 @@ START_TEST(TEST_read_socket_address_af_inet6)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -600,10 +600,10 @@ START_TEST(TEST_read_socket_address_af_inet6)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			regset_fill_or_kill(pid, regset);
+			read_socket_subcall_or_kill(pid, regset, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
-			read_socket_address_or_kill(current, SOCKDECODE,
+			read_socket_address_or_kill(pid, regset, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
@@ -653,7 +653,7 @@ START_TEST(TEST_read_socket_address_af_netlink)
 	return;
 #else
 	pid_t pid;
-	struct pink_process *current;
+	struct pink_regset *regset;
 	bool it_worked = false;
 	int test_sys = _i;
 	const char *test_name;
@@ -692,7 +692,7 @@ START_TEST(TEST_read_socket_address_af_netlink)
 		}
 		_exit(0);
 	}
-	process_alloc_or_kill(pid, &current);
+	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
 		int status;
@@ -709,10 +709,10 @@ START_TEST(TEST_read_socket_address_af_netlink)
 		if (WSTOPSIG(status) == SIGSTOP) {
 			trace_setup_or_kill(pid, test_options);
 		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
-			process_update_regset_or_kill(current);
-			read_socket_subcall_or_kill(current, SOCKDECODE, &subcall);
+			regset_fill_or_kill(pid, regset);
+			read_socket_subcall_or_kill(pid, regset, SOCKDECODE, &subcall);
 			check_socketcall_equal_or_kill(pid, test_sys, subcall);
-			read_socket_address_or_kill(current, SOCKDECODE,
+			read_socket_address_or_kill(pid, regset, SOCKDECODE,
 						    test_sys_index(test_sys),
 						    &newfd, &newaddr);
 			if (newfd != expfd) {
