@@ -263,8 +263,8 @@ int pink_read_argument(struct pink_process *tracee, unsigned arg_index, long *ar
 		out0 = ia64_rse_skip_regs((unsigned long *) rbs_end, -sof + sol);
 		addr = (unsigned long) ia64_rse_skip_regs(out0, arg_index);
 
-		if (pink_read_vm_data(tracee, addr, sizeof(long), &myval) < 0)
-			return -errno;
+		if ((r = pink_read_vm_data_full(tracee, addr, sizeof(long), &myval)) < 0)
+			return r;
 	} else { /* ia32 */
 		static const int argreg[PINK_MAX_ARGS] = { PT_R11 /* EBX = out0 */,
 						           PT_R9  /* ECX = out1 */,
@@ -338,6 +338,20 @@ ssize_t pink_read_vm_data(struct pink_process *tracee, long addr, char *dest, si
 	if (errno == ENOSYS)
 		return pink_vm_lread(tracee, addr, dest, len);
 	return r;
+}
+
+PINK_GCC_ATTR((nonnull(3)))
+int pink_read_vm_data_full(struct pink_process *tracee, long addr, char *dest, size_t len)
+{
+	ssize_t l;
+
+	errno = 0;
+	l = pink_read_vm_data(tracee, addr, dest, len);
+	if (l < 0)
+		return -errno;
+	if (len != (size_t)l)
+		return -EFAULT;
+	return 0;
 }
 
 PINK_GCC_ATTR((nonnull(3)))

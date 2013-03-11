@@ -130,12 +130,36 @@ ssize_t pink_read_vm_data(struct pink_process *tracee, long addr, char *dest, si
 	PINK_GCC_ATTR((nonnull(3)));
 
 /**
+ * Like pink_read_vm_data() but instead of setting errno, this function returns
+ * negated errno on failure and -EFAULT on partial reads.
+ *
+ * @see pink_read_vm_data()
+ *
+ * @param tracee Traced process
+ * @param addr Address in tracee's address space
+ * @param dest Pointer to store the data, must @b not be @e NULL
+ * @param len Number of bytes of data to read
+ * @return 0 on success, negated errno on failure
+ **/
+int pink_read_vm_data_full(struct pink_process *tracee, long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(3)));
+
+/**
  * Convenience macro to read an object
  *
  * @see pink_read_vm_data()
  **/
 #define pink_read_vm_object(tracee, addr, objp) \
 		pink_read_vm_data((tracee), (addr), \
+				  (char *)(objp), sizeof(*(objp)))
+
+/**
+ * Convenience macro to read an object fully
+ *
+ * @see pink_read_vm_data_full()
+ **/
+#define pink_read_vm_object_full(tracee, addr, objp) \
+		pink_read_vm_data_full((tracee), (addr), \
 				  (char *)(objp), sizeof(*(objp)))
 
 /**

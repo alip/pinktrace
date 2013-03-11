@@ -62,21 +62,20 @@ int pink_read_socket_argument(struct pink_process *tracee, bool decode_socketcal
 	 * int socketcall(int call, unsigned long *args);
 	 */
 
-	r = pink_read_argument(tracee, 1, &addr);
-	if (r < 0)
+	if ((r = pink_read_argument(tracee, 1, &addr)) < 0)
 		return r;
 	u_addr = addr;
 	wsize = pink_abi_wordsize(pink_process_get_abi(tracee));
 	u_addr += arg_index * wsize;
 	if (wsize == sizeof(int)) {
 		unsigned int arg;
-		if (pink_read_vm_object(tracee, u_addr, &arg) < 0)
-			return -errno;
+		if ((r = pink_read_vm_object_full(tracee, u_addr, &arg)) < 0)
+			return r;
 		*argval = arg;
 	} else {
 		unsigned long arg;
-		if (pink_read_vm_object(tracee, u_addr, &arg) < 0)
-			return -errno;
+		if ((r = pink_read_vm_object_full(tracee, u_addr, &arg)) < 0)
+			return r;
 		*argval = arg;
 	}
 
@@ -112,8 +111,8 @@ int pink_read_socket_address(struct pink_process *tracee, bool decode_socketcall
 		addrlen = sizeof(sockaddr->u);
 
 	memset(&sockaddr->u, 0, sizeof(sockaddr->u));
-	if (pink_read_vm_data(tracee, addr, sockaddr->u.pad, addrlen) < 0)
-		return -errno;
+	if ((r = pink_read_vm_data_full(tracee, addr, sockaddr->u.pad, addrlen)) < 0)
+		return r;
 	sockaddr->u.pad[sizeof(sockaddr->u.pad) - 1] = '\0';
 
 	sockaddr->family = sockaddr->u.sa.sa_family;
