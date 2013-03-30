@@ -79,7 +79,7 @@ int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode
 		*argval = arg;
 	}
 
-	return true;
+	return 0;
 }
 
 PINK_GCC_ATTR((nonnull(6)))
