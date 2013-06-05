@@ -477,6 +477,33 @@ void check_string_equal_or_kill(pid_t pid,
 	abort();
 }
 
+void check_string_endswith_or_kill(pid_t pid, const char *str,
+				   const char *suffix_expected)
+{
+	size_t slen, elen;
+
+	slen = strlen(str);
+	elen = strlen(suffix_expected);
+
+	if (elen == 0)
+		return;
+	if (slen < elen)
+		goto fail;
+	if (memcmp(str + (slen - elen), suffix_expected, elen) == 0)
+		return;
+fail:
+	kill(pid, SIGKILL);
+	warning("String %p:`%s' doesn't end with the expected %p:`%s'",
+			str, str,
+			suffix_expected, suffix_expected);
+	dump_basic_hex(str, slen);
+	dump_basic_hex(suffix_expected, elen);
+	fail_verbose("String %p:`%s' doesn't end with the expected %p:`%s'",
+			str, str,
+			suffix_expected, suffix_expected);
+	abort();
+}
+
 void check_addr_loopback_or_kill(pid_t pid, in_addr_t addr)
 {
 	char ip[64];
@@ -610,7 +637,7 @@ void read_syscall_or_kill(pid_t pid, struct pink_regset *regset, long *sysnum)
 
 	r = pink_read_syscall(pid, regset, sysnum);
 	if (r == 0) {
-		info("\tread_syscall (pid:%u) = %ld", pid, *sysnum);
+		info("\tread_syscall (pid:%u) = %ld\n", pid, *sysnum);
 	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
 		fail_verbose("pink_read_syscall (pid:%u, errno:%d %s)",
@@ -639,7 +666,7 @@ void read_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_i
 
 	r = pink_read_argument(pid, regset, arg_index, argval);
 	if (r == 0) {
-		info("\tread_argument (pid:%u, index:%u) = %ld", pid,
+		info("\tread_argument (pid:%u, index:%u) = %ld\n", pid,
 		     arg_index, *argval);
 	} else if (r < 0) {
 		kill_save_errno(pid, SIGKILL);
@@ -666,7 +693,7 @@ void read_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, char
 	dump_basic_hex(dest, r);
 }
 
-void read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+ssize_t read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
 	ssize_t r;
 
@@ -680,8 +707,10 @@ void read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, 
 		message("\tpink_read_vm_data_nul partial read, expected:%zu got:%zd\n",
 			len, r);
 	}
-	info("\tread_vm_data_nul (pid:%u, addr:%ld len:%zd) = %zd", pid, addr, len, r);
+	info("\tread_vm_data_nul (pid:%u, addr:%ld len:%zd) = %zd\n", pid, addr, len, r);
 	dump_basic_hex(dest, r);
+
+	return r;
 }
 
 void read_string_array_or_kill(pid_t pid, struct pink_regset *regset,

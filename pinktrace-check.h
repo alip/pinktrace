@@ -130,6 +130,8 @@ void check_string_equal_or_kill(pid_t pid,
 				const char *str,
 				const char *str_expected,
 				size_t len);
+void check_string_endswith_or_kill(pid_t pid, const char *str,
+				   const char *suffix_expected);
 void check_addr_loopback_or_kill(pid_t pid, in_addr_t addr);
 #if PINK_HAVE_IPV6
 void check_addr6_loopback_or_kill(pid_t pid, struct in6_addr *addr6);
@@ -149,7 +151,7 @@ void read_syscall_or_kill(pid_t pid, struct pink_regset *regset, long *sysnum);
 void read_retval_or_kill(pid_t pid, struct pink_regset *regset, long *retval, int *error);
 void read_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long *argval);
 void read_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
-void read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
+ssize_t read_vm_data_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
 void read_string_array_or_kill(pid_t pid, struct pink_regset *regset,
 			       long arg, unsigned arr_index,
 			       char *dest, size_t dest_len,

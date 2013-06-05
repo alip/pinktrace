@@ -425,6 +425,97 @@ START_TEST(TEST_read_vm_data_nul)
 END_TEST
 
 /*
+ * Test whether reading tracee's address space works for subsequent reads.
+ * First fork a new child, call syscall(PINK_SYSCALL_INVALID, ...) with a string
+ * longer than sizeof(long) then check whether it's read correctly.
+ */
+START_TEST(TEST_read_vm_data_nul_long)
+{
+	pid_t pid;
+	struct pink_regset *regset;
+	bool it_worked = false;
+	int arg_index = _i;
+	char expstr[PATH_MAX]; /* PATH_MAX should be sufficiently large, see below */
+	char newstr[PATH_MAX]; /* ditto */
+
+	/*
+	 * IMPORTANT: pink_vm_lread_nul() function reads one long at a time!
+	 * To be able to check whether looking for the zero-byte works correctly
+	 * we need to test for two subsequent reads.
+	 */
+	ssize_t r;
+	unsigned l;
+	unsigned fill = sizeof(long) / sizeof(char);
+	for (l = 0; l < fill; l++)
+		expstr[l] = 'P'; /* for pi, for pink, for pink floyd! */
+	expstr[l++] = 'i';
+	expstr[l++] = 'n';
+	expstr[l++] = 'k';
+	expstr[l++] = ' ';
+	expstr[l++] = 'F';
+	expstr[l++] = 'l';
+	expstr[l++] = 'o';
+	expstr[l++] = 'y';
+	expstr[l++] = 'd';
+	expstr[l] = '\0';
+
+	pid = fork_assert();
+	if (pid == 0) {
+		pid = getpid();
+		trace_me_and_stop();
+		switch (arg_index) {
+		case 0: syscall(PINK_SYSCALL_INVALID, expstr, 3, 3, 3, 3, 3); break;
+		case 1: syscall(PINK_SYSCALL_INVALID, 3, expstr, 3, 3, 3, 3); break;
+		case 2: syscall(PINK_SYSCALL_INVALID, 3, 3, expstr, 3, 3, 3); break;
+		case 3: syscall(PINK_SYSCALL_INVALID, 3, 3, 3, expstr, 3, 3); break;
+		case 4: syscall(PINK_SYSCALL_INVALID, 3, 3, 3, 3, expstr, 3);  break;
+		case 5: syscall(PINK_SYSCALL_INVALID, 3, 3, 3, 3, 3, expstr); break;
+		default: _exit(1);
+		}
+		_exit(0);
+	}
+	regset_alloc_or_kill(pid, &regset);
+
+	LOOP_WHILE_TRUE() {
+		int status;
+		pid_t tracee_pid;
+		long argval, sysnum;
+
+		tracee_pid = wait_verbose(&status);
+		if (tracee_pid <= 0 && check_echild_or_kill(pid, tracee_pid))
+			break;
+		if (check_exit_code_or_fail(status, 0))
+			break;
+		check_signal_or_fail(status, 0);
+		check_stopped_or_kill(tracee_pid, status);
+		if (WSTOPSIG(status) == SIGSTOP) {
+			trace_setup_or_kill(pid, test_options);
+		} else if (WSTOPSIG(status) == (SIGTRAP|0x80)) {
+			regset_fill_or_kill(pid, regset);
+			read_syscall_or_kill(pid, regset, &sysnum);
+			check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
+			read_argument_or_kill(pid, regset, arg_index, &argval);
+			r = read_vm_data_nul_or_kill(pid, regset, argval, newstr, l);
+			info("read_vm_data_nul() returned r:%zu for l:%d\n", r, l);
+			if ((size_t)r <= l)
+				newstr[r] = '\0';
+			check_string_endswith_or_kill(pid, newstr, "Pink Floyd");
+			it_worked = true;
+			kill(pid, SIGKILL);
+			break;
+		}
+		trace_syscall_or_kill(pid, 0);
+	}
+
+	if (!it_worked)
+		fail_verbose("Test for reading"
+			     " nul-terminated VM data"
+			     " subsequently at argument %d failed",
+			     arg_index);
+}
+END_TEST
+
+/*
  * Test whether reading NULL-terminated string arrays work.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, ...) with a
  * NULL-terminated array and then check whether it's read correctly.
@@ -521,6 +612,7 @@ TCase *create_testcase_read(void)
 	tcase_add_loop_test(tc, TEST_read_argument, 0, PINK_MAX_ARGS);
 	tcase_add_loop_test(tc, TEST_read_vm_data, 0, PINK_MAX_ARGS);
 	tcase_add_loop_test(tc, TEST_read_vm_data_nul, 0, PINK_MAX_ARGS);
+	tcase_add_loop_test(tc, TEST_read_vm_data_nul_long, 0, PINK_MAX_ARGS);
 	tcase_add_loop_test(tc, TEST_read_string_array, 0, PINK_MAX_ARGS);
 
 	return tc;
