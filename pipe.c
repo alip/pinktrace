@@ -38,6 +38,7 @@
 
 #include <pinktrace/pink.h>
 
+#ifndef HAVE_PIPE2
 static int set_cloexec_flag(int fd)
 {
 	int flags, newflags;
@@ -55,6 +56,7 @@ static int set_cloexec_flag(int fd)
 
 	return 0;
 }
+#endif
 
 /*
  * Reading or writing pipe data is atomic if the size of data written is not
