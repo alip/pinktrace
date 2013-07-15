@@ -184,7 +184,7 @@ int pink_trace_resume(pid_t pid, int sig);
  * @param sig Signal
  * @return 0 on success, negated errno on failure
  **/
-int pink_trace_kill(pid_t pid, pid_t tgid, int sig);
+int pink_trace_kill(pid_t tid, pid_t tgid, int sig);
 
 /**
  * Restarts the stopped child process and arranges it to be stopped after

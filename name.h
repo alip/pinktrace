@@ -139,7 +139,7 @@ int pink_lookup_errno(const char *name, short abi)
  * @param abi System call ABI
  * @return The name of the signal, NULL if errno name is unknown
  **/
-const char *pink_name_signal(int err_no, short abi)
+const char *pink_name_signal(int sig, short abi)
 	PINK_GCC_ATTR((pure));
 
 /**
