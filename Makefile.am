@@ -79,7 +79,11 @@ pinktrace_check_LDADD= $(CHECK_LIBS)
 
 TESTS= $(check_PROGRAMS)
 
+if ENABLE_INSTALLED_TESTS
+
 bin_PROGRAMS= pinktrace-check
+
+endif # ENABLE_INSTALLED_TESTS
 
 endif # HAVE_CHECK
 
