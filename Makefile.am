@@ -100,6 +100,14 @@ SPARSE_CPPFLAGS+= -D__x86_64__=1
 #SPARSE_CPPFLAGS+= -D__powerpc64__=1
 #SPARSE_CPPFLAGS+= -D__arm__=1
 
+.PHONY: cppcheck
+cppcheck:
+	cppcheck $(libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES) \
+		--std=c99 --std=posix \
+		--enable=warning,style,performance,portability,information,missingInclude \
+		-I$(top_builddir) -I$(top_srcdir) \
+		-I$(srcdir)/$(OS)/$(ARCH) -I$(srcdir)/$(OS)
+
 .PHONY: sparse-check
 sparse-check:
 	for src in $(libpinktrace_@PINKTRACE_PC_SLOT@_la_SOURCES); \
