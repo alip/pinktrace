@@ -66,6 +66,9 @@
 # define pt_all_user_regs XXX_pt_all_user_regs
 # endif
 #endif
+#ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
+# define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
+#endif
 #include <linux/ptrace.h>
 #if PINK_ARCH_IA64
 # undef ia64_fpreg
