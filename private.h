@@ -74,6 +74,10 @@
 # undef ia64_fpreg
 # undef pt_all_user_regs
 #endif
+#ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
+# undef ptrace_peeksiginfo_args
+#endif
+#endif
 
 #include <elf.h> /* NT_PRSTATUS */
 
