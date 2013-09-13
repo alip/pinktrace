@@ -77,7 +77,6 @@
 #ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
 # undef ptrace_peeksiginfo_args
 #endif
-#endif
 
 #include <elf.h> /* NT_PRSTATUS */
 
