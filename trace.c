@@ -207,6 +207,14 @@ int pink_trace_setup(pid_t pid, int options)
 #endif
 	}
 
+	if (options & PINK_TRACE_OPTION_EXITKILL) {
+#if PINK_HAVE_OPTION_EXITKILL
+		ptrace_options |= PTRACE_O_EXITKILL;
+#else
+		return -EINVAL;
+#endif
+	}
+
 	return pink_ptrace(PTRACE_SETOPTIONS, pid, NULL, (void *)(long)ptrace_options, NULL);
 #else
 	return -ENOSYS;

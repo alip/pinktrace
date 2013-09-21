@@ -130,6 +130,17 @@
 #define PINK_TRACE_OPTION_SECCOMP   (1 << 7)
 
 /**
+ * This define represents the trace option EXITKILL.
+ * If this flag is set in the options argument of pink_trace_setup(), a SIGKILL
+ * signal will be sent to every tracee if the tracer exits. This option is
+ * useful for ptrace jailers that want to ensure that tracees can never escape
+ * the tracer's control.
+ *
+ * @see PINK_HAVE_OPTION_EXITKILL
+ **/
+#define PINK_TRACE_OPTION_EXITKILL  (1 << 8)
+
+/**
  * Wrapper function for @e ptrace(2) function, addressing oddities.
  *
  * @param req Ptrace request

@@ -123,6 +123,13 @@
  * @see pink_trace_setup()
  **/
 #define PINK_HAVE_OPTION_SECCOMP	@PINK_HAVE_OPTION_SECCOMP@
+/**
+ * Define to 1 if #PINK_TRACE_OPTION_EXITKILL is supported, 0 otherwise
+ *
+ * @note This option is supported on Linux-3.8 and newer.
+ * @see pink_trace_setup()
+ **/
+#define PINK_HAVE_OPTION_EXITKILL	@PINK_HAVE_OPTION_EXITKILL@
 
 /**
  * Define to 1 if pink_trace_setup() is supported, 0 otherwise
