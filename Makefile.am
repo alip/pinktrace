@@ -50,26 +50,25 @@ noinst_HEADERS= \
 		private.h
 
 IF_CHECK_SRCS= \
+	       seatest.c \
 	       trace-TEST.c \
 	       read-TEST.c \
 	       write-TEST.c \
 	       socket-TEST.c \
 	       pinktrace-check.c
 
-noinst_HEADERS+= pinktrace-check.h
+noinst_HEADERS+= seatest.h pinktrace-check.h
 EXTRA_DIST+= $(IF_CHECK_SRCS)
 
-if HAVE_CHECK
 CHECK_CFLAGS= \
 	      -I$(top_builddir) \
 	      -I$(top_srcdir) \
-	      $(check_CFLAGS) \
 	      @PINKTRACE_CFLAGS@
 CHECK_LIBS= \
+	    -lrt -lm \
 	    $(builddir)/libpinktrace_@PINKTRACE_PC_SLOT@.la \
 	    -L$(builddir)/.libs \
-	    -lpinktrace_@PINKTRACE_PC_SLOT@ \
-	    $(check_LIBS)
+	    -lpinktrace_@PINKTRACE_PC_SLOT@
 
 check_PROGRAMS= pinktrace-check
 
@@ -84,8 +83,6 @@ if ENABLE_INSTALLED_TESTS
 bin_PROGRAMS= pinktrace-check
 
 endif # ENABLE_INSTALLED_TESTS
-
-endif # HAVE_CHECK
 
 SPARSE=sparse
 SPARSE_CPPFLAGS= $(DEFAULT_INCLUDES) \

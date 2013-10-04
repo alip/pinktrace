@@ -54,6 +54,9 @@
 #define ANSI_CYAN		"[00;36m"
 
 unsigned os_release;
+unsigned _i;
+pid_t _pgid = -1;
+char _pinktrace_fail_msg[256];
 
 PINK_GCC_ATTR((format (printf, 2, 0)))
 int pprintf_va(int pretty, const char *format, va_list ap)
@@ -89,6 +92,7 @@ int pprintf_va(int pretty, const char *format, va_list ap)
 	printf("%s", ANSI_NORMAL);
 	if (pretty == WARNING)
 		fputc('\n', stdout);
+	fflush(stdout);
 
 	return r;
 }
@@ -265,13 +269,25 @@ static void dump_socket_address(struct pink_sockaddr *sockaddr)
 
 pid_t fork_assert(void)
 {
+	int r, save_errno;
 	pid_t pid;
 
 	pid = fork();
-	fail_if_verbose(pid == -1, "fork (errno:%d %s)",
-			errno, strerror(errno));
+	assert_false_verbose(pid == -1, "fork (errno:%d %s)", errno, strerror(errno));
+	if (pid == 0)
+		return pid;
 
-	return pid;
+	r = setpgid(pid, 0);
+	save_errno = errno;
+	if (r == 0) {
+		_pgid = pid;
+		return pid;
+	}
+
+	kill(pid, SIGKILL);
+	errno = save_errno;
+	fail_verbose("setpgid (errno:%d %s)", errno, strerror(errno));
+	return -1;
 }
 
 void kill_save_errno(pid_t pid, int sig)
@@ -280,9 +296,7 @@ void kill_save_errno(pid_t pid, int sig)
 	int saved_errno = errno;
 
 	r = kill(pid, sig);
-	warning("\tkill(%u, %d) = %d (errno:%d %s)\n",
-			pid, sig,
-			r, errno, strerror(errno));
+	warning("\tkill(%u, %d) = %d (errno:%d %s)\n", pid, sig, r, errno, strerror(errno));
 	errno = saved_errno;
 }
 
@@ -309,33 +323,28 @@ pid_t waitpid_no_intr_debug(unsigned loopcnt,
 	tracee_pid = waitpid_no_intr(pid, status, options);
 	saved_errno = errno;
 	message("%s:%s@%d[%u] wait(pid:%d status:%p opts:%d) = %d ",
-			file, func, linecnt, loopcnt,
-			pid, (void *)status, options,
-			tracee_pid);
+		file, func, linecnt, loopcnt,
+		pid, (void *)status, options,
+		tracee_pid);
 	if (tracee_pid > 0) {
 		int s = *status;
 
 		debug("(status:%#x", (unsigned)*status);
 		if (WIFSTOPPED(s))
-			debug("{stop:%d %s}",
-					WSTOPSIG(s),
-					strsignal(WSTOPSIG(s)));
+			debug("{stop:%d %s}", WSTOPSIG(s), strsignal(WSTOPSIG(s)));
 		else if (WIFEXITED(s))
 			debug("{exit:%d}", WEXITSTATUS(s));
 		else if (WIFSIGNALED(s))
 			debug("{term:%d %s%s}",
-					WTERMSIG(s), strsignal(WTERMSIG(s)),
-					WCOREDUMP(s) ? " (core dumped)" : "");
+			      WTERMSIG(s), strsignal(WTERMSIG(s)),
+			      WCOREDUMP(s) ? " (core dumped)" : "");
 #ifdef WIFCONTINUED
 		else if (WIFCONTINUED(s))
-			debug("{cont:%d %s}",
-					SIGCONT,
-					strsignal(SIGCONT));
+			debug("{cont:%d %s}", SIGCONT, strsignal(SIGCONT));
 #endif
 		debug(")\n");
 	} else {
-		warning("(errno:%d %s)\n", saved_errno,
-				strerror(saved_errno));
+		warning("(errno:%d %s)\n", saved_errno, strerror(saved_errno));
 	}
 	errno = saved_errno;
 
@@ -352,8 +361,8 @@ pid_t wait_no_intr_debug(unsigned loopcnt,
 			 int *status)
 {
 	return waitpid_no_intr_debug(loopcnt,
-			file, func, linecnt,
-			-1, status, 0);
+				     file, func, linecnt,
+				     -_pgid, status, 0);
 }
 
 bool check_echild_or_kill(pid_t pid, pid_t retval)
@@ -361,9 +370,8 @@ bool check_echild_or_kill(pid_t pid, pid_t retval)
 	if (errno == ECHILD)
 		return true;
 	kill_save_errno(pid, SIGKILL);
-	fail_verbose("unexpected wait result %d (errno:%d %s)",
-			retval, errno, strerror(errno));
-	abort();
+	fail_verbose("unexpected wait result %d (errno:%d %s)", retval, errno, strerror(errno));
+	return false;
 }
 
 bool check_exit_code_or_fail(int status, int code)
@@ -382,9 +390,7 @@ bool check_signal_or_fail(int status, int sig)
 		return false;
 	if (WTERMSIG(status) == sig)
 		return true;
-	fail_verbose("unexpected signal (signal:%u %s)",
-			WTERMSIG(status),
-			strsignal(WTERMSIG(status)));
+	fail_verbose("unexpected signal (signal:%u %s)", WTERMSIG(status), strsignal(WTERMSIG(status)));
 	abort();
 }
 
@@ -402,78 +408,55 @@ void check_syscall_equal_or_kill(pid_t pid, long sysnum, long sysnum_expected)
 	if (sysnum == sysnum_expected)
 		return;
 	kill(pid, SIGKILL);
-	fail_verbose("unexpected syscall %ld"
-			" (name:%s expected:%ld %s)",
-			sysnum,
-			pink_name_syscall(sysnum, PINK_ABI_DEFAULT),
-			sysnum_expected,
-			sysnum_expected == PINK_SYSCALL_INVALID
-				? "PINK_SYSCALL_INVALID"
-				: pink_name_syscall(sysnum_expected,
-						    PINK_ABI_DEFAULT));
+	fail_verbose("unexpected syscall %ld (name:%s expected:%ld %s)",
+		       sysnum, pink_name_syscall(sysnum, PINK_ABI_DEFAULT),
+		       sysnum_expected,
+		       sysnum_expected == PINK_SYSCALL_INVALID ? "PINK_SYSCALL_INVALID" : pink_name_syscall(sysnum_expected, PINK_ABI_DEFAULT));
 	abort();
 }
 
-void check_retval_equal_or_kill(pid_t pid,
-				long retval, long retval_expected,
+void check_retval_equal_or_kill(pid_t pid, long retval, long retval_expected,
 				int error, int error_expected)
 {
 	if (retval == retval_expected && error == error_expected)
 		return;
 	kill(pid, SIGKILL);
-	fail_verbose("unexpected retval %ld (errno:%d %s)"
-			", expected %ld (errno:%d %s)",
-			retval,
-			error, strerror(error),
-			retval_expected,
-			error_expected, strerror(error_expected));
+	fail_verbose("unexpected retval %ld (errno:%d %s), expected %ld (errno:%d %s)",
+		       retval, error, strerror(error), retval_expected,
+		       error_expected, strerror(error_expected));
 	abort();
 }
 
-void check_argument_equal_or_kill(pid_t pid,
-				  long arg, long arg_expected)
+void check_argument_equal_or_kill(pid_t pid, long arg, long arg_expected)
 {
 	if (arg == arg_expected)
 		return;
 	kill(pid, SIGKILL);
-	fail_verbose("unexpected argument %ld expected %ld",
-			arg, arg_expected);
+	fail_verbose("unexpected argument %ld expected %ld", arg, arg_expected);
 	abort();
 }
 
-void check_memory_equal_or_kill(pid_t pid,
-				const void *val,
-				const void *val_expected,
-				size_t n)
+void check_memory_equal_or_kill(pid_t pid, const void *val, const void *val_expected, size_t n)
 {
 	if (memcmp(val, val_expected, n) == 0)
 		return;
 	kill(pid, SIGKILL);
-	warning("Memory area %p not identical with the expected %p",
-			val, val_expected);
+	warning("Memory area %p not identical with the expected %p", val, val_expected);
 	dump_basic_hex(val, n);
 	dump_basic_hex(val_expected, n);
-	fail_verbose("Memory area %p not identical with the expected %p",
-			val, val_expected);
+	fail_verbose("Memory area %p not identical with the expected %p", val, val_expected);
 	abort();
 }
 
-void check_string_equal_or_kill(pid_t pid,
-				const char *str,
-				const char *str_expected,
-				size_t len)
+void check_string_equal_or_kill(pid_t pid, const char *str, const char *str_expected, size_t len)
 {
 	if (strncmp(str, str_expected, len) == 0)
 		return;
 	kill(pid, SIGKILL);
-	warning("String %p:`%s' not identical with the expected %p:`%s'",
-			str, str,
-			str_expected, str_expected);
+	warning("String %p:`%s' not identical with the expected %p:`%s'", str, str, str_expected, str_expected);
 	dump_basic_hex(str, len);
 	dump_basic_hex(str_expected, len);
-	fail_verbose("String %p:`%s' not identical with the expected %p:`%s'",
-			str, str,
-			str_expected, str_expected);
+	fail_verbose("String %p:`%s' not identical with the expected %p:`%s'", str, str, str_expected, str_expected);
 	abort();
 }
 
@@ -493,14 +476,10 @@ void check_string_endswith_or_kill(pid_t pid, const char *str,
 		return;
 fail:
 	kill(pid, SIGKILL);
-	warning("String %p:`%s' doesn't end with the expected %p:`%s'",
-			str, str,
-			suffix_expected, suffix_expected);
+	warning("String %p:`%s' doesn't end with the expected %p:`%s'", str, str, suffix_expected, suffix_expected);
 	dump_basic_hex(str, slen);
 	dump_basic_hex(suffix_expected, elen);
-	fail_verbose("String %p:`%s' doesn't end with the expected %p:`%s'",
-			str, str,
-			suffix_expected, suffix_expected);
+	fail_verbose("String %p:`%s' doesn't end with the expected %p:`%s'", str, str, suffix_expected, suffix_expected);
 	abort();
 }
 
@@ -516,8 +495,7 @@ void check_addr_loopback_or_kill(pid_t pid, in_addr_t addr)
 		(u_int32_t)addr, ip,
 		(u_int32_t)INADDR_LOOPBACK);
 	fail_verbose("in_addr %#x (ip: `%s') not identical with INADDR_LOOPBACK:%#x",
-		     (u_int32_t)addr, ip,
-		     (u_int32_t)INADDR_LOOPBACK);
+		     (u_int32_t)addr, ip, (u_int32_t)INADDR_LOOPBACK);
 	abort();
 }
 
@@ -532,8 +510,7 @@ void check_addr6_loopback_or_kill(pid_t pid, struct in6_addr *addr6)
 	inet_ntop(AF_INET6, addr6, ip, sizeof(ip));
 	warning("in6_addr: `%s' not identical to in6addr_loopback: `::1'", ip);
 
-	fail_verbose("in6_addr: `%s' not identical to in6addr_loopback: `::1'",
-		     ip);
+	fail_verbose("in6_addr: `%s' not identical to in6addr_loopback: `::1'", ip);
 	abort();
 }
 #endif
@@ -886,30 +863,22 @@ static unsigned get_os_release(void)
 	return rel;
 }
 
-int main(void)
+static void all_tests(void)
 {
-	int number_failed;
-	SRunner *sr;
-	Suite *s;
+	if (!getenv("PINK_CHECK_SKIP_TRACE"))
+		test_suite_trace();
+	if (!getenv("PINK_CHECK_SKIP_READ"))
+		test_suite_read();
+	if (!getenv("PINK_CHECK_SKIP_WRITE"))
+		test_suite_write();
+	if (!getenv("PINK_CHECK_SKIP_SOCKET"))
+		test_suite_socket();
+}
 
+int main(int argc, char *argv[])
+{
 	os_release = get_os_release();
+	_i = 0;
 
-	s = suite_create("pink-core");
-	if (getenv("PINK_CHECK_SKIP_TRACE") == NULL)
-		suite_add_tcase(s, create_testcase_trace());
-	if (getenv("PINK_CHECK_SKIP_READ") == NULL)
-		suite_add_tcase(s, create_testcase_read());
-	if (getenv("PINK_CHECK_SKIP_WRITE") == NULL)
-		suite_add_tcase(s, create_testcase_write());
-	if (getenv("PINK_CHECK_SKIP_SOCKET") == NULL)
-		suite_add_tcase(s, create_testcase_socket());
-
-	sr = srunner_create(s);
-
-	srunner_run_all(sr, CK_VERBOSE);
-	number_failed = srunner_ntests_failed(sr);
-	srunner_free(sr);
-
-	warning("Failed test cases: %d", number_failed);
-	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+	return seatest_testrunner(argc, argv, all_tests, NULL, NULL);
 }

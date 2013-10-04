@@ -127,7 +127,7 @@ static void check_socketcall_equal_or_kill(pid_t pid, int test_sys, long subcall
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, fd, NULL,...) with
  * a number and socket address and then check whether it's read correctly.
  */
-START_TEST(TEST_read_socket_address_af_null)
+static void test_read_socket_address_af_null(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -211,14 +211,13 @@ START_TEST(TEST_read_socket_address_af_null)
 			     test_name,
 			     test_sys_name(test_sys));
 }
-END_TEST
 
 /*
  * Test whether reading AF_UNIX socket address works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, fd, $sun_addr,...)
  * with a number and socket address and then check whether it's read correctly.
  */
-START_TEST(TEST_read_socket_address_af_unix)
+static void test_read_socket_address_af_unix(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -316,14 +315,13 @@ START_TEST(TEST_read_socket_address_af_unix)
 			     test_name,
 			     test_sys_name(test_sys));
 }
-END_TEST
 
 /*
  * Test whether reading AF_UNIX abstract socket address works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, fd, $sun_addr,...)
  * with a number and socket address and then check whether it's read correctly.
  */
-START_TEST(TEST_read_socket_address_af_unixabs)
+static void test_read_socket_address_af_unixabs(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -426,14 +424,13 @@ START_TEST(TEST_read_socket_address_af_unixabs)
 		fail_verbose("%s: Test for reading socket address for %s() failed",
 			     test_name, test_sys_name(test_sys));
 }
-END_TEST
 
 /*
  * Test whether reading AF_INET abstract socket address works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, fd, $sin_addr,...)
  * with a number and socket address and then check whether it's read correctly.
  */
-START_TEST(TEST_read_socket_address_af_inet)
+static void test_read_socket_address_af_inet(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -530,14 +527,13 @@ START_TEST(TEST_read_socket_address_af_inet)
 		fail_verbose("%s: Test for reading socket address for %s() failed",
 			     test_name, test_sys_name(test_sys));
 }
-END_TEST
 
 /*
  * Test whether reading AF_INET6 abstract socket address works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, fd, $sin6_addr,...)
  * with a number and socket address and then check whether it's read correctly.
  */
-START_TEST(TEST_read_socket_address_af_inet6)
+static void test_read_socket_address_af_inet6(void)
 {
 #if !PINK_HAVE_IPV6
 	message("PINK_HAVE_IPV6 is 0, skipping test\n");
@@ -639,14 +635,13 @@ START_TEST(TEST_read_socket_address_af_inet6)
 			     test_name, test_sys_name(test_sys));
 #endif
 }
-END_TEST
 
 /*
  * Test whether reading AF_NETLINK abstract socket address works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, fd, $nl_addr,...)
  * with a number and socket address and then check whether it's read correctly.
  */
-START_TEST(TEST_read_socket_address_af_netlink)
+static void test_read_socket_address_af_netlink(void)
 {
 #if !PINK_HAVE_NETLINK
 	message("PINK_HAVE_NETLINK is 0, skipping test\n");
@@ -754,23 +749,26 @@ START_TEST(TEST_read_socket_address_af_netlink)
 			     test_name, test_sys_name(test_sys));
 #endif
 }
-END_TEST
 
-TCase *create_testcase_socket(void)
-{
-	TCase *tc = tcase_create("socket");
+static void test_fixture_socket(void) {
+	test_fixture_start();
 
-	tcase_add_loop_test(tc, TEST_read_socket_address_af_null,
-			    TEST_SYS_BIND, TEST_SYS_MAX);
-	tcase_add_loop_test(tc, TEST_read_socket_address_af_unix,
-			    TEST_SYS_BIND, TEST_SYS_MAX);
-	tcase_add_loop_test(tc, TEST_read_socket_address_af_unixabs,
-			    TEST_SYS_BIND, TEST_SYS_MAX);
-	tcase_add_loop_test(tc, TEST_read_socket_address_af_inet,
-			    TEST_SYS_BIND, TEST_SYS_MAX);
-	tcase_add_loop_test(tc, TEST_read_socket_address_af_inet6,
-			    TEST_SYS_BIND, TEST_SYS_MAX);
-	tcase_add_loop_test(tc, TEST_read_socket_address_af_netlink,
-			    TEST_SYS_BIND, TEST_SYS_MAX);
-	return tc;
+	for (_i = TEST_SYS_BIND; _i < TEST_SYS_MAX; _i++)
+		run_test(test_read_socket_address_af_null);
+	for (_i = TEST_SYS_BIND; _i < TEST_SYS_MAX; _i++)
+		run_test(test_read_socket_address_af_unix);
+	for (_i = TEST_SYS_BIND; _i < TEST_SYS_MAX; _i++)
+		run_test(test_read_socket_address_af_unixabs);
+	for (_i = TEST_SYS_BIND; _i < TEST_SYS_MAX; _i++)
+		run_test(test_read_socket_address_af_inet);
+	for (_i = TEST_SYS_BIND; _i < TEST_SYS_MAX; _i++)
+		run_test(test_read_socket_address_af_inet6);
+	for (_i = TEST_SYS_BIND; _i < TEST_SYS_MAX; _i++)
+		run_test(test_read_socket_address_af_netlink);
+
+	test_fixture_end();
+}
+
+void test_suite_socket(void) {
+	test_fixture_socket();
 }

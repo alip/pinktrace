@@ -53,7 +53,7 @@ static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
  * libraries like glibc may cache the result of getpid() thus returning without
  * calling the actual system call.
  */
-START_TEST(TEST_read_syscall)
+static void test_read_syscall(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -101,14 +101,13 @@ START_TEST(TEST_read_syscall)
 		fail_verbose("Test for reading system call number"
 				" with PINK_TRACE_OPTION_SYSGOOD failed");
 }
-END_TEST
 
 /*
  * Test whether reading syscall return value works for success.
  * Fork a child and call getpid() which should always return success.
  * Check for the system call return value from parent.
  */
-START_TEST(TEST_read_retval_good)
+static void test_read_retval_good(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -164,14 +163,13 @@ START_TEST(TEST_read_retval_good)
 	if (!it_worked)
 		fail_verbose("Test for reading success return value failed");
 }
-END_TEST
 
 /*
  * Test whether reading syscall return value works for failure.
  * Fork a child and call open(NULL, 0);
  * Check for -EFAULT error condition.
  */
-START_TEST(TEST_read_retval_fail)
+static void test_read_retval_fail(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -227,14 +225,13 @@ START_TEST(TEST_read_retval_fail)
 	if (!it_worked)
 		fail_verbose("Test for reading error return value failed");
 }
-END_TEST
 
 /*
  * Test whether reading syscall arguments works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, ...) with
  * expected arguments and then check whether they are read correctly.
  */
-START_TEST(TEST_read_argument)
+static void test_read_argument(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -289,14 +286,13 @@ START_TEST(TEST_read_argument)
 	if (!it_worked)
 		fail_verbose("Test for reading syscall argument %d failed", arg_index);
 }
-END_TEST
 
 /*
  * Test whether reading tracee's address space works.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, ...) with
  * a filled 'struct stat' and then check whether it's read correctly.
  */
-START_TEST(TEST_read_vm_data)
+static void test_read_vm_data(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -353,7 +349,6 @@ START_TEST(TEST_read_vm_data)
 	if (!it_worked)
 		fail_verbose("Test for reading VM data at argument %d failed", arg_index);
 }
-END_TEST
 
 /*
  * Test whether reading tracee's address space works.
@@ -361,7 +356,7 @@ END_TEST
  * string containing '\0' in the middle and then check whether it's read
  * correctly.
  */
-START_TEST(TEST_read_vm_data_nul)
+static void test_read_vm_data_nul(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -422,14 +417,13 @@ START_TEST(TEST_read_vm_data_nul)
 				" at argument %d failed",
 				arg_index);
 }
-END_TEST
 
 /*
  * Test whether reading tracee's address space works for subsequent reads.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, ...) with a string
  * longer than sizeof(long) then check whether it's read correctly.
  */
-START_TEST(TEST_read_vm_data_nul_long)
+static void test_read_vm_data_nul_long(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -513,14 +507,13 @@ START_TEST(TEST_read_vm_data_nul_long)
 			     " subsequently at argument %d failed",
 			     arg_index);
 }
-END_TEST
 
 /*
  * Test whether reading NULL-terminated string arrays work.
  * First fork a new child, call syscall(PINK_SYSCALL_INVALID, ...) with a
  * NULL-terminated array and then check whether it's read correctly.
  */
-START_TEST(TEST_read_string_array)
+static void test_read_string_array(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -600,20 +593,28 @@ START_TEST(TEST_read_string_array)
 		fail_verbose("Test for reading NULL-terminated string array"
 			     " at argument %d failed", arg_index);
 }
-END_TEST
 
-TCase *create_testcase_read(void)
-{
-	TCase *tc = tcase_create("read");
+static void test_fixture_read(void) {
+	test_fixture_start();
 
-	tcase_add_test(tc, TEST_read_syscall);
-	tcase_add_test(tc, TEST_read_retval_good);
-	tcase_add_test(tc, TEST_read_retval_fail);
-	tcase_add_loop_test(tc, TEST_read_argument, 0, PINK_MAX_ARGS);
-	tcase_add_loop_test(tc, TEST_read_vm_data, 0, PINK_MAX_ARGS);
-	tcase_add_loop_test(tc, TEST_read_vm_data_nul, 0, PINK_MAX_ARGS);
-	tcase_add_loop_test(tc, TEST_read_vm_data_nul_long, 0, PINK_MAX_ARGS);
-	tcase_add_loop_test(tc, TEST_read_string_array, 0, PINK_MAX_ARGS);
+	run_test(test_read_syscall);
+	run_test(test_read_retval_good);
+	run_test(test_read_retval_fail);
 
-	return tc;
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_read_argument);
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_read_vm_data);
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_read_vm_data_nul);
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_read_vm_data_nul_long);
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_read_string_array);
+
+	test_fixture_end();
+}
+
+void test_suite_read(void) {
+	test_fixture_read();
 }

@@ -48,29 +48,29 @@ static const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
  * 0: Change getpid() to PINK_SYSCALL_INVALID and expect -ENOSYS.
  * 1: Change lseek(0, 0, 0) to open(0, ...); and expect -EFAULT.
  */
-START_TEST(TEST_write_syscall)
+static void test_write_syscall(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
 
-#define TEST_GETPID 0
-#define TEST_LSEEK 1
+#define test_GETPID 0
+#define test_LSEEK 1
 #define TEST_WRITE_SYSCALL_MAX 2
 	int test = _i;
 	const char *test_name = NULL;
 	int errno_expected;
 	long test_call, change_call;
 
-	if (test == TEST_GETPID) {
+	if (test == test_GETPID) {
 		test_name = "getpid";
 		errno_expected = ENOSYS;
 		change_call = PINK_SYSCALL_INVALID;
 		test_call = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of getpid()");
-	} else if (test == TEST_LSEEK) {
+	} else if (test == test_LSEEK) {
 		test_name = "lseek";
 		errno_expected = EFAULT;
 		change_call = pink_lookup_syscall("open", PINK_ABI_DEFAULT);
@@ -92,14 +92,14 @@ START_TEST(TEST_write_syscall)
 	if (pid == 0) {
 		pid = getpid();
 		trace_me_and_stop();
-		if (test == TEST_GETPID)
+		if (test == test_GETPID)
 			syscall(test_call);
-		else if (test == TEST_LSEEK)
+		else if (test == test_LSEEK)
 			syscall(test_call, 0, 0, 0);
 		_exit(0);
 	}
-#undef TEST_GETPID
-#undef TEST_LSEEK
+#undef test_GETPID
+#undef test_LSEEK
 	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
@@ -139,14 +139,13 @@ START_TEST(TEST_write_syscall)
 	if (!it_worked)
 		fail_verbose("Test for writing system call `%s' failed", test_name);
 }
-END_TEST
 
 /*
  * Test whether writing return value works
  * 0: Change getpid() return value to 0xdead and check exit status
  * 1: Change getpid() return to -EPERM and check exit status
  */
-START_TEST(TEST_write_retval)
+static void test_write_retval(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -155,8 +154,8 @@ START_TEST(TEST_write_retval)
 	bool write_done = false;
 	long sys_getpid;
 
-#define TEST_GOOD 0
-#define TEST_FAIL 1
+#define test_GOOD 0
+#define test_FAIL 1
 #define TEST_WRITE_RETVAL_MAX 2
 	int test = _i;
 	const char *test_name = NULL;
@@ -167,7 +166,7 @@ START_TEST(TEST_write_retval)
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 
-	if (test == TEST_GOOD) {
+	if (test == test_GOOD) {
 		test_name = "good";
 		change_error = 0;
 		change_retval = 0xdead;
@@ -178,8 +177,8 @@ START_TEST(TEST_write_retval)
 	}
 	message("test_retval_%s: changing retval:%ld errno:%d %s\n",
 		test_name, change_retval, change_error, strerror(change_error));
-#undef TEST_GOOD
-#undef TEST_FAIL
+#undef test_GOOD
+#undef test_FAIL
 
 	pid = fork_assert();
 	if (pid == 0) {
@@ -229,7 +228,6 @@ START_TEST(TEST_write_retval)
 	if (!it_worked)
 		fail_verbose("Test for reading return value of `%s' failed", test_name);
 }
-END_TEST
 
 /*
  * Test whether writing syscall arguments works.
@@ -237,7 +235,7 @@ END_TEST
  * arguments. From parent write the argument on system call entry and then read
  * it on system call exit.
  */
-START_TEST(TEST_write_argument)
+static void test_write_argument(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -300,7 +298,6 @@ START_TEST(TEST_write_argument)
 	if (!it_worked)
 		fail_verbose("Test for writing syscall argument %d failed", arg_index);
 }
-END_TEST
 
 /*
  * Test whether writing syscall VM data works.
@@ -308,7 +305,7 @@ END_TEST
  * arguments. From parent write VM data on system call entry and then read
  * it on system call exit.
  */
-START_TEST(TEST_write_vm_data)
+static void test_write_vm_data(void)
 {
 	pid_t pid;
 	struct pink_regset *regset;
@@ -379,16 +376,22 @@ START_TEST(TEST_write_vm_data)
 	if (!it_worked)
 		fail_verbose("Test for writing VM data to argument %d failed", arg_index);
 }
-END_TEST
 
-TCase *create_testcase_write(void)
-{
-	TCase *tc = tcase_create("write");
+static void test_fixture_write(void) {
+	test_fixture_start();
 
-	tcase_add_loop_test(tc, TEST_write_syscall, 0, TEST_WRITE_SYSCALL_MAX);
-	tcase_add_loop_test(tc, TEST_write_retval, 0, TEST_WRITE_RETVAL_MAX);
-	tcase_add_loop_test(tc, TEST_write_argument, 0, PINK_MAX_ARGS);
-	tcase_add_loop_test(tc, TEST_write_vm_data, 0, PINK_MAX_ARGS);
+	for (_i = 0; _i < TEST_WRITE_SYSCALL_MAX; _i++)
+		run_test(test_write_syscall);
+	for (_i = 0; _i < TEST_WRITE_RETVAL_MAX; _i++)
+		run_test(test_write_retval);
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_write_argument);
+	for (_i = 0; _i < PINK_MAX_ARGS; _i++)
+		run_test(test_write_vm_data);
 
-	return tc;
+	test_fixture_end();
+}
+
+void test_suite_write(void) {
+	test_fixture_write();
 }

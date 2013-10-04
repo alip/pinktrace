@@ -45,7 +45,7 @@
  * First fork a new child, call ptrace with PTRACE_SETOPTIONS on it,
  * and then see which options are supported by the kernel.
  */
-START_TEST(TEST_trace_clone)
+static void test_trace_clone(void)
 {
 	pid_t pid, expected_grandchild = 0, found_grandchild = 0;
 	const unsigned int test_options = PINK_TRACE_OPTION_CLONE |
@@ -120,7 +120,6 @@ START_TEST(TEST_trace_clone)
 	if (!(expected_grandchild && expected_grandchild == found_grandchild))
 		fail_verbose("Test for PINK_TRACE_OPTION_CLONE failed");
 }
-END_TEST
 
 /*
  * Test whether the kernel support PTRACE_O_TRACESYSGOOD.
@@ -136,7 +135,7 @@ END_TEST
  *		int	$0x80
  * (compile with: "gcc -nostartfiles -nostdlib -o int3 int3.S")
  */
-START_TEST(TEST_trace_sysgood)
+static void test_trace_sysgood(void)
 {
 	const unsigned int test_options = PINK_TRACE_OPTION_SYSGOOD;
 	pid_t pid;
@@ -171,10 +170,9 @@ START_TEST(TEST_trace_sysgood)
 	if (!it_worked)
 		fail_verbose("Test for PINK_TRACE_OPTION_SYSGOOD failed");
 }
-END_TEST
 
 /* Test whether the kernel supports PTRACE_O_TRACEEXEC */
-START_TEST(TEST_trace_exec)
+static void test_trace_exec(void)
 {
 	const unsigned int test_options = PINK_TRACE_OPTION_EXEC;
 	pid_t pid;
@@ -226,15 +224,15 @@ START_TEST(TEST_trace_exec)
 	if (!it_worked)
 		fail_verbose("Test for PINK_TRACE_OPTION_EXEC failed");
 }
-END_TEST
 
-TCase *create_testcase_trace(void)
-{
-	TCase *tc = tcase_create("trace");
+static void test_fixture_trace(void) {
+	test_fixture_start();
+	run_test(test_trace_clone);
+	run_test(test_trace_sysgood);
+	run_test(test_trace_exec);
+	test_fixture_end();
+}
 
-	tcase_add_test(tc, TEST_trace_clone);
-	tcase_add_test(tc, TEST_trace_sysgood);
-	tcase_add_test(tc, TEST_trace_exec);
-
-	return tc;
+void test_suite_trace(void) {
+	test_fixture_trace();
 }

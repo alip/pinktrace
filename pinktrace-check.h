@@ -47,15 +47,20 @@
 
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
-#include <check.h>
 
 #include <stdarg.h>
 #include <sys/types.h>
+#include <setjmp.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/un.h>
 #include <arpa/inet.h>
+
+#include "seatest.h"
+
+extern unsigned _i;
+extern pid_t _pgid;
 
 #ifdef KERNEL_VERSION
 # undef KERNEL_VERSION
@@ -76,25 +81,30 @@ int pprintf(int pretty, const char *format, ...)
 #define message(...)	pprintf(MESSAGE, __VA_ARGS__)
 #define warning(...)	pprintf(WARNING, __VA_ARGS__)
 
-#define fail_verbose(...)			\
-	do {					\
-		pprintf(WARNING, __VA_ARGS__);	\
-		fail(__VA_ARGS__);		\
+extern char _pinktrace_fail_msg[256];
+#define fail_verbose(...) \
+	do { \
+		pprintf(WARNING, __VA_ARGS__); \
+		memset(_pinktrace_fail_msg, 0, 256 * sizeof(char)); \
+		snprintf(_pinktrace_fail_msg, 256, __VA_ARGS__); \
+		seatest_simple_test_result(0, _pinktrace_fail_msg, __func__, __LINE__); \
 	} while (0)
 
-#define fail_if_verbose(x, fmt, ...)				\
-	do {							\
-		if ((x)) {					\
-			fail_verbose((fmt), __VA_ARGS__);	\
-		}						\
-	} while (0)
+#define assert_true_verbose(x, fmt, ...) \
+	do { \
+		if (!(x)) { \
+			fail_verbose((fmt), __VA_ARGS__); \
+		} \
+	} \
+	while (0)
 
-#define fail_unless_verbose(x, fmt, ...)			\
-	do {							\
-		if (!(x)) {					\
-			fail_verbose((fmt), __VA_ARGS__);	\
-		}						\
-	} while (0)
+#define assert_false_verbose(x, fmt, ...) \
+	do { \
+		if ((x)) { \
+			fail_verbose((fmt), __VA_ARGS__); \
+		} \
+	} \
+	while (0)
 
 pid_t fork_assert(void);
 void kill_save_errno(pid_t pid, int sig);
@@ -170,9 +180,9 @@ void write_retval_or_kill(pid_t pid, struct pink_regset *regset, long retval, in
 void write_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long argval);
 void write_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len);
 
-TCase *create_testcase_trace(void);
-TCase *create_testcase_read(void);
-TCase *create_testcase_write(void);
-TCase *create_testcase_socket(void);
+void test_suite_trace(void);
+void test_suite_read(void);
+void test_suite_write(void);
+void test_suite_socket(void);
 
 #endif
