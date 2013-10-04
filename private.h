@@ -35,6 +35,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <limits.h>
 #include <errno.h>
@@ -58,25 +59,27 @@
 #endif /* HAVE_SYS_UIO_H */
 
 /* We need additional hackery on IA64 to include linux/ptrace.h. */
-#if PINK_ARCH_IA64
-# ifdef HAVE_STRUCT_IA64_FPREG
-# define ia64_fpreg XXX_ia64_fpreg
+#ifdef HAVE_LINUX_PTRACE_H
+# if PINK_ARCH_IA64
+#  ifdef HAVE_STRUCT_IA64_FPREG
+#  define ia64_fpreg XXX_ia64_fpreg
+#  endif
+#  ifdef HAVE_STRUCT_PT_ALL_USER_REGS
+#  define pt_all_user_regs XXX_pt_all_user_regs
+#  endif
 # endif
-# ifdef HAVE_STRUCT_PT_ALL_USER_REGS
-# define pt_all_user_regs XXX_pt_all_user_regs
+# ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
+#  define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
 # endif
-#endif
-#ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
-# define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
-#endif
-#include <linux/ptrace.h>
-#if PINK_ARCH_IA64
-# undef ia64_fpreg
-# undef pt_all_user_regs
-#endif
-#ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
-# undef ptrace_peeksiginfo_args
-#endif
+# include <linux/ptrace.h>
+# if PINK_ARCH_IA64
+#  undef ia64_fpreg
+#  undef pt_all_user_regs
+# endif
+# ifdef HAVE_STRUCT_PTRACE_PEEKSIGINFO_ARGS
+#  undef ptrace_peeksiginfo_args
+# endif
+#endif /* HAVE_LINUX_PTRACE_H */
 
 #include <elf.h> /* NT_PRSTATUS */
 
