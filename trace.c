@@ -66,15 +66,15 @@ int pink_trace_kill(pid_t tid, pid_t tgid, int sig)
 
 	if (tgid <= 0) {
 #if PINK_HAVE_TKILL
-		return syscall(__NR_tkill, tid, sig) < 0 ? -errno : 0;
+		return syscall(SYS_tkill, tid, sig) < 0 ? -errno : 0;
 #else
 		return kill(tid, sig) < 0 ? -errno : 0;
 #endif
 	} else {
 #if PINK_HAVE_TGKILL
-		return syscall(__NR_tgkill, tgid, tid, sig) ? -errno : 0;
+		return syscall(SYS_tgkill, tgid, tid, sig) ? -errno : 0;
 #elif PINK_HAVE_TKILL
-		return syscall(__NR_tkill, tid, sig) < 0 ? -errno : 0;
+		return syscall(SYS_tkill, tid, sig) < 0 ? -errno : 0;
 #else
 		return kill(tid, sig) < 0 ? -errno : 0;
 #endif

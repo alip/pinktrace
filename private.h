@@ -41,8 +41,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ptrace.h>
+#include <sys/syscall.h>
 #include <sys/wait.h>
-#include <asm/unistd.h>
 
 #include <netinet/in.h>
 #include <sys/un.h>
