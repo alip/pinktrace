@@ -55,6 +55,8 @@
 #define PINK_ARCH_IA64			@PINK_ARCH_IA64@
 /** Define to 1 if the architecture is arm, 0 otherwise */
 #define PINK_ARCH_ARM			@PINK_ARCH_ARM@
+/** `undef' to get ARM OABI support */
+#define PINK_ARCH_ARM_KNOWS_ONLY_EABI	1
 
 /** Maximum number of arguments to a system call */
 #define PINK_MAX_ARGS			6

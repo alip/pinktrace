@@ -71,28 +71,33 @@ int pink_read_syscall(pid_t pid, struct pink_regset *regset, long *sysnum)
 	}
 	/* Note: we support only 32-bit CPUs, not 26-bit */
 
+# ifndef PINK_ARCH_ARM_KNOWS_ONLY_EABI
+#  warning PINK_ARCH_ARM_KNOWS_ONLY_EABI not set, will PTRACE_PEEKTEXT on every syscall (slower tracing)
 	if (regs.ARM_cpsr & 0x20) {
 		/* Thumb mode */
-		sysval = regs.ARM_r7;
-	} else {
-		/* ARM mode */
-		if ((r = pink_read_word_data(pid, (long)(regs.ARM_pc - 4), &sysval)) < 0)
-			return r;
-
-		/* EABI syscall convention? */
-		if (sysval == 0xef000000) {
-			sysval = regs.ARM_r7; /* yes */
-		} else {
-			if ((sysval & 0x0ff00000) != 0x0f900000) {
-				fprintf(stderr, "pid %d unknown syscall trap 0x%08lx\n",
-					pid, sysval);
-				return -1;
-			}
-			/* Fixup the syscall number */
-			sysval &= 0x000fffff;
-		}
+		goto scno_in_r7;
 	}
-
+	/* ARM mode */
+	/* Check EABI/OABI by examining SVC insn's low 24 bits */
+	if ((r = pink_read_word_data(pid, (long)(regs.ARM_pc - 4), &sysval)) < 0)
+		return r;
+	/* EABI syscall convention? */
+	if (sysval != 0xef000000) {
+		/* No, it's OABI */
+		if ((sysval & 0x0ff00000) != 0x0f900000) {
+			fprintf(stderr, "pinktrace warning "
+					"pid %d unknown syscall trap 0x%08lx\n", pid, sysval);
+			return -1;
+		}
+		/* Fixup the syscall number */
+		sysval &= 0x000fffff;
+	} else {
+scno_in_r7:
+		sysval = regs.ARM_r7;
+	}
+# else
+	sysval = regs.ARM_r7;
+# endif
 	*sysnum = sysval;
 	return 0;
 #elif PINK_ARCH_IA64
