@@ -130,14 +130,10 @@ int pink_write_argument(pid_t pid, struct pink_regset *regset, unsigned arg_inde
 		return -EINVAL;
 
 #if PINK_ARCH_ARM
-	if (arg_index == 0) {
-		/* TODO: do this with pink_write_word_user() */
-		struct pt_regs r = regset->arm_regs;
-		r.ARM_ORIG_r0 = argval;
-		return pink_trace_set_regs(pid, &r);
-	} else {
+	if (arg_index == 0)
+		return pink_write_word_user(pid, sizeof(long) * 17, argval); /* ARM_ORIG_r0 */
+	else
 		return pink_write_word_user(pid, sizeof(long) * arg_index, argval);
-	}
 #elif PINK_ARCH_IA64
 	if (regset->ia32) {
 		static const int argreg[PINK_MAX_ARGS] = { PT_R11 /* EBX = out0 */,
