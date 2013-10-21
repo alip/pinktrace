@@ -77,6 +77,8 @@ int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
 int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error)
 {
 #if PINK_ARCH_ARM
+	if (error)
+		retval = (long)-error;
 	return pink_write_word_user(pid, 0, retval);
 #elif PINK_ARCH_IA64
 	int r;
