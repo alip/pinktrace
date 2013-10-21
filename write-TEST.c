@@ -55,22 +55,22 @@ static void test_write_syscall(void)
 	bool it_worked = false;
 	bool insyscall = false;
 
-#define test_GETPID 0
-#define test_LSEEK 1
+#define TEST_GETPID 0
+#define TEST_LSEEK 1
 #define TEST_WRITE_SYSCALL_MAX 2
 	int test = _i;
 	const char *test_name = NULL;
 	int errno_expected;
 	long test_call, change_call;
 
-	if (test == test_GETPID) {
+	if (test == TEST_GETPID) {
 		test_name = "getpid";
 		errno_expected = ENOSYS;
 		change_call = PINK_SYSCALL_INVALID;
 		test_call = pink_lookup_syscall("getpid", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of getpid()");
-	} else if (test == test_LSEEK) {
+	} else if (test == TEST_LSEEK) {
 		test_name = "lseek";
 		errno_expected = EFAULT;
 		change_call = pink_lookup_syscall("open", PINK_ABI_DEFAULT);
@@ -92,14 +92,14 @@ static void test_write_syscall(void)
 	if (pid == 0) {
 		pid = getpid();
 		trace_me_and_stop();
-		if (test == test_GETPID)
+		if (test == TEST_GETPID)
 			syscall(test_call);
-		else if (test == test_LSEEK)
+		else if (test == TEST_LSEEK)
 			syscall(test_call, 0, 0, 0);
 		_exit(0);
 	}
-#undef test_GETPID
-#undef test_LSEEK
+#undef TEST_GETPID
+#undef TEST_LSEEK
 	regset_alloc_or_kill(pid, &regset);
 
 	LOOP_WHILE_TRUE() {
@@ -154,8 +154,8 @@ static void test_write_retval(void)
 	bool write_done = false;
 	long sys_getpid;
 
-#define test_GOOD 0
-#define test_FAIL 1
+#define TEST_GOOD 0
+#define TEST_FAIL 1
 #define TEST_WRITE_RETVAL_MAX 2
 	int test = _i;
 	const char *test_name = NULL;
@@ -166,7 +166,7 @@ static void test_write_retval(void)
 	if (sys_getpid == -1)
 		fail_verbose("don't know the syscall number of getpid()");
 
-	if (test == test_GOOD) {
+	if (test == TEST_GOOD) {
 		test_name = "good";
 		change_error = 0;
 		change_retval = 0xdead;
@@ -177,8 +177,8 @@ static void test_write_retval(void)
 	}
 	message("test_retval_%s: changing retval:%ld errno:%d %s\n",
 		test_name, change_retval, change_error, strerror(change_error));
-#undef test_GOOD
-#undef test_FAIL
+#undef TEST_GOOD
+#undef TEST_FAIL
 
 	pid = fork_assert();
 	if (pid == 0) {
