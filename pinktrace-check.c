@@ -880,5 +880,7 @@ int main(int argc, char *argv[])
 	os_release = get_os_release();
 	_i = 0;
 
-	return seatest_testrunner(argc, argv, all_tests, NULL, NULL);
+	if (seatest_testrunner(argc, argv, all_tests, NULL, NULL))
+		return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }
