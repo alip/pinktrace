@@ -1,0 +1,3 @@
+* 20131022: Use GETREGSET instead of GETREGS on ARM (consult strace source code)
+* 20131022: Test on powerpc
+* 20131022: Test on powerpc64
