@@ -1,0 +1,95 @@
+# pinktrace's .gitignore
+
+#
+# Normal rules
+#
+.*
+*.o
+*.o.*
+*.a
+*.s
+*.ko
+*.so
+*.so.dbg
+*.la
+*.lo
+*.gz
+*.bz2
+*.lzma
+*.lzo
+*.xz
+*.patch
+*.gcno
+
+#
+# git files that we don't want to ignore even it they are dot-files
+#
+!.gitignore
+!.mailmap
+
+# stgit generated dirs
+patches-*
+
+# quilt's files
+patches
+series
+
+# cscope files
+cscope.*
+ncscope.*
+
+# gnu global files
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+
+# backup files
+*.orig
+*~
+\#*#
+
+# autohell
+/INSTALL
+/aclocal.m4
+/autom4te.cache
+/build-aux
+/config.guess
+/config.h
+/config.h.in
+/config.log
+/config.sub
+/config.status
+/configure
+/compile
+/depcomp
+/install-sh
+/missing
+/stamp-h1
+
+Makefile.in
+Makefile
+
+# tests
+*.log
+*.trs
+
+# libtool
+.deps
+.libs
+/libtool
+/ltmain.sh
+/m4/libtool.m4
+/m4/lt*.m4
+
+# Specific ignores
+/doc/api/c/doxygen.conf
+/doc/api/c/pinktrace.tag
+/doc/api/c/c
+
+/pinktrace/about.h
+/pinktrace/system.h
+
+/pkg-config/pinktrace.pc
+
+/pinktrace/pinktrace-check

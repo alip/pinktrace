@@ -1,0 +1,10 @@
+prefix=#PINKTRACE_PC_PREFIX#
+exec_prefix=${prefix}
+libdir=#PINKTRACE_PC_LIBDIR#
+includedir=#PINKTRACE_PC_INCLUDEDIR#
+
+Name: pinktrace
+Description: Pink's Tracing Library
+Version: #PINKTRACE_PC_VERSION#
+Libs: -L${libdir} #PINKTRACE_PC_LIBS#
+Cflags: -I${includedir} #PINKTRACE_PC_CFLAGS#
