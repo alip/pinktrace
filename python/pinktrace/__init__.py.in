@@ -23,6 +23,7 @@ PC_SLOT = "#PC_SLOT#"
 
 import pinktrace.system
 import pinktrace.abi
+import pinktrace.event
 import pinktrace.trace
 import pinktrace.test
 

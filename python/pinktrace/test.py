@@ -413,6 +413,12 @@ class TestCase_02_Trace(PinkTestCase):
     def test_29_trace_listen_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.listen, 0)
 
+class TestCase_03_Event(PinkTestCase):
+    def test_01_event_decide_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, event.decide)
+        self.assertRaises(TypeError, event.decide, 1, 2)
+        self.assertRaises(TypeError, event.decide, 'pink')
+
 def main():
     import sys
     sys.exit(unittest.main(verbosity = 2))
