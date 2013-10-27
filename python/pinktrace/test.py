@@ -255,7 +255,7 @@ checkPinkCall: callable Object unexpected retval '{retval!r}' (expected: '{retva
     def checkPinkCallErrno(self, errno_wanted, callableObj, *args, **kwargs):
         return self._checkPinkCall(0, errno_wanted, callableObj, *args, **kwargs)
 
-class TestCase_1_Trace(PinkTestCase):
+class TestCase_01_Trace(PinkTestCase):
     @classmethod
     def setUpClass(cls):
         cls.killPID = None
@@ -293,20 +293,20 @@ class TestCase_1_Trace(PinkTestCase):
         _, wait_status = self.waitProcess(pid, 0)
         self.assertProcessExitedWith(0, wait_status)
 
-    def test_02_trace_resume_raises_type_error_for_invalid_arguments(self):
+    def test_03_trace_resume_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.resume)
         self.assertRaises(TypeError, trace.resume, 1, 2, 3)
         self.assertRaises(TypeError, trace.resume, 'pink')
         self.assertRaises(TypeError, trace.resume, 0, 'pink')
 
-    def test_03_trace_resume_raises_os_error_with_esrch_for_invalid_process(self):
+    def test_04_trace_resume_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.resume, 0)
 
-    def test_04_trace_resume_raises_value_error_for_invalid_signal(self):
+    def test_05_trace_resume_raises_value_error_for_invalid_signal(self):
         self.assertRaises(ValueError, trace.resume, self.killPID, -1)
         self.assertRaises(ValueError, trace.resume, self.killPID, INT_MAX)
 
-    def test_05_trace_kill_raises_type_error_for_invalid_arguments(self):
+    def test_06_trace_kill_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.kill)
         self.assertRaises(TypeError, trace.kill, 'pink')
         self.assertRaises(TypeError, trace.kill, 0, 'pink')
@@ -337,40 +337,40 @@ class TestCase_1_Trace(PinkTestCase):
         self.assertRaises(ValueError, trace.singlestep, self.killPID, -1)
         self.assertRaises(ValueError, trace.singlestep, self.killPID, INT_MAX)
 
-    def test_10_trace_syscall_raises_type_error_for_invalid_arguments(self):
+    def test_11_trace_syscall_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.syscall)
         self.assertRaises(TypeError, trace.syscall, 1, 2, 3)
         self.assertRaises(TypeError, trace.syscall, 'pink')
         self.assertRaises(TypeError, trace.syscall, 0, 'pink')
 
-    def test_11_trace_syscall_raises_os_error_with_esrch_for_invalid_process(self):
+    def test_12_trace_syscall_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.syscall, 0)
 
-    def test_12_trace_syscall_raises_value_error_for_invalid_signal(self):
+    def test_13_trace_syscall_raises_value_error_for_invalid_signal(self):
         self.assertRaises(ValueError, trace.syscall, self.killPID, -1)
         self.assertRaises(ValueError, trace.syscall, self.killPID, INT_MAX)
 
-    def test_13_trace_geteventmsg_raises_type_error_for_invalid_arguments(self):
+    def test_14_trace_geteventmsg_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.geteventmsg)
         self.assertRaises(TypeError, trace.geteventmsg, 'pink')
 
-    def test_14_trace_geteventmsg_raises_os_error_with_esrch_for_invalid_process(self):
+    def test_15_trace_geteventmsg_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.geteventmsg, 0)
 
-    def test_15_trace_setup_raises_type_error_for_invalid_arguments(self):
+    def test_16_trace_setup_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.setup)
         self.assertRaises(TypeError, trace.setup, 'pink')
         self.assertRaises(TypeError, trace.setup, 0, 'pink')
 
-    def test_16_trace_setup_raises_os_error_with_esrch_for_invalid_process(self):
+    def test_17_trace_setup_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.setup, 0, trace.OPTION_SYSGOOD)
 
-    def test_26_trace_attach_raises_type_error_for_invalid_arguments(self):
+    def test_18_trace_attach_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.attach)
         self.assertRaises(TypeError, trace.attach, 1, 2)
         self.assertRaises(TypeError, trace.attach, 'pink')
 
-    def test_27_trace_attach_raises_os_error_with_esrch_for_invalid_process(self):
+    def test_19_trace_attach_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.attach, 0)
 
     def test_20_trace_detach_raises_type_error_for_invalid_arguments(self):
@@ -406,12 +406,12 @@ class TestCase_1_Trace(PinkTestCase):
     def test_27_trace_interrupt_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.interrupt, 0)
 
-    def test_26_trace_listen_raises_type_error_for_invalid_arguments(self):
+    def test_28_trace_listen_raises_type_error_for_invalid_arguments(self):
         self.assertRaises(TypeError, trace.listen)
         self.assertRaises(TypeError, trace.listen, 1, 2)
         self.assertRaises(TypeError, trace.listen, 'pink')
 
-    def test_27_trace_listen_raises_os_error_with_esrch_for_invalid_process(self):
+    def test_29_trace_listen_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.listen, 0)
 
 def main():
