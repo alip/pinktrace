@@ -105,12 +105,12 @@
  **/
 #define PINK_HAVE_OPTION_EXEC		@PINK_HAVE_OPTION_EXEC@
 /**
- * Define to 1 if #PINK_TRACE_OPTION_VFORKDONE is supported, 0 otherwise
+ * Define to 1 if #PINK_TRACE_OPTION_VFORK_DONE is supported, 0 otherwise
  *
  * @note This option is supported on Linux-2.5.60 and newer.
  * @see pink_trace_setup()
  **/
-#define PINK_HAVE_OPTION_VFORKDONE	@PINK_HAVE_OPTION_VFORKDONE@
+#define PINK_HAVE_OPTION_VFORK_DONE	@PINK_HAVE_OPTION_VFORK_DONE@
 /**
  * Define to 1 if #PINK_TRACE_OPTION_EXIT is supported, 0 otherwise
  *
