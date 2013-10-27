@@ -2,6 +2,10 @@ dnl Program, version
 AC_PREREQ(2.59)
 
 dnl Versioning
+dnl major: User interface changes
+dnl minor: Major changes without UI breakage
+dnl micro: Every other change increases micro version
+dnl suffix: For prerelease, alpha, beta versions
 m4_define([pinktrace_version_major],  [0])
 m4_define([pinktrace_version_minor],  [9])
 m4_define([pinktrace_version_micro],  [0])
@@ -35,6 +39,7 @@ AC_SUBST([PINK_VERSION_MINOR])
 AC_SUBST([PINK_VERSION_MICRO])
 AC_SUBST([PINK_VERSION_FULL])
 AC_SUBST([PINK_VERSION_SUFFIX])
+AC_SUBST([PINK_VERSION])
 AC_SUBST([PINK_VERSION_LIB_CURRENT])
 AC_SUBST([PINK_VERSION_LIB_REVISION])
 
@@ -65,6 +70,8 @@ AC_SUBST([GITVERSION])
 
 PINKTRACE_PC_VERSION="${PINK_VERSION_FULL}"
 PINKTRACE_PC_SLOT="${PINK_VERSION_MAJOR}.${PINK_VERSION_MINOR}${PINK_VERSION_SUFFIX}"
+AC_SUBST([PINKTRACE_PC_VERSION])
+AC_SUBST([PINKTRACE_PC_SLOT])
 
 AC_MSG_CHECKING([for pinktrace slot])
 AC_MSG_RESULT([$PINKTRACE_PC_SLOT])
@@ -486,12 +493,75 @@ dnl built sources
 GENERATED_FILE=misc/generated-file.txt
 AC_SUBST_FILE([GENERATED_FILE])
 
+dnl Python interface
+AC_ARG_VAR([PYTHON], [path to the Python interpreter])
+AC_MSG_CHECKING([whether to build the Python interface])
+AC_ARG_ENABLE([python],
+	      AS_HELP_STRING([--enable-python], [Enable Python interface (default: disable)]),
+	      enable_python="$enableval",
+	      enable_python=no)
+AC_MSG_RESULT([$enable_python])
+
+if test x"$enable_python" = x"yes" ; then
+	AM_PATH_PYTHON([2.7.0])
+	if test x"$PYTHON" = x ; then
+		AC_MSG_ERROR([Python is required for --enable-python])
+	fi
+
+	PY_PREFIX=`$PYTHON -c 'import sys ; sys.stdout.write(sys.prefix)'`
+	PYTHON_ABIFLAGS=`$PYTHON -c 'import sys ; sys.stdout.write(getattr(sys, "abiflags", ''))'`
+	PYTHON_LIBS="-lpython${PYTHON_VERSION}${PYTHON_ABIFLAGS}"
+	PYTHON_CFLAGS="-I$PY_PREFIX/include/python${PYTHON_VERSION}${PYTHON_ABIFLAGS}"
+
+	AC_SUBST([PYTHON_ABIFLAGS])
+	AC_SUBST([PYTHON_LIBS])
+	AC_SUBST([PYTHON_CFLAGS])
+
+	if test x"$WANT_IPV6" = x"yes" ; then
+		PYTHON_HAVE_IPV6="True"
+	else
+		PYTHON_HAVE_IPV6="False"
+	fi
+	AC_SUBST([PYTHON_HAVE_IPV6])
+
+	if test x"$WANT_NETLINK" = x"yes" ; then
+		PYTHON_HAVE_NETLINK="True"
+	else
+		PYTHON_HAVE_NETLINK="False"
+	fi
+	AC_SUBST([PYTHON_HAVE_NETLINK])
+fi
+AM_CONDITIONAL([ENABLE_PYTHON], test x"$enable_python" = x"yes")
+
+dnl Python documentation
+AC_ARG_VAR([EPYDOC], [Path to the epydoc documentation tool])
+AC_MSG_CHECKING([whether to build the Python documentation])
+AC_ARG_ENABLE([python-doc],
+	      AS_HELP_STRING([--enable-python-doc],
+			     [Enable Python documentation, requires --enable-python (default: disable)]),
+	      enable_python_doc="$enableval",
+	      enable_python_doc=no)
+AC_MSG_RESULT([$enable_python_doc])
+
+if test x"$enable_python_doc" = x"yes" && test x"$enable_python" = x"no"; then
+	AC_MSG_ERROR([--enable-python-doc requires --enable-python])
+fi
+
+if test x"$enable_python_doc" = x"yes" ; then
+	AC_PATH_PROG([EPYDOC], epydoc)
+	if test x"$EPYDOC" = x ; then
+		AC_MSG_ERROR([epydoc (http://epydoc.sourceforge.net) is required to build Python documentation])
+	fi
+fi
+AM_CONDITIONAL([ENABLE_PYTHON_DOC], test x"$enable_python_doc" = x"yes")
+
 dnl output
 AC_CONFIG_FILES([Makefile
 		 doc/Makefile
 		 doc/api/Makefile
 		 doc/api/c/Makefile
 		 doc/api/c/doxygen.conf
+		 doc/api/python/Makefile
 		 pkg-config/Makefile
 		 pinktrace/Makefile
 		 pinktrace/about.h
@@ -502,5 +572,7 @@ AC_CONFIG_FILES([Makefile
 		 pinktrace/linux/x86_64/Makefile
 		 pinktrace/linux/ia64/Makefile
 		 pinktrace/linux/powerpc/Makefile
-		 pinktrace/linux/arm/Makefile])
+		 pinktrace/linux/arm/Makefile
+		 python/Makefile
+		 python/pinktrace/Makefile])
 AC_OUTPUT

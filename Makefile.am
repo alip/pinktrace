@@ -20,6 +20,7 @@ dist_doc_DATA= \
 
 DISTCHECK_CONFIGURE_FLAGS= \
 			   --enable-doxygen \
+			   --enable-python --enable-python-doc \
 			   --enable-ipv6
 
 TAR_FILE= $(PACKAGE)-$(VERSION).tar.bz2
@@ -28,6 +29,10 @@ GPG_FILE= $(SHA1_FILE).asc
 
 .PHONY: doxygen
 doxygen: all
+	$(MAKE) -C doc $@
+
+.PHONY: epydoc
+epydoc: all
 	$(MAKE) -C doc $@
 
 $(SHA1_FILE): dist
@@ -46,4 +51,4 @@ upload:
 upload-release: upload $(SHA1_FILE) $(GPG_FILE)
 	rsync --partial --progress -ave ssh $(TAR_FILE) $(SHA1_FILE) $(GPG_FILE) tchaikovsky.exherbo.org:public_html/pinktrace/release
 
-SUBDIRS= pinktrace doc pkg-config .
+SUBDIRS= pinktrace python doc pkg-config .

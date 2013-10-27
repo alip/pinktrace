@@ -20,6 +20,7 @@
 *.xz
 *.patch
 *.gcno
+*.py[co]
 
 #
 # git files that we don't want to ignore even it they are dot-files
@@ -86,10 +87,13 @@ Makefile
 /doc/api/c/doxygen.conf
 /doc/api/c/pinktrace.tag
 /doc/api/c/c
+/doc/api/python/python
 
 /pinktrace/about.h
 /pinktrace/system.h
+/pinktrace/pinktrace-check
 
 /pkg-config/pinktrace.pc
 
-/pinktrace/pinktrace-check
+/python/pinktrace/__init__.py
+/python/pinktrace/__pycache__
