@@ -61,15 +61,6 @@ def printError(string, role = "P", pid = None):
 def printMessage(string, role = "P", pid = None):
     writeFormatString(sys.stderr, string, role, pid, isError = False)
 
-#class ProcessMaker:
-#    @classmethod
-#    def spawn(cls, callableObj, *args, **kwargs):
-#        cls.process_func = callableObj
-#        cls.process_args = args
-#        cls.process_kwargs = kwargs
-#
-#        cls.pid = os.fork()
-
 class Libc:
     def __init__(self, libc = None):
         if libc is None:
@@ -255,7 +246,15 @@ checkPinkCall: callable Object unexpected retval '{retval!r}' (expected: '{retva
     def checkPinkCallErrno(self, errno_wanted, callableObj, *args, **kwargs):
         return self._checkPinkCall(0, errno_wanted, callableObj, *args, **kwargs)
 
-class TestCase_01_Trace(PinkTestCase):
+class TestCase_01_Abi(PinkTestCase):
+    def test_01_abi_wordsize_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, abi.wordsize, 1, 2)
+        self.assertRaises(TypeError, abi.wordsize, 'pink')
+
+    def test_02_abi_wordsize_without_argument_returns_for_default_abi(self):
+        self.assertEqual(abi.wordsize(), abi.wordsize(abi.ABI_DEFAULT))
+
+class TestCase_02_Trace(PinkTestCase):
     @classmethod
     def setUpClass(cls):
         cls.killPID = None

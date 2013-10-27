@@ -22,6 +22,7 @@ PC_VERSION = "#PC_VERSION#"
 PC_SLOT = "#PC_SLOT#"
 
 import pinktrace.system
+import pinktrace.abi
 import pinktrace.trace
 import pinktrace.test
 

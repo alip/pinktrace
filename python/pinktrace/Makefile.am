@@ -48,10 +48,14 @@ __init__.py: __init__.py.in
 
 pkgpyexec_LTLIBRARIES= \
 		       system.la \
+		       abi.la \
 		       trace.la
 
 system_la_SOURCES= py-system.c
 system_la_LIBADD= $(PINKTRACE_LIB_ADD)
+
+abi_la_SOURCES= py-abi.c
+abi_la_LIBADD= $(PINKTRACE_LIB_ADD)
 
 trace_la_SOURCES= py-trace.c
 trace_la_LIBADD= $(PINKTRACE_LIB_ADD)
@@ -62,6 +66,7 @@ trace_la_LIBADD= $(PINKTRACE_LIB_ADD)
 	$(AM_V_at)test -h $@ || $(LN_S) $(addprefix .libs/, $(addsuffix .so,$(basename $<))) $@
 noinst_DATA= \
 	     system.so \
+	     abi.so \
 	     trace.so
 
 # Remove the .la files - *.la is never linked against (pinktrace is a module)
