@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 # Copyright 2010, 2013 Ali Polatel <alip@exherbo.org>
-# Distributed under the terms of the 3-clause BSD License
+# Distributed under the same terms as Python itself.
 
 from __future__ import with_statement
 
