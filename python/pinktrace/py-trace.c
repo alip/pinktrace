@@ -53,7 +53,7 @@ static char pinkpy_trace_resume_doc[] = ""
 	"@return: True";
 static PyObject *pinkpy_trace_resume(PyObject *self, PyObject *args)
 {
-	int r, sig;
+	int sig;
 	pid_t pid;
 
 	sig = 0;
