@@ -183,8 +183,8 @@ int pink_trace_setup(pid_t pid, int options)
 #endif
 	}
 
-	if (options & PINK_TRACE_OPTION_VFORKDONE) {
-#if PINK_HAVE_OPTION_VFORKDONE
+	if (options & PINK_TRACE_OPTION_VFORK_DONE) {
+#if PINK_HAVE_OPTION_VFORK_DONE
 		ptrace_options |= PTRACE_O_TRACEVFORKDONE;
 #else
 		return -EINVAL;

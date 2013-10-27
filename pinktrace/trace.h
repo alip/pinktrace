@@ -100,9 +100,9 @@
  * child at the completion of the next vfork(2) call with
  * (SIGTRAP | PTRACE_EVENT_VFORK_DONE << 8)
  *
- * @see PINK_HAVE_OPTION_VFORKDONE
+ * @see PINK_HAVE_OPTION_VFORK_DONE
  **/
-#define PINK_TRACE_OPTION_VFORKDONE (1 << 5)
+#define PINK_TRACE_OPTION_VFORK_DONE (1 << 5)
 /**
  * This define represents the trace option EXIT.
  * If this flag is set in the options argument of pink_trace_setup(), stop the
