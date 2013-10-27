@@ -202,7 +202,7 @@ int pink_trace_kill(pid_t tid, pid_t tgid, int sig);
  * execution of a single instruction.
  *
  * @param pid Process ID
- * @param sig Treated the same as the signal argument of pink_trace_cont()
+ * @param sig Treated the same as the signal argument of pink_trace_resume()
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_singlestep(pid_t pid, int sig);
@@ -212,7 +212,7 @@ int pink_trace_singlestep(pid_t pid, int sig);
  * the entry or exit of the next system call.
  *
  * @param pid Process ID
- * @param sig Treated the same was as the signal argument of pink_trace_cont()
+ * @param sig Treated the same was as the signal argument of pink_trace_resume()
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_syscall(pid_t pid, int sig);
@@ -305,7 +305,7 @@ int pink_trace_setup(pid_t pid, int options);
  * @see PINK_HAVE_SYSEMU
  *
  * @param pid Process ID
- * @param sig Treated same as the signal argument of pink_trace_cont()
+ * @param sig Treated same as the signal argument of pink_trace_resume()
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_sysemu(pid_t pid, int sig);
@@ -317,13 +317,13 @@ int pink_trace_sysemu(pid_t pid, int sig);
  * @see PINK_HAVE_SYSEMU_SINGLESTEP
  *
  * @param pid Process ID of the child to be restarted
- * @param sig Treated same as the signal argument of pink_trace_cont()
+ * @param sig Treated same as the signal argument of pink_trace_resume()
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_sysemu_singlestep(pid_t pid, int sig);
 
 /**
- * Attaches to the process specified in tid, making it a traced "child" of the
+ * Attaches to the process specified in pid, making it a traced "child" of the
  * calling process; the behaviour of the child is as if it had done a
  * PTRACE_TRACEME. The child is sent a SIGSTOP, but will not necessarily have
  * stopped by the completion of this call; use wait(2) to wait for the child to
@@ -335,17 +335,17 @@ int pink_trace_sysemu_singlestep(pid_t pid, int sig);
 int pink_trace_attach(pid_t pid);
 
 /**
- * Restarts the stopped child as for pink_trace_cont(), but first detaches from
+ * Restarts the stopped child as for pink_trace_resume(), but first detaches from
  * the process, undoing the reparenting effect of pink_trace_attach().
  *
  * @param pid Process ID
- * @param sig Treated same as the signal argument of pink_trace_cont()
+ * @param sig Treated same as the signal argument of pink_trace_resume()
  * @return 0 on success, negated errno on failure
  **/
 int pink_trace_detach(pid_t pid, int sig);
 
 /**
- * Attach to the process specified in tid, without trapping it or affecting its
+ * Attach to the process specified in pid, without trapping it or affecting its
  * signal and job control states.
  *
  * @see PINK_HAVE_SEIZE
