@@ -254,7 +254,116 @@ class TestCase_01_Abi(PinkTestCase):
     def test_02_abi_wordsize_without_argument_returns_for_default_abi(self):
         self.assertEqual(abi.wordsize(), abi.wordsize(abi.ABI_DEFAULT))
 
-class TestCase_02_Trace(PinkTestCase):
+class TestCase_02_Event(PinkTestCase):
+    def test_01_event_decide_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, event.decide)
+        self.assertRaises(TypeError, event.decide, 1, 2)
+        self.assertRaises(TypeError, event.decide, 'pink')
+
+class TestCase_03_Name(PinkTestCase):
+    def test_01_name_event_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.name_event)
+        self.assertRaises(TypeError, name.name_event, 1, 2)
+        self.assertRaises(TypeError, name.name_event, 'pink')
+
+    def test_02_name_event_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.name_event, INT_MAX)
+
+    def test_03_lookup_event_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.lookup_event)
+        self.assertRaises(TypeError, name.lookup_event, 1, 2)
+
+    def test_04_lookup_event_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.lookup_event, 'pink')
+
+    def test_05_name_syscall_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.name_syscall)
+        self.assertRaises(TypeError, name.name_syscall, 1, 2, 3)
+        self.assertRaises(TypeError, name.name_syscall, 'pink')
+        self.assertRaises(TypeError, name.name_syscall, 'pink', 1)
+        self.assertRaises(TypeError, name.name_syscall, 1, 'pink')
+
+    def test_06_name_syscall_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.name_syscall, INT_MAX)
+        self.assertRaises(ValueError, name.name_syscall, INT_MAX, abi.ABI_DEFAULT)
+
+    def test_07_lookup_syscall_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.lookup_syscall)
+        self.assertRaises(TypeError, name.lookup_syscall, 1, 2)
+
+    def test_08_lookup_syscall_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.lookup_syscall, 'pink')
+        self.assertRaises(ValueError, name.lookup_syscall, 'pink', abi.ABI_DEFAULT)
+
+    def test_10_name_socket_family_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.name_socket_family)
+        self.assertRaises(TypeError, name.name_socket_family, 1, 2)
+        self.assertRaises(TypeError, name.name_socket_family, 'pink')
+
+    def test_11_name_socket_family_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.name_socket_family, INT_MAX)
+
+    def test_12_lookup_socket_family_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.lookup_socket_family)
+        self.assertRaises(TypeError, name.lookup_socket_family, 1, 2)
+
+    def test_13_lookup_socket_family_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.lookup_socket_family, 'pink')
+
+    def test_14_name_socket_subcall_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.name_socket_subcall)
+        self.assertRaises(TypeError, name.name_socket_subcall, 1, 2)
+        self.assertRaises(TypeError, name.name_socket_subcall, 'pink')
+
+    def test_15_name_socket_subcall_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.name_socket_subcall, INT_MAX)
+
+    def test_16_lookup_socket_subcall_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.lookup_socket_subcall)
+        self.assertRaises(TypeError, name.lookup_socket_subcall, 1, 2)
+
+    def test_17_lookup_socket_subcall_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.lookup_socket_subcall, 'pink')
+
+    def test_18_name_errno_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.name_errno)
+        self.assertRaises(TypeError, name.name_errno, 1, 2, 3)
+        self.assertRaises(TypeError, name.name_errno, 'pink')
+        self.assertRaises(TypeError, name.name_errno, 'pink', 1)
+        self.assertRaises(TypeError, name.name_errno, 1, 'pink')
+
+    def test_19_name_errno_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.name_errno, INT_MAX)
+        self.assertRaises(ValueError, name.name_errno, INT_MAX, abi.ABI_DEFAULT)
+
+    def test_20_lookup_errno_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.lookup_errno)
+        self.assertRaises(TypeError, name.lookup_errno, 1, 2)
+
+    def test_21_lookup_errno_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.lookup_errno, 'pink')
+        self.assertRaises(ValueError, name.lookup_errno, 'pink', abi.ABI_DEFAULT)
+
+    def test_22_name_signal_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.name_signal)
+        self.assertRaises(TypeError, name.name_signal, 1, 2, 3)
+        self.assertRaises(TypeError, name.name_signal, 'pink')
+        self.assertRaises(TypeError, name.name_signal, 'pink', 1)
+        self.assertRaises(TypeError, name.name_signal, 1, 'pink')
+
+    def test_23_name_signal_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.name_signal, INT_MAX)
+        self.assertRaises(ValueError, name.name_signal, INT_MAX, abi.ABI_DEFAULT)
+
+    def test_24_lookup_signal_raises_type_error_for_invalid_arguments(self):
+        self.assertRaises(TypeError, name.lookup_signal)
+        self.assertRaises(TypeError, name.lookup_signal, 1, 2)
+
+    def test_25_lookup_signal_raises_value_error_for_lookup_failure(self):
+        self.assertRaises(ValueError, name.lookup_signal, 'pink')
+        self.assertRaises(ValueError, name.lookup_signal, 'pink', abi.ABI_DEFAULT)
+
+class TestCase_04_Trace(PinkTestCase):
     @classmethod
     def setUpClass(cls):
         cls.killPID = None
@@ -412,12 +521,6 @@ class TestCase_02_Trace(PinkTestCase):
 
     def test_29_trace_listen_raises_os_error_with_esrch_for_invalid_process(self):
         self.assertRaisesOSErrorWithErrno(ESRCH, trace.listen, 0)
-
-class TestCase_03_Event(PinkTestCase):
-    def test_01_event_decide_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, event.decide)
-        self.assertRaises(TypeError, event.decide, 1, 2)
-        self.assertRaises(TypeError, event.decide, 'pink')
 
 def main():
     import sys

@@ -1,9 +1,24 @@
 #!/usr/bin/env python
 # coding: utf-8
+# Copyright 2013 Ali Polatel <alip@exherbo.org>
+# Distributed under the same terms as Python itself.
 
 from __future__ import print_function, with_statement
 
 import os, re
+
+# Shamelessly stolen from python-3.3/shlex.py
+_find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+def quote(s):
+    """Return a shell-escaped version of the string *s*."""
+    if not s:
+        return "''"
+    if _find_unsafe(s) is None:
+        return s
+
+    # use single quotes, and put single quotes into double quotes
+    # the string $'b is then quoted as '$'"'"'b'
+    return "'" + s.replace("'", "'\"'\"'") + "'"
 
 TESTS = ["pinktrace/test.py"]
 
@@ -24,4 +39,5 @@ for test in TESTS:
                     tr_i += 1
                 else:
                     dest.write(line)
-        print("%s -> %s" % (test, test + ".new"))
+    print("%s -> %s" % (test, test + ".new"))
+    os.system("mv -i %s %s" % (quote(test + ".new"), quote(test)))

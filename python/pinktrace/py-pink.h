@@ -92,4 +92,18 @@
 		} \
 	} while (0)
 
+#define PINK_CHECK_NULL(str, msg) \
+	do { \
+		if ((str) == NULL) { \
+			return PyErr_Format(PyExc_ValueError, (msg)); \
+		} \
+	} while (0)
+
+#define PINK_CHECK_LOOKUP(retval, msg) \
+	do { \
+		if ((retval) == -1) { \
+			return PyErr_Format(PyExc_ValueError, (msg)); \
+		} \
+	} while (0)
+
 #endif

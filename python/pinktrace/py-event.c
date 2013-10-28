@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2010, 2011, 2013 Ali Polatel <alip@exherbo.org>
- * All rights reserved.
  *
  * This module is free software, and you may redistribute it and/or modify
  * it under the same terms as Python itself, so long as this copyright message
@@ -26,8 +25,6 @@ PyInit_event(void);
 #else
 initevent(void);
 #endif /* PY_MAJOR_VERSION > 2 */
-
-static PyObject *EventError;
 
 static char pinkpy_event_decide_doc[] = ""
 	"Return the last event made by child.\n"
