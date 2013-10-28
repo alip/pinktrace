@@ -34,15 +34,13 @@
  *
  * Do not include this file directly. Use pinktrace/pink.h instead.
  *
- * @defgroup pink_event Pink's ptrace(2) event handling for Linux
+ * @defgroup pink_event Pink's ptrace(2) event handling
  * @ingroup pinktrace
  * @{
  **/
 
 /**
  * @e ptrace(2) event constants
- *
- * @note Availability: Linux
  **/
 enum pink_event {
 	/** No event */
@@ -99,9 +97,6 @@ enum pink_event {
 
 /**
  * Calculate the event from the status argument as returned by @e waitpid(2)
- *
- * @note Available on Linux, on other systems this function always returns
- * #PINK_EVENT_NONE and sets errno to @e ENOSYS
  *
  * @param status Status argument as returned by @e waitpid(2)
  * @return One of PINK_EVENT constants
