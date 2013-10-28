@@ -5,6 +5,7 @@ IF_PYTHON_FILES= \
 		 py-abi.c \
 		 py-event.c \
 		 py-name.c \
+		 py-regset.c \
 		 py-trace.c
 EXTRA_DIST= $(IF_PYTHON_FILES)
 
@@ -54,6 +55,7 @@ pkgpyexec_LTLIBRARIES= \
 		       abi.la \
 		       event.la \
 		       name.la \
+		       regset.la \
 		       trace.la
 
 system_la_SOURCES= py-system.c
@@ -68,6 +70,9 @@ event_la_LIBADD= $(PINKTRACE_LIB_ADD)
 name_la_SOURCES= py-name.c
 name_la_LIBADD= $(PINKTRACE_LIB_ADD)
 
+regset_la_SOURCES= py-regset.c
+regset_la_LIBADD= $(PINKTRACE_LIB_ADD)
+
 trace_la_SOURCES= py-trace.c
 trace_la_LIBADD= $(PINKTRACE_LIB_ADD)
 
@@ -80,6 +85,7 @@ noinst_DATA= \
 	     abi.so \
 	     event.so \
 	     name.so \
+	     regset.so \
 	     trace.so
 
 # Remove the .la files - *.la is never linked against (pinktrace is a module)

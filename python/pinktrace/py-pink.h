@@ -29,6 +29,7 @@
 
 #define PY_SSIZE_T_CLEAN 1
 #include <Python.h>
+#include <errno.h>
 #include <signal.h>
 #include <pinktrace/pink.h>
 
