@@ -22,6 +22,10 @@ DISTCHECK_CONFIGURE_FLAGS= \
 			   --enable-doxygen \
 			   --enable-python --enable-python-doc \
 			   --enable-ipv6
+# "make distcheck" builds the dvi target, so use it to check that the
+# documentation is built correctly.
+dvi:
+	$(MAKE) SPHINXOPTS_EXTRA=-W html
 
 TAR_FILE= $(PACKAGE)-$(VERSION).tar.bz2
 SHA1_FILE= $(TAR_FILE).sha1sum

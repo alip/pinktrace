@@ -84,6 +84,7 @@ Makefile
 /m4/lt*.m4
 
 # Specific ignores
+/docs/_build
 /doc/api/c/doxygen.conf
 /doc/api/c/pinktrace.tag
 /doc/api/c/c
