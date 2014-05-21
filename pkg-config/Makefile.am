@@ -14,4 +14,5 @@ pinktrace.pc: pinktrace.pc.in Makefile
 	    -e "s,#PINKTRACE_PC_VERSION#,$(PINKTRACE_PC_VERSION)," \
 	    -e "s,#PINKTRACE_PC_LIBS#,$(PINKTRACE_PC_LIBS)," \
 	    -e "s,#PINKTRACE_PC_CFLAGS#,$(PINKTRACE_PC_CFLAGS)," \
+	    -e "s,#PTRACE_SUPPORTS_SEIZE#,$(PTRACE_SUPPORTS_SEIZE)," \
 	    < $(srcdir)/pinktrace.pc.in > pinktrace.pc

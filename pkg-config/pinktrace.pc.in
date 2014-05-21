@@ -8,3 +8,5 @@ Description: Pink's Tracing Library
 Version: #PINKTRACE_PC_VERSION#
 Libs: -L${libdir} #PINKTRACE_PC_LIBS#
 Cflags: -I${includedir} #PINKTRACE_PC_CFLAGS#
+
+PINK_HAVE_SEIZE=#PTRACE_SUPPORTS_SEIZE#
