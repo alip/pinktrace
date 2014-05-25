@@ -124,7 +124,7 @@ int pink_read_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index
  * Read len bytes of data of tracee at address @b addr, to our address
  * space @b dest
  *
- * @note This function calls the functions:
+ * @note This function uses either one of the functions:
  *       - pink_vm_cread()
  *       - pink_vm_lread()
  * depending on availability.
@@ -182,7 +182,22 @@ int pink_read_vm_data_full(pid_t pid, struct pink_regset *regset, long addr, cha
  * Like pink_read_vm_data() but make the additional effort of looking for a
  * terminating zero-byte
  *
- * @see pink_read_vm_data()
+ * @note This function uses either one of the functions:
+ *       - pink_vm_cread_nul()
+ *       - pink_vm_lread_nul()
+ * depending on availability.
+ * @see pink_vm_cread_nul()
+ * @see pink_vm_lread_nul()
+ * @see PINK_HAVE_PROCESS_VM_READV
+ *
+ * @param pid Process ID
+ * @param regset Registry set
+ * @param addr Address in tracee's address space
+ * @param dest Pointer to store the data, must @b not be @e NULL
+ * @param len Number of bytes of data to read
+ * @return On success, this function returns the number of bytes read @b including the zero-byte.
+ *         On error, -1 is returned and errno is set appropriately.
+ *         Check the return value for partial reads.
  **/
 ssize_t pink_read_vm_data_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 	PINK_GCC_ATTR((nonnull(4)));
