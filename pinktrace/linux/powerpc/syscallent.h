@@ -351,3 +351,5 @@
 	"setns", /* 350 */
 	"process_vm_readv", /* 351 */
 	"process_vm_writev", /* 352 */
+	"kcmp", /* 353 */
+	"finit_module", /* 354 */

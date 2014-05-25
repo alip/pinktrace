@@ -310,3 +310,5 @@
 	"getcpu", /* 309 */
 	"process_vm_readv", /* 310 */
 	"process_vm_writev", /* 311 */
+	"kcmp", /* 312 */
+	"finit_module", /* 313 */

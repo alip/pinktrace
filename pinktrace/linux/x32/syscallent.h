@@ -539,3 +539,5 @@
 	"sendmmsg", /* 538 */
 	"process_vm_readv", /* 539 */
 	"process_vm_writev", /* 540 */
+	"kcmp", /* 312 */
+	"finit_module", /* 313 */

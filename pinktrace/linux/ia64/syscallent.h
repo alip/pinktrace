@@ -95,12 +95,12 @@
 	"syslog", /* 1117 */
 	"setitimer", /* 1118 */
 	"getitimer", /* 1119 */
-	"old_stat", /* 1120 */
-	"old_lstat", /* 1121 */
-	"old_fstat", /* 1122 */
+	"stat", /* 1120 */
+	"lstat", /* 1121 */
+	"fstat", /* 1122 */
 	"vhangup", /* 1123 */
 	"lchown", /* 1124 */
-	"remap_file_pages", /* 1125 */
+	"vm86", /* 1125 */
 	"wait4", /* 1126 */
 	"sysinfo", /* 1127 */
 	"clone", /* 1128 */
@@ -123,8 +123,8 @@
 	"flock", /* 1145 */
 	"readv", /* 1146 */
 	"writev", /* 1147 */
-	"pread64", /* 1148 */
-	"pwrite64", /* 1149 */
+	"pread", /* 1148 */
+	"pwrite", /* 1149 */
 	"_sysctl", /* 1150 */
 	"mmap", /* 1151 */
 	"munmap", /* 1152 */
@@ -206,8 +206,8 @@
 	"fremovexattr", /* 1228 */
 	"tkill", /* 1229 */
 	"futex", /* 1230 */
-	"sched_setaffinity", /* 1231 */
-	"sched_getaffinity", /* 1232 */
+	"sched_setaffinity",/* 1231 */
+	"sched_getaffinity",/* 1232 */
 	"set_tid_address", /* 1233 */
 	"fadvise64", /* 1234 */
 	"tgkill", /* 1235 */
@@ -272,35 +272,33 @@
 	"pselect6", /* 1294 */
 	"ppoll", /* 1295 */
 	"unshare", /* 1296 */
-	"splice", /* 1297 */
-	"set_robust_list", /* 1298 */
-	"get_robust_list", /* 1299 */
+	"set_robust_list", /* 1297 */
+	"get_robust_list", /* 1298 */
+	"splice", /* 1299 */
 	"sync_file_range", /* 1300 */
 	"tee", /* 1301 */
 	"vmsplice", /* 1302 */
-	"fallocate", /* 1303 */
+	NULL, /* 1303 */
 	"getcpu", /* 1304 */
 	"epoll_pwait", /* 1305 */
-	"utimensat", /* 1306 */
+	NULL, /* 1306 */
 	"signalfd", /* 1307 */
 	"timerfd", /* 1308 */
 	"eventfd", /* 1309 */
-	"timerfd_create", /* 1310 */
-	"timerfd_settime", /* 1311 */
-	"timerfd_gettime", /* 1312 */
-	"preadv", /* 1313 */
-	"pwritev", /* 1314 */
-	"rt_tgsigqueueinfo" /* 1315 */
-	"recvmmsg", /* 1316 */
-	"fanotify_init", /* 1317 */
-	"fanotify_mark", /* 1318 */
-	"prlimit64", /* 1319 */
-	"name_to_handle_at", /* 1320 */
-	"open_by_handle_at", /* 1321 */
-	"clock_adjtime", /* 1322 */
-	"syncfs", /* 1323 */
-	"setns", /* 1324 */
-	"sendmmsg", /* 1325 */
-	"process_vm_readv", /* 1326 */
-	"process_vm_writev", /* 1327 */
-	"accept4", /* 1328 */
+	"preadv", /* 1319 */
+	"pwritev", /* 1320 */
+	"rt_tgsigqueueinfo", /* 1321 */
+	"recvmmsg", /* 1322 */
+	"fanotify_init", /* 1323 */
+	"fanotify_mark", /* 1324 */
+	"prlimit64", /* 1325 */
+	"name_to_handle_at", /* 1326 */
+	"open_by_handle_at", /* 1327 */
+	"clock_adjtime", /* 1328 */
+	"syncfs", /* 1329 */
+	"setns", /* 1330 */
+	"sendmmsg", /* 1331 */
+	"process_vm_readv", /* 1332 */
+	"process_vm_writev", /* 1333 */
+	"accept4", /* 1334 */
+	"finit_module", /* 1335 */
