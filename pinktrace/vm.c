@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2014 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -69,13 +69,17 @@ ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *de
 		n = addr - (addr & -sizeof(long)); /* residue */
 		addr &= -sizeof(long); /* residue */
 		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
-			/* Not started yet, thus we had a bogus address. */
+			/* Not started yet: process is gone or address space is
+			 * inacessible. */
 			errno = -r;
 			return count_read > 0 ? count_read : -1;
 		}
 		m = MIN(sizeof(long) - n, len);
 		memcpy(dest, &u.x[n], m);
-		addr += sizeof(long), dest += m, len -= m, count_read += m;
+		addr += sizeof(long);
+		dest += m;
+		count_read += m;
+		len -= m;
 	}
 	while (len > 0) {
 		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
@@ -84,7 +88,10 @@ ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *de
 		}
 		m = MIN(sizeof(long), len);
 		memcpy(dest, u.x, m);
-		addr += sizeof(long), dest += m, len -= m, count_read += m;
+		addr += sizeof(long);
+		dest += m;
+		count_read += m;
+		len -= m;
 	}
 	return count_read;
 }
@@ -92,8 +99,35 @@ ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *de
 PINK_GCC_ATTR((nonnull(4)))
 ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
-	unsigned i;
+#if SIZEOF_LONG == 4
+	const unsigned long x01010101 = 0x01010101ul;
+	const unsigned long x80808080 = 0x80808080ul;
+# define return_readc(c, t) \
+	do { \
+		switch ((t)) { \
+		case 1ul <<  7: default: return (c); \
+		case 1ul << 15: return (c)+1; \
+		case 1ul << 23: return (c)+2; case 1ul << 31: return (c)+3; } \
+	} while (0)
+#elif SIZEOF_LONG == 8
+	const unsigned long x01010101 = 0x0101010101010101ul;
+	const unsigned long x80808080 = 0x8080808080808080ul;
+# define return_readc(c, t) \
+	do { \
+		switch ((t)) { \
+		case 1ul <<  7: default: return (c); \
+		case 1ul << 15: return (c)+1; \
+		case 1ul << 23: return (c)+2; case 1ul << 31: return (c)+3; \
+		case 1ul << 39: return (c)+4; case 1ul << 47: return (c)+5; \
+		case 1ul << 55: return (c)+6; case 1ul << 63: return (c)+7; } \
+	} while (0)
+#else
+# error SIZEOF_LONG > 8
+#endif
+
 	int n, m, r;
+	unsigned i;
+	unsigned long x;
 	union {
 		long val;
 		char x[sizeof(long)];
@@ -107,17 +141,20 @@ ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char
 		n = addr - (addr & -sizeof(long)); /* residue */
 		addr &= -sizeof(long); /* residue */
 		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
-			/* Not started yet, thus we had a bogus address. */
+			/* Not started yet: process is gone or address space is
+			 * inacessible. */
 			errno = -r;
 			return -1;
 		}
 		m = MIN(sizeof(long) - n, len);
 		memcpy(dest, &u.x[n], m);
-		while (n & (sizeof(long) - 1))
-			if (u.x[n++] == '\0')
-				return count_read + m;
-		addr += sizeof(long), dest += m, len -= m;
+		/* "If a NUL char exists in this word" */
+		if ((u.val - x01010101) & ~u.val & x80808080)
+			return count_read + m;
+		addr += sizeof(long);
+		dest += m;
 		count_read += m;
+		len -= m;
 	}
 	while (len > 0) {
 		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
@@ -126,13 +163,16 @@ ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char
 		}
 		m = MIN(sizeof(long), len);
 		memcpy(dest, u.x, m);
-		for (i = 0; i < sizeof(long); i++)
-			if (u.x[i] == '\0')
-				return count_read + i;
-		addr += sizeof(long), dest += m, len -= m;
+		/* "If a NUL char exists in this word" */
+		if (x = ((u.val - x01010101) & ~u.val & x80808080))
+			return_readc(count_read, x);
+		addr += sizeof(long);
+		dest += m;
 		count_read += m;
+		len -= m;
 	}
 	return count_read;
+#undef return_readc
 }
 
 PINK_GCC_ATTR((nonnull(4)))
@@ -155,11 +195,15 @@ ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const c
 		m = MIN(sizeof(long) - n, len);
 		memcpy(u.x, &src[n], m);
 		if ((r = pink_write_word_data(pid, addr, u.val)) < 0) {
-			/* Not started yet, thus we had a bogus address. */
+			/* Not started yet: process is gone or address space is
+			 * inacessible. */
 			errno = -r;
 			return -1;
 		}
-		addr += sizeof(long), src += m, len -= m, count_written += m;
+		addr += sizeof(long);
+		src += m;
+		count_written += m;
+		len -= m;
 	}
 	while (len > 0) {
 		m = MIN(sizeof(long), len);
@@ -168,7 +212,10 @@ ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const c
 			errno = -r;
 			return count_written > 0 ? count_written : -1;
 		}
-		addr += sizeof(long), src += m, len -= m, count_written += m;
+		addr += sizeof(long);
+		src += m;
+		count_written += m;
+		len -= m;
 	}
 
 	return count_written;
