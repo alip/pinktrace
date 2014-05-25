@@ -157,6 +157,9 @@ enum pink_event event_decide_and_print(int status);
 void regset_alloc_or_kill(pid_t pid, struct pink_regset **regptr);
 void regset_fill_or_kill(pid_t pid, struct pink_regset *regset);
 
+void vm_lread_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
+ssize_t vm_lread_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len);
+
 void read_syscall_or_kill(pid_t pid, struct pink_regset *regset, long *sysnum);
 void read_retval_or_kill(pid_t pid, struct pink_regset *regset, long *retval, int *error);
 void read_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_index, long *argval);
@@ -181,6 +184,7 @@ void write_argument_or_kill(pid_t pid, struct pink_regset *regset, unsigned arg_
 void write_vm_data_or_kill(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len);
 
 void test_suite_trace(void);
+void test_suite_vm(void);
 void test_suite_read(void);
 void test_suite_write(void);
 void test_suite_socket(void);

@@ -608,6 +608,44 @@ void regset_fill_or_kill(pid_t pid, struct pink_regset *regset)
 	dump_regset(regset);
 }
 
+void vm_lread_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+{
+	ssize_t r;
+
+	errno = 0;
+	r = pink_vm_lread(pid, regset, addr, dest, len);
+	if (r < 0) {
+		kill_save_errno(pid, SIGKILL);
+		fail_verbose("pink_vm_lread (pid:%u, addr:%ld, len:%zd errno:%d %s)",
+			     pid, addr, len, errno, strerror(errno));
+	} else if ((size_t)r < len) {
+		message("\tpink_vm_lread partial read, expected:%zu got:%zd\n",
+			len, r);
+	}
+	info("\tpink_vm_lread (pid:%u, addr:%ld len:%zd) = %zd", pid, addr, len, r);
+	dump_basic_hex(dest, r);
+}
+
+ssize_t vm_lread_nul_or_kill(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+{
+	ssize_t r;
+
+	errno = 0;
+	r = pink_vm_lread_nul(pid, regset, addr, dest, len);
+	if (r < 0) {
+		kill_save_errno(pid, SIGKILL);
+		fail_verbose("pink_vm_lread_nul (pid:%u, addr:%ld, len:%zd errno:%d %s)",
+			     pid, addr, len, errno, strerror(errno));
+	} else if ((size_t)r < len) {
+		message("\tpink_vm_lread_nul partial read, expected:%zu got:%zd\n",
+			len, r);
+	}
+	info("\tread_vm_lread_nul (pid:%u, addr:%ld len:%zd) = %zd\n", pid, addr, len, r);
+	dump_basic_hex(dest, r);
+
+	return r;
+}
+
 void read_syscall_or_kill(pid_t pid, struct pink_regset *regset, long *sysnum)
 {
 	int r;
@@ -865,13 +903,17 @@ static unsigned get_os_release(void)
 
 static void all_tests(void)
 {
-	if (!getenv("PINK_CHECK_SKIP_TRACE"))
+	const char *skip = getenv("PINK_CHECK_SKIP");
+
+	if (!skip || !strstr(skip, "trace"))
 		test_suite_trace();
-	if (!getenv("PINK_CHECK_SKIP_READ"))
+	if (!skip || !strstr(skip, "vm"))
+		test_suite_vm();
+	if (!skip || !strstr(skip, "read"))
 		test_suite_read();
-	if (!getenv("PINK_CHECK_SKIP_WRITE"))
+	if (!skip || !strstr(skip, "write"))
 		test_suite_write();
-	if (!getenv("PINK_CHECK_SKIP_SOCKET"))
+	if (!skip || !strstr(skip, "socket"))
 		test_suite_socket();
 }
 

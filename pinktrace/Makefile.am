@@ -54,6 +54,7 @@ noinst_HEADERS= \
 IF_CHECK_SRCS= \
 	       seatest.c \
 	       trace-TEST.c \
+	       vm-TEST.c \
 	       read-TEST.c \
 	       write-TEST.c \
 	       socket-TEST.c \
