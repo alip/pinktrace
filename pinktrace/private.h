@@ -137,6 +137,30 @@
 # define ABI0_WORDSIZE (int)(sizeof(long))
 #endif
 
+extern const char *const errnoent0[];
+extern const char *const signalent0[];
+extern const char *const sysent0[];
+extern const size_t nerrnos0;
+extern const size_t nsignals0;
+extern const size_t nsyscalls0;
+
+#if PINK_ABIS_SUPPORTED > 1
+extern const char *const errnoent1[];
+extern const char *const signalent1[];
+extern const char *const sysent1[];
+extern const size_t nerrnos1;
+extern const size_t nsignals1;
+extern const size_t nsyscalls1;
+# if PINK_ABIS_SUPPORTED > 2
+extern const char *const errnoent2[];
+extern const char *const signalent2[];
+extern const char *const sysent2[];
+extern const size_t nerrnos2;
+extern const size_t nsignals2;
+extern const size_t nsyscalls2;
+# endif
+#endif
+
 #if PINK_ARCH_X86_64 || PINK_ARCH_X32
 /*
  * On i386, pt_regs and user_regs_struct are the same,

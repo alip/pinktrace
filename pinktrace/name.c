@@ -36,79 +36,54 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-static const char *const sysent0[] = {
-#include "syscallent.h"
-};
-static const char *const errnoent0[] = {
+const char *const errnoent0[] = {
 #include "errnoent.h"
 };
-static const char *const signalent0[] = {
+const char *const signalent0[] = {
 #include "signalent.h"
 };
+const char *const sysent0[] = {
+#include "syscallent.h"
+};
 
 #if PINK_ABIS_SUPPORTED > 1
-static const char *const sysent1[] = {
-# include "syscallent1.h"
-};
-static const char *const errnoent1[] = {
+const char *const errnoent1[] = {
 # include "errnoent1.h"
 };
-static const char *const signalent1[] = {
+const char *const signalent1[] = {
 # include "signalent1.h"
 };
+const char *const sysent1[] = {
+# include "syscallent1.h"
+};
 #endif
 
 #if PINK_ABIS_SUPPORTED > 2
-static const char *const sysent2[] = {
-#include "syscallent2.h"
-};
-static const char *const errnoent2[] = {
+const char *const errnoent2[] = {
 # include "errnoent2.h"
 };
-static const char *const signalent2[] = {
+const char *const signalent2[] = {
 # include "signalent2.h"
 };
+const char *const sysent2[] = {
+#include "syscallent2.h"
+};
 #endif
 
-enum {
-	nsyscalls0 = ARRAY_SIZE(sysent0)
+const size_t nerrnos0 = ARRAY_SIZE(errnoent0);
+const size_t nsignals0 = ARRAY_SIZE(signalent0);
+const size_t nsyscalls0 = ARRAY_SIZE(sysent0);
 #if PINK_ABIS_SUPPORTED > 1
-	, nsyscalls1 = ARRAY_SIZE(sysent1)
+const size_t nerrnos1 = ARRAY_SIZE(errnoent1);
+const size_t nsignals1 = ARRAY_SIZE(signalent1);
+const size_t nsyscalls1 = ARRAY_SIZE(sysent1);
 # if PINK_ABIS_SUPPORTED > 2
-	, nsyscalls2 = ARRAY_SIZE(sysent2)
+const size_t nerrnos2 = ARRAY_SIZE(errnoent2);
+const size_t nsignals2 = ARRAY_SIZE(signalent2);
+const size_t nsyscalls2 = ARRAY_SIZE(sysent2);
 # endif
 #endif
-};
 
-enum {
-	nerrnos0 = ARRAY_SIZE(errnoent0)
-#if PINK_ABIS_SUPPORTED > 1
-	, nerrnos1 = ARRAY_SIZE(errnoent1)
-# if PINK_ABIS_SUPPORTED > 2
-	, nerrnos2 = ARRAY_SIZE(errnoent2)
-# endif
-#endif
-};
-
-enum {
-	nsignals0 = ARRAY_SIZE(signalent0)
-#if PINK_ABIS_SUPPORTED > 1
-	, nsignals1 = ARRAY_SIZE(signalent1)
-# if PINK_ABIS_SUPPORTED > 2
-	, nsignals2 = ARRAY_SIZE(signalent2)
-# endif
-#endif
-};
-
-static const unsigned nsyscall_vec[PINK_ABIS_SUPPORTED] = {
-	nsyscalls0,
-#if PINK_ABIS_SUPPORTED > 1
-	nsyscalls1,
-#endif
-#if PINK_ABIS_SUPPORTED > 2
-	nsyscalls2,
-#endif
-};
 static const char *const *sysent_vec[PINK_ABIS_SUPPORTED] = {
 	sysent0,
 #if PINK_ABIS_SUPPORTED > 1
@@ -118,15 +93,6 @@ static const char *const *sysent_vec[PINK_ABIS_SUPPORTED] = {
 	sysent2,
 #endif
 };
-static const unsigned nerrno_vec[PINK_ABIS_SUPPORTED] = {
-	nerrnos0,
-#if PINK_ABIS_SUPPORTED > 1
-	nerrnos1,
-#endif
-#if PINK_ABIS_SUPPORTED > 2
-	nerrnos2,
-#endif
-};
 static const char *const *errnoent_vec[PINK_ABIS_SUPPORTED] = {
 	errnoent0,
 #if PINK_ABIS_SUPPORTED > 1
@@ -134,15 +100,6 @@ static const char *const *errnoent_vec[PINK_ABIS_SUPPORTED] = {
 #endif
 #if PINK_ABIS_SUPPORTED > 2
 	errnoent2,
-#endif
-};
-static const unsigned nsignal_vec[PINK_ABIS_SUPPORTED] = {
-	nsignals0,
-#if PINK_ABIS_SUPPORTED > 1
-	nsignals1,
-#endif
-#if PINK_ABIS_SUPPORTED > 2
-	nsignals2,
 #endif
 };
 static const char *const *signalent_vec[PINK_ABIS_SUPPORTED] = {
@@ -387,6 +344,15 @@ const char *pink_name_syscall(long scno, short abi)
 {
 	int nsyscalls;
 	const char *const *sysent;
+	const size_t nsyscall_vec[PINK_ABIS_SUPPORTED] = {
+		nsyscalls0,
+#if PINK_ABIS_SUPPORTED > 1
+		nsyscalls1,
+#endif
+#if PINK_ABIS_SUPPORTED > 2
+		nsyscalls2,
+#endif
+	};
 
 	if (abi < 0 || abi >= PINK_ABIS_SUPPORTED)
 		return NULL;
@@ -409,6 +375,15 @@ long pink_lookup_syscall(const char *name, short abi)
 	int nsyscalls;
 	const char *const *sysent;
 	long scno;
+	const size_t nsyscall_vec[PINK_ABIS_SUPPORTED] = {
+		nsyscalls0,
+#if PINK_ABIS_SUPPORTED > 1
+		nsyscalls1,
+#endif
+#if PINK_ABIS_SUPPORTED > 2
+		nsyscalls2,
+#endif
+	};
 
 	if (!name || *name == '\0')
 		return -1;
@@ -436,6 +411,15 @@ const char *pink_name_errno(int err_no, short abi)
 {
 	int nerrnos;
 	const char *const *errnoent;
+	const size_t nerrno_vec[PINK_ABIS_SUPPORTED] = {
+		nerrnos0,
+#if PINK_ABIS_SUPPORTED > 1
+		nerrnos1,
+#endif
+#if PINK_ABIS_SUPPORTED > 2
+		nerrnos2,
+#endif
+	};
 
 	if (abi < 0 || abi >= PINK_ABIS_SUPPORTED)
 		return NULL;
@@ -454,6 +438,15 @@ int pink_lookup_errno(const char *name, short abi)
 	int nerrnos;
 	const char *const *errnoent;
 	int err_no;
+	const size_t nerrno_vec[PINK_ABIS_SUPPORTED] = {
+		nerrnos0,
+#if PINK_ABIS_SUPPORTED > 1
+		nerrnos1,
+#endif
+#if PINK_ABIS_SUPPORTED > 2
+		nerrnos2,
+#endif
+	};
 
 	if (!name || *name == '\0')
 		return -1;
@@ -476,6 +469,15 @@ const char *pink_name_signal(int sig, short abi)
 {
 	int nsignals;
 	const char *const *signalent;
+	const size_t nsignal_vec[PINK_ABIS_SUPPORTED] = {
+		nsignals0,
+#if PINK_ABIS_SUPPORTED > 1
+		nsignals1,
+#endif
+#if PINK_ABIS_SUPPORTED > 2
+		nsignals2,
+#endif
+	};
 
 	if (abi < 0 || abi >= PINK_ABIS_SUPPORTED)
 		return NULL;
@@ -494,6 +496,15 @@ int pink_lookup_signal(const char *name, short abi)
 	int nsignals;
 	const char *const *signalent;
 	int sig;
+	const size_t nsignal_vec[PINK_ABIS_SUPPORTED] = {
+		nsignals0,
+#if PINK_ABIS_SUPPORTED > 1
+		nsignals1,
+#endif
+#if PINK_ABIS_SUPPORTED > 2
+		nsignals2,
+#endif
+	};
 
 	if (!name || *name == '\0')
 		return -1;

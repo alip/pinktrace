@@ -135,12 +135,32 @@ scno_in_r7:
  * Check the syscall return value register value for whether it is
  * a negated errno code indicating an error, or a success return value.
  */
-static inline int is_negated_errno(unsigned long int val, size_t current_wordsize)
+static inline int is_negated_errno(unsigned long int val, short abi)
 {
-	int nerrnos = 530; /* XXX: strace, errnoent.h */
+	size_t nerrnos;
+
+	switch (abi) {
+	case 0:
+		nerrnos = nerrnos0;
+		break;
+#if PINK_ABIS_SUPPORTED > 1
+	case 1:
+		nerrnos = nerrnos1;
+		break;
+# if PINK_ABIS_SUPPORTED > 2
+	case 2:
+		nerrnos = nerrnos2;
+		break;
+# endif
+#endif
+	default:
+		_pink_assert_not_reached();
+	}
+
 	unsigned long int max = -(long int) nerrnos;
-#if SUPPORTED_ABIS > 1
-	if (current_wordsize < sizeof(val)) {
+#if PINK_ABIS_SUPPORTED > 1 && SIZEOF_LONG > 4
+	size_t wordsize = pink_abi_wordsize(abi);
+	if (wordsize < sizeof(val)) {
 		val = (unsigned int) val;
 		max = (unsigned int) max;
 	}
@@ -148,17 +168,46 @@ static inline int is_negated_errno(unsigned long int val, size_t current_wordsiz
 	return val > max;
 }
 
+#if PINK_ARCH_X32
+static inline int is_negated_errno_x32(unsigned long long val, short abi)
+{
+	size_t nerrnos;
+
+	switch (abi) {
+	case 0:
+		nerrnos = nerrnos0;
+		break;
+	case 1:
+		nerrnos = nerrnos1;
+		break;
+	default:
+		_pink_assert_not_reached();
+	}
+
+	unsigned long long max = -(long long) nerrnos;
+	/*
+	 * current_wordsize is 4 even in personality 0 (native X32)
+	 * but truncation _must not_ be done in it.
+	 * can't check current_wordsize here!
+	 */
+	if (abi != 0) {
+		val = (uint32_t) val;
+		max = (uint32_t) max;
+	}
+	return val > max;
+}
+#endif
+
 PINK_GCC_ATTR((nonnull(3)))
 int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *error)
 {
 	long myrval;
 	int myerror = 0;
-	size_t wsize = pink_abi_wordsize(regset->abi);
 
 #if PINK_ARCH_ARM
 	struct pt_regs regs = regset->arm_regs;
 
-	if (is_negated_errno(regs.ARM_r0, wsize)) {
+	if (is_negated_errno(regs.ARM_r0, regset->abi)) {
 		myrval = -1;
 		myerror = -regs.ARM_r0;
 	} else {
@@ -177,7 +226,7 @@ int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *e
 		int err;
 
 		err = (int)r8;
-		if (is_negated_errno(err, wsize)) {
+		if (is_negated_errno(err, regset->abi)) {
 			myrval = -1;
 			myerror = -err;
 		} else {
@@ -200,7 +249,7 @@ int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *e
 	if (regs.ccr & SO_MASK)
 		ppc_result = -ppc_result;
 
-	if (is_negated_errno(ppc_result, wsize)) {
+	if (is_negated_errno(ppc_result, regset->abi)) {
 		myrval = -1;
 		myerror = -ppc_result;
 	} else {
@@ -209,27 +258,45 @@ int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *e
 #elif PINK_ARCH_I386
 	struct user_regs_struct regs = regset->i386_regs;
 
-	if (is_negated_errno(regs.eax, wsize)) {
+	if (is_negated_errno(regs.eax, regset->abi)) {
 		myrval = -1;
 		myerror = -regs.eax;
 	} else {
 		myrval = regs.eax;
 	}
-#elif PINK_ARCH_X86_64 || PINK_ARCH_X32
+#elif PINK_ARCH_X86_64
 	long rax;
 
 	if (regset->abi == PINK_ABI_I386) {
 		/* Sign extend from 32 bits */
 		rax = (int32_t)regset->x86_regs_union.i386_r.eax;
 	} else {
-		/* Note: in X32 build, this truncates 64 to 32 bits */
 		rax = regset->x86_regs_union.x86_64_r.rax;
 	}
-	if (is_negated_errno(rax, wsize)) {
+	if (is_negated_errno(rax, regset->abi)) {
 		myrval = -1;
 		myerror = -rax;
 	} else {
 		myrval = rax;
+	}
+#elif PINK_ARCH_X32
+	/* In X32, return value is 64-bit (llseek uses one).
+	 * Using merely "long rax" would not work.
+	 */
+	long long rax;
+
+	if (regset->abi == PINK_ABI_I386) {
+		/* Sign extend from 32 bits */
+		rax = (int32_t)regset->x86_regs_union.i386_r.eax;
+	} else {
+		rax = regset->x86_regs_union.x86_64_r.rax;
+	}
+	/* Careful: is_negated_errno() works only on longs */
+	if (is_negated_errno_x32(rax)) {
+		myrval = -1;
+		myerror = -rax;
+	} else {
+		myrval = rax; /* truncating */
 	}
 #else
 #error unsupported architecture
