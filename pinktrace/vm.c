@@ -126,7 +126,6 @@ ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char
 #endif
 
 	int n, m, r;
-	unsigned i;
 	unsigned long x;
 	union {
 		long val;
@@ -164,7 +163,7 @@ ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char
 		m = MIN(sizeof(long), len);
 		memcpy(dest, u.x, m);
 		/* "If a NUL char exists in this word" */
-		if (x = ((u.val - x01010101) & ~u.val & x80808080))
+		if ((x = ((u.val - x01010101) & ~u.val & x80808080)))
 			return_readc(count_read + 1, x); /* +1 is for NUL */
 		addr += sizeof(long);
 		dest += m;
