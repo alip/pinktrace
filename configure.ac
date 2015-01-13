@@ -562,7 +562,6 @@ AC_CONFIG_FILES([Makefile
 		 doc/api/c/Makefile
 		 doc/api/c/doxygen.conf
 		 doc/api/python/Makefile
-		 docs/Makefile
 		 pkg-config/Makefile
 		 pinktrace/Makefile
 		 pinktrace/about.h
