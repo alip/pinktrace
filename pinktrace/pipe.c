@@ -135,7 +135,7 @@ int pink_pipe_done(int pipefd[2])
 
 int pink_pipe_close(int pipefd[2], int fd_index)
 {
-	if (fd_index != PINK_PIPE_RD || fd_index != PINK_PIPE_WR)
+	if (fd_index != PINK_PIPE_RD && fd_index != PINK_PIPE_WR)
 		return -EINVAL;
 
 	if (pipefd[fd_index] >= 0) {
