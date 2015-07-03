@@ -1,0 +1,4 @@
+[gerrit]
+host=galileo.mailstation.de
+port=29418
+project=pinktrace-1
