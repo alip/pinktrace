@@ -378,3 +378,32 @@
 	"process_vm_writev", /* 377 */
 	"kcmp", /* 378 */
 	"finit_module", /* 379 */
+	"sched_setattr", /* 380 */
+	"sched_getattr", /* 381 */
+	"renameat2", /* 382 */
+	"seccomp", /* 383 */
+	"getrandom", /* 384 */
+	"memfd_create", /* 385 */
+	"bpf", /* 386 */
+	"execveat", /* 387 */
+
+#define ARM_FIRST_SHUFFLED_SYSCALL 388
+
+	/* __ARM_NR_cmpxchg (0x000ffff0).
+	 * Remapped by shuffle_scno() to be directly after ordinary syscalls
+	 * in this table.
+	 */
+	"cmpxchg", /* ARM_FIRST_SHUFFLED_SYSCALL */
+
+	/* ARM specific syscalls. Encoded with scno 0x000f00xx.
+	 * Remapped by shuffle_scno() to be directly after __ARM_NR_cmpxchg.
+	 */
+        NULL, /* 0 */
+	"breakpoint", /* 1 */
+	"cacheflush", /* 2 */
+	"usr26", /* 3 */
+	"usr32", /* 4 */
+	"set_tls" /* 5 */
+
+#define ARM_LAST_SPECIAL_SYSCALL 5
+
