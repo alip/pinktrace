@@ -253,12 +253,14 @@ static ssize_t _pink_process_vm_readv(pid_t pid,
 PINK_GCC_ATTR((nonnull(4)))
 ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
 {
+#if PINK_HAVE_PROCESS_VM_READV
 	struct iovec local[1], remote[1];
 
 	addr = setup_addr(pid, regset, addr);
 	local[0].iov_base = dest;
 	remote[0].iov_base = (void *)addr;
 	local[0].iov_len = remote[0].iov_len = len;
+#endif
 
 	return process_vm_readv(pid, local, 1, remote, 1, /*flags:*/0);
 }
@@ -343,12 +345,14 @@ static ssize_t _pink_process_vm_writev(pid_t pid,
 PINK_GCC_ATTR((nonnull(4)))
 ssize_t pink_vm_cwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
 {
+#if PINK_HAVE_PROCESS_VM_WRITEV
 	struct iovec local[1], remote[1];
 
 	addr = setup_addr(pid, regset, addr);
 	local[0].iov_base = (void *)src;
 	remote[0].iov_base = (void *)addr;
 	local[0].iov_len = remote[0].iov_len = len;
+#endif
 
 	return process_vm_writev(pid, local, 1, remote, 1, /*flags:*/ 0);
 }
