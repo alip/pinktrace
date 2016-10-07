@@ -72,7 +72,7 @@ ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *de
 			/* Not started yet: process is gone or address space is
 			 * inacessible. */
 			errno = -r;
-			return -1;
+			return count_read > 0 ? count_read : -1;
 		}
 		m = MIN(sizeof(long) - n, len);
 		memcpy(dest, &u.x[n], m);
