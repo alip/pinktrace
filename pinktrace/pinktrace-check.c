@@ -56,7 +56,7 @@
 unsigned os_release;
 unsigned _i;
 pid_t _pgid = -1;
-char _pinktrace_fail_msg[256];
+char _pinktrace_fail_msg[PINKTRACE_FAIL_MSG_BUFSIZE];
 
 PINK_GCC_ATTR((format (printf, 2, 0)))
 int pprintf_va(int pretty, const char *format, va_list ap)

@@ -81,12 +81,13 @@ int pprintf(int pretty, const char *format, ...)
 #define message(...)	pprintf(MESSAGE, __VA_ARGS__)
 #define warning(...)	pprintf(WARNING, __VA_ARGS__)
 
-extern char _pinktrace_fail_msg[256];
+#define PINKTRACE_FAIL_MSG_BUFSIZE 512
+extern char _pinktrace_fail_msg[PINKTRACE_FAIL_MSG_BUFSIZE];
 #define fail_verbose(...) \
 	do { \
 		pprintf(WARNING, __VA_ARGS__); \
-		memset(_pinktrace_fail_msg, 0, 256 * sizeof(char)); \
-		snprintf(_pinktrace_fail_msg, 256, __VA_ARGS__); \
+		memset(_pinktrace_fail_msg, 0, PINKTRACE_FAIL_MSG_BUFSIZE * sizeof(char)); \
+		snprintf(_pinktrace_fail_msg, PINKTRACE_FAIL_MSG_BUFSIZE, __VA_ARGS__); \
 		seatest_simple_test_result(0, _pinktrace_fail_msg, __func__, __LINE__); \
 	} while (0)
 
