@@ -221,7 +221,7 @@
 	"getdents64", /* 220 */
 	"fcntl64", /* 221 */
 	"SYS_222", /* 222 */
-/*TODO*/"security", /* 223 */
+	"SYS_223", /* 223 */
 	"gettid", /* 224 */
 	"readahead", /* 225 */
 	"setxattr", /* 226 */
@@ -349,3 +349,94 @@
 	"process_vm_writev", /* 348 */
 	"kcmp", /* 349 */
 	"finit_module", /* 350 */
+	"sched_setattr", /* 351 */
+	"sched_getattr", /* 352 */
+	"renameat2", /* 353 */
+	"seccomp", /* 354 */
+	"getrandom", /* 355 */
+	"memfd_create", /* 356 */
+	"bpf", /* 357 */
+	"execveat", /* 358 */
+	"socket", /* 359 */
+	"socketpair", /* 360 */
+	"bind", /* 361 */
+	"connect", /* 362 */
+	"listen", /* 363 */
+	"accept4", /* 364 */
+	"getsockopt", /* 365 */
+	"setsockopt", /* 366 */
+	"getsockname", /* 367 */
+	"getpeername", /* 368 */
+	"sendto", /* 369 */
+	"sendmsg", /* 370 */
+	"recvfrom", /* 371 */
+	"recvmsg", /* 372 */
+	"shutdown", /* 373 */
+	"userfaultfd", /* 374 */
+	"membarrier", /* 375 */
+	"mlock2", /* 376 */
+	"copy_file_range", /* 377 */
+	"preadv2", /* 378 */
+	"pwritev2", /* 379 */
+	"pkey_mprotect", /* 380 */
+	"pkey_alloc", /* 381 */
+	"pkey_free", /* 382 */
+	"statx", /* 383 */
+	"arch_prctl", /* 384 */
+	"io_pgetevents", /* 385 */
+	"rseq", /* 386 */
+	"SYS_387", /* room for arch specific calls */
+	"SYS_388",
+	"SYS_389",
+	"SYS_390",
+	"SYS_391",
+	"SYS_392",
+	"semget", /* 393 */
+	"semctl", /* 394 */
+	"shmget", /* 395 */
+	"shmctl", /* 396 */
+	"shmat", /* 397 */
+	"shmdt", /* 398 */
+	"msgget", /* 399 */
+	"msgsnd", /* 400 */
+	"msgrcv", /* 401 */
+	"msgctl", /* 402 */
+	"clock_gettime64", /* 403 */
+	"clock_settime64", /* 404 */
+	"clock_adjtime64", /* 405 */
+	"clock_getres_time64", /* 406 */
+	"clock_nanosleep_time64", /* 407 */
+	"timer_gettime64", /* 408 */
+	"timer_settime64", /* 409 */
+	"timerfd_gettime64", /* 410 */
+	"timerfd_settime64", /* 411 */
+	"utimensat_time64", /* 412 */
+	"pselect6_time64", /* 413 */
+	"ppoll_time64", /* 414 */
+	"SYS_415", /* 415 */
+	"io_pgetevents_time64", /* 416 */
+	"recvmmsg_time64", /* 417 */
+	"mq_timedsend_time64", /* 418 */
+	"mq_timedreceive_time64", /* 419 */
+	"semtimedop_time64", /* 420 */
+	"rt_sigtimedwait_time64", /* 421 */
+	"futex_time64", /* 422 */
+	"sched_rr_get_interval_time64", /* 423 */
+	"pidfd_send_signal", /* 424 */
+	"io_uring_setup", /* 425 */
+	"io_uring_enter", /* 426 */
+	"io_uring_register", /* 427 */
+	"open_tree", /* 428 */
+	"move_mount", /* 429 */
+	"fsopen", /* 430 */
+	"fsconfig", /* 431 */
+	"fsmount", /* 432 */
+	"fspick", /* 433 */
+	"pidfd_open", /* 434 */
+	"clone3", /* 435 */
+	"close_range", /* 436 */
+	"openat2", /* 437 */
+	"pidfd_getfd", /* 438 */
+	"faccessat2", /* 439 */
+	"process_madvise", /* 440 */
+	"epoll_pwait2", /* 441 */
