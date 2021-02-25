@@ -11,14 +11,14 @@
 	"mprotect",  /* 10 */
 	"munmap",  /* 11 */
 	"brk",  /* 12 */
-	"", /* 13 */
+	"rt_sigaction#64", /* 13 */
 	"rt_sigprocmask",  /* 14 */
-	NULL, /* 15 */
-	NULL, /* 16 */
+	"rt_sigreturn#64", /* 15 */
+	"ioctl#64", /* 16 */
 	"pread",  /* 17 */
 	"pwrite",  /* 18 */
-	NULL, /* 19 */
-	NULL, /* 20 */
+	"readv#64", /* 19 */
+	"writev#64", /* 20 */
 	"access",  /* 21 */
 	"pipe",  /* 22 */
 	"select",  /* 23 */
@@ -43,21 +43,21 @@
 	"connect",  /* 42 */
 	"accept",  /* 43 */
 	"sendto",  /* 44 */
-	NULL, /* 45 */
-	NULL, /* 46 */
-	NULL, /* 47 */
+	"recvfrom#64", /* 45 */
+	"sendmsg#64", /* 46 */
+	"recvmsg#64", /* 47 */
 	"shutdown",  /* 48 */
 	"bind",  /* 49 */
 	"listen",  /* 50 */
 	"getsockname",  /* 51 */
 	"getpeername",  /* 52 */
 	"socketpair",  /* 53 */
-	"setsockopt",  /* 54 */
-	"getsockopt",  /* 55 */
+	"setsockopt#64",  /* 54 */
+	"getsockopt#64",  /* 55 */
 	"clone",  /* 56 */
 	"fork",  /* 57 */
 	"vfork",  /* 58 */
-	NULL, /* 59 */
+	"execve#64", /* 59 */
 	"_exit",  /* 60 */
 	"wait4",  /* 61 */
 	"kill",  /* 62 */
@@ -99,7 +99,7 @@
 	"getrusage",  /* 98 */
 	"sysinfo",  /* 99 */
 	"times",  /* 100 */
-	NULL, /* 101 */
+	"ptrace#64", /* 101 */
 	"getuid",  /* 102 */
 	"syslog",  /* 103 */
 	"getgid",  /* 104 */
@@ -125,14 +125,14 @@
 	"getsid",  /* 124 */
 	"capget",  /* 125 */
 	"capset",  /* 126 */
-	NULL, /* 127 */
-	NULL, /* 128 */
-	NULL, /* 129 */
+	"rt_sigpending#64", /* 127 */
+	"rt_sigtimedwait#64", /* 128 */
+	"rt_sigqueueinfo#64", /* 129 */
 	"rt_sigsuspend",  /* 130 */
-	NULL, /* 131 */
+	"sigaltstack#64", /* 131 */
 	"utime",  /* 132 */
 	"mknod",  /* 133 */
-	NULL, /* 134 */
+	"uselib#64", /* 134 */
 	"personality",  /* 135 */
 	"ustat",  /* 136 */
 	"statfs",  /* 137 */
@@ -154,7 +154,7 @@
 	"vhangup",  /* 153 */
 	"modify_ldt",  /* 154 */
 	"pivot_root",  /* 155 */
-	NULL, /* 156 */
+	"_sysctl#64", /* 156 */
 	"prctl",  /* 157 */
 	"arch_prctl",  /* 158 */
 	"adjtimex",  /* 159 */
@@ -172,13 +172,13 @@
 	"setdomainname",  /* 171 */
 	"iopl",  /* 172 */
 	"ioperm",  /* 173 */
-	NULL,  /* 174 */
+	"create_module#64",  /* 174 */
 	"init_module",  /* 175 */
 	"delete_module",  /* 176 */
-	NULL,  /* 177 */
-	NULL,  /* 178 */
+	"get_kernel_syms#64",  /* 177 */
+	"query_module#64",  /* 178 */
 	"quotactl",  /* 179 */
-	NULL,  /* 180 */
+	"nfsservctl#64",  /* 180 */
 	"getpmsg", /* 181 */
 	"putpmsg", /* 182 */
 	"afs_syscall",  /* 183 */
@@ -203,24 +203,24 @@
 	"futex", /* 202 */
 	"sched_setaffinity",/* 203 */
 	"sched_getaffinity",/* 204 */
-	NULL,  /* 205 */
-	"io_setup", /* 206 */
+	"set_thread_area#64",  /* 205 */
+	"io_setup#64", /* 206 */
 	"io_destroy", /* 207 */
 	"io_getevents", /* 208 */
-	"io_submit", /* 209 */
+	"io_submit#64", /* 209 */
 	"io_cancel", /* 210 */
-	NULL,  /* 211 */
+	"get_thread_area#64",  /* 211 */
 	"lookup_dcookie", /* 212 */
 	"epoll_create", /* 213 */
-	NULL,  /* 214 */
-	NULL,  /* 215 */
+	"epoll_ctl_old#64",  /* 214 */
+	"epoll_wait_old#64",  /* 215 */
 	"remap_file_pages", /* 216 */
 	"getdents64", /* 217 */
 	"set_tid_address", /* 218 */
 	"restart_syscall", /* 219 */
 	"semtimedop", /* 220 */
 	"fadvise64", /* 221 */
-	NULL,  /* 222 */
+	"timer_create#64",  /* 222 */
 	"timer_settime", /* 223 */
 	"timer_gettime", /* 224 */
 	"timer_getoverrun", /* 225 */
@@ -234,7 +234,7 @@
 	"epoll_ctl", /* 233 */
 	"tgkill", /* 234 */
 	"utimes", /* 235 */
-	NULL,  /* 236 */
+	"vserver#64",  /* 236 */
 	"mbind", /* 237 */
 	"set_mempolicy", /* 238 */
 	"get_mempolicy", /* 239 */
@@ -242,10 +242,10 @@
 	"mq_unlink", /* 241 */
 	"mq_timedsend", /* 242 */
 	"mq_timedreceive", /* 243 */
-	NULL,  /* 244 */
+	"mq_notify#64"  /* 244 */
 	"mq_getsetattr", /* 245 */
-	NULL,  /* 246 */
-	NULL,  /* 247 */
+	"kexec_load#64",  /* 246 */
+	"waitid#64",  /* 247 */
 	"add_key", /* 248 */
 	"request_key", /* 249 */
 	"keyctl", /* 250 */
@@ -271,13 +271,13 @@
 	"pselect6", /* 270 */
 	"ppoll", /* 271 */
 	"unshare", /* 272 */
-	NULL,  /* 273 */
-	NULL,  /* 274 */
+	"set_robust_list#64",  /* 273 */
+	"get_robust_list#64",  /* 274 */
 	"splice", /* 275 */
 	"tee", /* 276 */
 	"sync_file_range", /* 277 */
-	NULL,  /* 278 */
-	NULL,  /* 279 */
+	"vmsplice#64",  /* 278 */
+	"move_pages#64",  /* 279 */
 	"utimensat", /* 280 */
 	"epoll_pwait", /* 281 */
 	"signalfd", /* 282 */
@@ -293,11 +293,11 @@
 	"dup3", /* 292 */
 	"pipe2", /* 293 */
 	"inotify_init1", /* 294 */
-	NULL,  /* 295 */
-	NULL,  /* 296 */
-	NULL,  /* 297 */
+	"preadv#64",  /* 295 */
+	"pwritev#64",  /* 296 */
+	"rt_tgsigqueueinfo#64",  /* 297 */
 	"perf_event_open", /* 298 */
-	NULL,  /* 299 */
+	"recvmmsg#64",  /* 299 */
 	"fanotify_init", /* 300 */
 	"fanotify_mark", /* 301 */
 	"prlimit64", /* 302 */
@@ -305,34 +305,35 @@
 	"open_by_handle_at", /* 304 */
 	"clock_adjtime", /* 305 */
 	"syncfs", /* 306 */
-	NULL,  /* 307 */
+	"sendmmsg#64",  /* 307 */
 	"setns", /* 308 */
 	"getcpu", /* 309 */
-	NULL,  /* 310 */
-	NULL,  /* 311 */
-	NULL, /* 312 */
-	NULL, /* 313 */
-	NULL, /* 314 */
-	NULL, /* 315 */
-	NULL, /* 316 */
-	NULL, /* 317 */
-	NULL, /* 318 */
-	NULL, /* 319 */
-	NULL, /* 320 */
-	NULL, /* 321 */
-	NULL, /* 322 */
-	NULL, /* 323 */
-	NULL, /* 324 */
-	NULL, /* 325 */
-	NULL, /* 326 */
-	NULL, /* 327 */
-	NULL, /* 328 */
-	NULL, /* 329 */
-	NULL, /* 330 */
-	NULL, /* 331 */
-	NULL, /* 332 */
-	NULL, /* 333 */
-	NULL, /* 334 */
+	"process_vm_readv#64",  /* 310 */
+	"process_vm_writev#64",  /* 311 */
+	"kcmp", /* 312 */
+	"finit_module", /* 313 */
+	"sched_setattr", /* 314 */
+	"sched_getattr", /* 315 */
+	"renameat2", /* 316 */
+	"seccomp", /* 317 */
+	"getrandom", /* 318 */
+	"memfd_create", /* 319 */
+	"kexec_file_load", /* 320 */
+	"bpf", /* 321 */
+	"execveat#64", /* 322 */
+	"userfaultfd", /* 323 */
+	"membarrier", /* 324 */
+	"mlock2", /* 325 */
+	"copy_file_range", /* 326 */
+	"preadv2#64", /* 327 */
+	"pwritev2#64", /* 328 */
+	"pkey_mprotect", /* 329 */
+	"pkey_alloc", /* 330 */
+	"pkey_free", /* 331 */
+	"statx", /* 332 */
+	"io_pgetevents", /* 333 */
+	"rseq", /* 334 */
+/* [335 ... 423] - reserved to sync up with other architectures */
 	NULL, /* 335 */
 	NULL, /* 336 */
 	NULL, /* 337 */
@@ -422,24 +423,24 @@
 	NULL, /* 421 */
 	NULL, /* 422 */
 	NULL, /* 423 */
-	NULL, /* 424 */
-	NULL, /* 425 */
-	NULL, /* 426 */
-	NULL, /* 427 */
-	NULL, /* 428 */
-	NULL, /* 429 */
-	NULL, /* 430 */
-	NULL, /* 431 */
-	NULL, /* 432 */
-	NULL, /* 433 */
-	NULL, /* 434 */
-	NULL, /* 435 */
-	NULL, /* 436 */
-	NULL, /* 437 */
-	NULL, /* 438 */
-	NULL, /* 439 */
-	NULL, /* 440 */
-	NULL, /* 441 */
+	"pidfd_send_signal", /* 424 */
+	"io_uring_setup", /* 425 */
+	"io_uring_enter", /* 426 */
+	"io_uring_register", /* 427 */
+	"open_tree", /* 428 */
+	"move_mount", /* 429 */
+	"fsopen", /* 430 */
+	"fsconfig", /* 431 */
+	"fsmount", /* 432 */
+	"fspick", /* 433 */
+	"pidfd_open", /* 434 */
+	"clone3", /* 435 */
+	"close_range", /* 436 */
+	"openat2", /* 437 */
+	"pidfd_getfd", /* 438 */
+	"faccessat2", /* 439 */
+	"process_madvise", /* 440 */
+	"epoll_pwait2", /* 441 */
 	NULL, /* 442 */
 	NULL, /* 443 */
 	NULL, /* 444 */
@@ -510,6 +511,10 @@
 	NULL, /* 509 */
 	NULL, /* 510 */
 	NULL, /* 511 */
+/*
+ * x32-specific system call numbers start at 512 to avoid cache impact
+ * for native 64-bit operation.
+ */
 	"rt_sigaction",  /* 512 */
 	"rt_sigreturn",  /* 513 */
 	"ioctl",  /* 514 */
@@ -539,5 +544,10 @@
 	"sendmmsg", /* 538 */
 	"process_vm_readv", /* 539 */
 	"process_vm_writev", /* 540 */
-	"kcmp", /* 312 */
-	"finit_module", /* 313 */
+	"setsockopt", /* 541 */
+	"getsockopt", /* 542 */
+	"io_setup", /* 543 */
+	"io_submit", /* 544 */
+	"execveat", /* 545 */
+	"preadv2", /* 546 */
+	"pwritev2", /* 547 */
