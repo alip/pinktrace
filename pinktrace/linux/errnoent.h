@@ -532,4 +532,4 @@
 	"EBADTYPE", /* 527 */
 	"EJUKEBOX", /* 528 */
 	"EIOCBQUEUED", /* 529 */
-	"EIOCBRETRY", /* 530 */
+	"ERECALLCONFLICT", /* 530 */
