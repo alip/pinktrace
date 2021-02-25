@@ -53,6 +53,6 @@ upload:
 
 .PHONY: upload-release
 upload-release: $(SHA1_FILE) $(GPG_FILE)
-	rsync --partial --progress -ave ssh $(TAR_FILE) $(SHA1_FILE) $(GPG_FILE) tchaikovsky.exherbo.org:public_html/pinktrace/release
+	rsync --partial --progress -ave ssh $(TAR_FILE) $(SHA1_FILE) $(GPG_FILE) dev.exherbo.org:public_html/pinktrace/release
 
 SUBDIRS= pinktrace python doc pkg-config .
