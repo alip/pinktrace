@@ -550,7 +550,7 @@ fi
 AM_CONDITIONAL([ENABLE_PYTHON], test x"$enable_python" = x"yes")
 
 dnl Python documentation
-AC_ARG_VAR([EPYDOC], [Path to the epydoc documentation tool])
+AC_ARG_VAR([PYDOCTOR], [Path to the pydoctor documentation tool])
 AC_MSG_CHECKING([whether to build the Python documentation])
 AC_ARG_ENABLE([python-doc],
 	      AS_HELP_STRING([--enable-python-doc],
@@ -564,9 +564,9 @@ if test x"$enable_python_doc" = x"yes" && test x"$enable_python" = x"no"; then
 fi
 
 if test x"$enable_python_doc" = x"yes" ; then
-	AC_PATH_PROG([EPYDOC], epydoc)
-	if test x"$EPYDOC" = x ; then
-		AC_MSG_ERROR([epydoc (http://epydoc.sourceforge.net) is required to build Python documentation])
+	AC_PATH_PROG([PYDOCTOR], pydoctor)
+	if test x"$PYDOCTOR" = x ; then
+		AC_MSG_ERROR([pydoctor (https://launchpad.net/pydoctor) is required to build Python documentation])
 	fi
 fi
 AM_CONDITIONAL([ENABLE_PYTHON_DOC], test x"$enable_python_doc" = x"yes")

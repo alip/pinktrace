@@ -8,7 +8,6 @@ upload:
 doxygen:
 	$(MAKE) -C api $@
 
-
-.PHONY: epydoc
-epydoc:
+.PHONY: pydoctor
+pydoctor:
 	$(MAKE) -C api $@

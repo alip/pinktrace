@@ -21,11 +21,11 @@ dist_doc_DATA= \
 	       README-configure \
 	       INSTALL-git.md
 
-# FIXME: --enable-python-doc requires epydoc which is no longer maintained.
 DISTCHECK_CONFIGURE_FLAGS= \
 			   --enable-maintainer-mode \
 			   --enable-doxygen \
 			   --enable-python \
+			   --enable-python-doc \
 			   --enable-ipv6
 # "make distcheck" builds the dvi target, so use it to check that the
 # documentation is built correctly.
@@ -83,8 +83,8 @@ GPG_FILE= $(SHA1_FILE).asc
 doxygen: all
 	$(MAKE) -C doc $@
 
-.PHONY: epydoc
-epydoc: all
+.PHONY: pydoctor
+pydoctor: all
 	$(MAKE) -C doc $@
 
 $(SHA1_FILE): dist

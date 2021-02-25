@@ -9,7 +9,12 @@ from __future__ import with_statement
 pinktrace Python bindings (unit tests)
 """
 
-from pinktrace import *
+import pinktrace.system
+import pinktrace.abi
+import pinktrace.event
+import pinktrace.name
+import pinktrace.regset
+import pinktrace.trace
 
 import os, sys
 import ctypes, errno, signal
@@ -248,120 +253,120 @@ checkPinkCall: callable Object unexpected retval '{retval!r}' (expected: '{retva
 
 class TestCase_01_Abi(PinkTestCase):
     def test_01_abi_wordsize_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, abi.wordsize, 1, 2)
-        self.assertRaises(TypeError, abi.wordsize, 'pink')
+        self.assertRaises(TypeError, pinktrace.abi.wordsize, 1, 2)
+        self.assertRaises(TypeError, pinktrace.abi.wordsize, 'pink')
 
     def test_02_abi_wordsize_without_argument_returns_for_default_abi(self):
-        self.assertEqual(abi.wordsize(), abi.wordsize(abi.ABI_DEFAULT))
+        self.assertEqual(pinktrace.abi.wordsize(), pinktrace.abi.wordsize(pinktrace.abi.ABI_DEFAULT))
 
 class TestCase_02_Event(PinkTestCase):
     def test_01_event_decide_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, event.decide)
-        self.assertRaises(TypeError, event.decide, 1, 2)
-        self.assertRaises(TypeError, event.decide, 'pink')
+        self.assertRaises(TypeError, pinktrace.event.decide)
+        self.assertRaises(TypeError, pinktrace.event.decide, 1, 2)
+        self.assertRaises(TypeError, pinktrace.event.decide, 'pink')
 
 class TestCase_03_Name(PinkTestCase):
     def test_01_name_event_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.name_event)
-        self.assertRaises(TypeError, name.name_event, 1, 2)
-        self.assertRaises(TypeError, name.name_event, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_event)
+        self.assertRaises(TypeError, pinktrace.name.name_event, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.name_event, 'pink')
 
     def test_02_name_event_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.name_event, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.name.name_event, INT_MAX)
 
     def test_03_lookup_event_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.lookup_event)
-        self.assertRaises(TypeError, name.lookup_event, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.lookup_event)
+        self.assertRaises(TypeError, pinktrace.name.lookup_event, 1, 2)
 
     def test_04_lookup_event_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.lookup_event, 'pink')
+        self.assertRaises(ValueError, pinktrace.name.lookup_event, 'pink')
 
     def test_05_name_syscall_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.name_syscall)
-        self.assertRaises(TypeError, name.name_syscall, 1, 2, 3)
-        self.assertRaises(TypeError, name.name_syscall, 'pink')
-        self.assertRaises(TypeError, name.name_syscall, 'pink', 1)
-        self.assertRaises(TypeError, name.name_syscall, 1, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_syscall)
+        self.assertRaises(TypeError, pinktrace.name.name_syscall, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.name.name_syscall, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_syscall, 'pink', 1)
+        self.assertRaises(TypeError, pinktrace.name.name_syscall, 1, 'pink')
 
     def test_06_name_syscall_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.name_syscall, INT_MAX)
-        self.assertRaises(ValueError, name.name_syscall, INT_MAX, abi.ABI_DEFAULT)
+        self.assertRaises(ValueError, pinktrace.name.name_syscall, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.name.name_syscall, INT_MAX, pinktrace.abi.ABI_DEFAULT)
 
     def test_07_lookup_syscall_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.lookup_syscall)
-        self.assertRaises(TypeError, name.lookup_syscall, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.lookup_syscall)
+        self.assertRaises(TypeError, pinktrace.name.lookup_syscall, 1, 2)
 
     def test_08_lookup_syscall_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.lookup_syscall, 'pink')
-        self.assertRaises(ValueError, name.lookup_syscall, 'pink', abi.ABI_DEFAULT)
+        self.assertRaises(ValueError, pinktrace.name.lookup_syscall, 'pink')
+        self.assertRaises(ValueError, pinktrace.name.lookup_syscall, 'pink', pinktrace.abi.ABI_DEFAULT)
 
     def test_09_name_socket_family_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.name_socket_family)
-        self.assertRaises(TypeError, name.name_socket_family, 1, 2)
-        self.assertRaises(TypeError, name.name_socket_family, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_socket_family)
+        self.assertRaises(TypeError, pinktrace.name.name_socket_family, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.name_socket_family, 'pink')
 
     def test_10_name_socket_family_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.name_socket_family, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.name.name_socket_family, INT_MAX)
 
     def test_11_lookup_socket_family_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.lookup_socket_family)
-        self.assertRaises(TypeError, name.lookup_socket_family, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.lookup_socket_family)
+        self.assertRaises(TypeError, pinktrace.name.lookup_socket_family, 1, 2)
 
     def test_12_lookup_socket_family_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.lookup_socket_family, 'pink')
+        self.assertRaises(ValueError, pinktrace.name.lookup_socket_family, 'pink')
 
     def test_13_name_socket_subcall_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.name_socket_subcall)
-        self.assertRaises(TypeError, name.name_socket_subcall, 1, 2)
-        self.assertRaises(TypeError, name.name_socket_subcall, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_socket_subcall)
+        self.assertRaises(TypeError, pinktrace.name.name_socket_subcall, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.name_socket_subcall, 'pink')
 
     def test_14_name_socket_subcall_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.name_socket_subcall, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.name.name_socket_subcall, INT_MAX)
 
     def test_15_lookup_socket_subcall_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.lookup_socket_subcall)
-        self.assertRaises(TypeError, name.lookup_socket_subcall, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.lookup_socket_subcall)
+        self.assertRaises(TypeError, pinktrace.name.lookup_socket_subcall, 1, 2)
 
     def test_16_lookup_socket_subcall_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.lookup_socket_subcall, 'pink')
+        self.assertRaises(ValueError, pinktrace.name.lookup_socket_subcall, 'pink')
 
     def test_17_name_errno_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.name_errno)
-        self.assertRaises(TypeError, name.name_errno, 1, 2, 3)
-        self.assertRaises(TypeError, name.name_errno, 'pink')
-        self.assertRaises(TypeError, name.name_errno, 'pink', 1)
-        self.assertRaises(TypeError, name.name_errno, 1, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_errno)
+        self.assertRaises(TypeError, pinktrace.name.name_errno, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.name.name_errno, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_errno, 'pink', 1)
+        self.assertRaises(TypeError, pinktrace.name.name_errno, 1, 'pink')
 
     def test_18_name_errno_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.name_errno, INT_MAX)
-        self.assertRaises(ValueError, name.name_errno, INT_MAX, abi.ABI_DEFAULT)
+        self.assertRaises(ValueError, pinktrace.name.name_errno, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.name.name_errno, INT_MAX, pinktrace.abi.ABI_DEFAULT)
 
     def test_19_lookup_errno_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.lookup_errno)
-        self.assertRaises(TypeError, name.lookup_errno, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.lookup_errno)
+        self.assertRaises(TypeError, pinktrace.name.lookup_errno, 1, 2)
 
     def test_20_lookup_errno_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.lookup_errno, 'pink')
-        self.assertRaises(ValueError, name.lookup_errno, 'pink', abi.ABI_DEFAULT)
+        self.assertRaises(ValueError, pinktrace.name.lookup_errno, 'pink')
+        self.assertRaises(ValueError, pinktrace.name.lookup_errno, 'pink', pinktrace.abi.ABI_DEFAULT)
 
     def test_21_name_signal_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.name_signal)
-        self.assertRaises(TypeError, name.name_signal, 1, 2, 3)
-        self.assertRaises(TypeError, name.name_signal, 'pink')
-        self.assertRaises(TypeError, name.name_signal, 'pink', 1)
-        self.assertRaises(TypeError, name.name_signal, 1, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_signal)
+        self.assertRaises(TypeError, pinktrace.name.name_signal, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.name.name_signal, 'pink')
+        self.assertRaises(TypeError, pinktrace.name.name_signal, 'pink', 1)
+        self.assertRaises(TypeError, pinktrace.name.name_signal, 1, 'pink')
 
     def test_22_name_signal_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.name_signal, INT_MAX)
-        self.assertRaises(ValueError, name.name_signal, INT_MAX, abi.ABI_DEFAULT)
+        self.assertRaises(ValueError, pinktrace.name.name_signal, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.name.name_signal, INT_MAX, pinktrace.abi.ABI_DEFAULT)
 
     def test_23_lookup_signal_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, name.lookup_signal)
-        self.assertRaises(TypeError, name.lookup_signal, 1, 2)
+        self.assertRaises(TypeError, pinktrace.name.lookup_signal)
+        self.assertRaises(TypeError, pinktrace.name.lookup_signal, 1, 2)
 
     def test_24_lookup_signal_raises_value_error_for_lookup_failure(self):
-        self.assertRaises(ValueError, name.lookup_signal, 'pink')
-        self.assertRaises(ValueError, name.lookup_signal, 'pink', abi.ABI_DEFAULT)
+        self.assertRaises(ValueError, pinktrace.name.lookup_signal, 'pink')
+        self.assertRaises(ValueError, pinktrace.name.lookup_signal, 'pink', pinktrace.abi.ABI_DEFAULT)
 
 class TestCase_04_Trace(PinkTestCase):
     @classmethod
@@ -381,18 +386,18 @@ class TestCase_04_Trace(PinkTestCase):
             self.killPID = None
 
     def test_01_trace_me_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.me, 1)
+        self.assertRaises(TypeError, pinktrace.trace.me, 1)
 
     def test_02_trace_me_raises_os_error_with_eperm_in_traced_process(self):
         def child_func():
             try:
-                r = self.checkPinkCallRetval(0, trace.me)
+                r = self.checkPinkCallRetval(0, pinktrace.trace.me)
             except AssertionError as e:
                 printError(e.message)
                 return 1
 
             try:
-                r = self.checkPinkCallErrno(EPERM, trace.me)
+                r = self.checkPinkCallErrno(EPERM, pinktrace.trace.me)
             except AssertionError as e:
                 printError(e.message)
                 return 2
@@ -402,125 +407,125 @@ class TestCase_04_Trace(PinkTestCase):
         self.assertProcessExitedWith(0, wait_status)
 
     def test_03_trace_resume_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.resume)
-        self.assertRaises(TypeError, trace.resume, 1, 2, 3)
-        self.assertRaises(TypeError, trace.resume, 'pink')
-        self.assertRaises(TypeError, trace.resume, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.resume)
+        self.assertRaises(TypeError, pinktrace.trace.resume, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.trace.resume, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.resume, 0, 'pink')
 
     def test_04_trace_resume_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.resume, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.resume, 0)
 
     def test_05_trace_resume_raises_value_error_for_invalid_signal(self):
-        self.assertRaises(ValueError, trace.resume, self.killPID, -1)
-        self.assertRaises(ValueError, trace.resume, self.killPID, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.trace.resume, self.killPID, -1)
+        self.assertRaises(ValueError, pinktrace.trace.resume, self.killPID, INT_MAX)
 
     def test_06_trace_kill_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.kill)
-        self.assertRaises(TypeError, trace.kill, 'pink')
-        self.assertRaises(TypeError, trace.kill, 0, 'pink')
-        self.assertRaises(TypeError, trace.kill, 'pink', 0)
-        self.assertRaises(TypeError, trace.kill, 'pink', 'pink')
-        self.assertRaises(TypeError, trace.kill, 'pink', 'pink', 'pink')
-        self.assertRaises(TypeError, trace.kill, 0, 'pink', 'pink')
-        self.assertRaises(TypeError, trace.kill, 'pink', 0, 'pink')
-        self.assertRaises(TypeError, trace.kill, 'pink', 'pink', 0)
-        self.assertRaises(TypeError, trace.kill, 0, 0, 'pink')
-        self.assertRaises(TypeError, trace.kill, 0, 'pink', 0)
-        self.assertRaises(TypeError, trace.kill, 'pink', 0, 0)
+        self.assertRaises(TypeError, pinktrace.trace.kill)
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink', 0)
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink', 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink', 'pink', 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 0, 'pink', 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink', 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink', 'pink', 0)
+        self.assertRaises(TypeError, pinktrace.trace.kill, 0, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.kill, 0, 'pink', 0)
+        self.assertRaises(TypeError, pinktrace.trace.kill, 'pink', 0, 0)
 
     def test_07_trace_kill_raises_value_error_for_invalid_signal(self):
-        self.assertRaises(ValueError, trace.kill, self.killPID, -1, -1)
-        self.assertRaises(ValueError, trace.kill, self.killPID, -1, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.trace.kill, self.killPID, -1, -1)
+        self.assertRaises(ValueError, pinktrace.trace.kill, self.killPID, -1, INT_MAX)
 
     def test_08_trace_singlestep_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.singlestep)
-        self.assertRaises(TypeError, trace.singlestep, 1, 2, 3)
-        self.assertRaises(TypeError, trace.singlestep, 'pink')
-        self.assertRaises(TypeError, trace.singlestep, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.singlestep)
+        self.assertRaises(TypeError, pinktrace.trace.singlestep, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.trace.singlestep, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.singlestep, 0, 'pink')
 
     def test_09_trace_singlestep_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.singlestep, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.singlestep, 0)
 
     def test_10_trace_singlestep_raises_value_error_for_invalid_signal(self):
-        self.assertRaises(ValueError, trace.singlestep, self.killPID, -1)
-        self.assertRaises(ValueError, trace.singlestep, self.killPID, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.trace.singlestep, self.killPID, -1)
+        self.assertRaises(ValueError, pinktrace.trace.singlestep, self.killPID, INT_MAX)
 
     def test_11_trace_syscall_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.syscall)
-        self.assertRaises(TypeError, trace.syscall, 1, 2, 3)
-        self.assertRaises(TypeError, trace.syscall, 'pink')
-        self.assertRaises(TypeError, trace.syscall, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.syscall)
+        self.assertRaises(TypeError, pinktrace.trace.syscall, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.trace.syscall, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.syscall, 0, 'pink')
 
     def test_12_trace_syscall_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.syscall, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.syscall, 0)
 
     def test_13_trace_syscall_raises_value_error_for_invalid_signal(self):
-        self.assertRaises(ValueError, trace.syscall, self.killPID, -1)
-        self.assertRaises(ValueError, trace.syscall, self.killPID, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.trace.syscall, self.killPID, -1)
+        self.assertRaises(ValueError, pinktrace.trace.syscall, self.killPID, INT_MAX)
 
     def test_14_trace_geteventmsg_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.geteventmsg)
-        self.assertRaises(TypeError, trace.geteventmsg, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.geteventmsg)
+        self.assertRaises(TypeError, pinktrace.trace.geteventmsg, 'pink')
 
     def test_15_trace_geteventmsg_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.geteventmsg, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.geteventmsg, 0)
 
     def test_16_trace_setup_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.setup)
-        self.assertRaises(TypeError, trace.setup, 'pink')
-        self.assertRaises(TypeError, trace.setup, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.setup)
+        self.assertRaises(TypeError, pinktrace.trace.setup, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.setup, 0, 'pink')
 
     def test_17_trace_setup_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.setup, 0, trace.OPTION_SYSGOOD)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.setup, 0, pinktrace.trace.OPTION_SYSGOOD)
 
     def test_18_trace_attach_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.attach)
-        self.assertRaises(TypeError, trace.attach, 1, 2)
-        self.assertRaises(TypeError, trace.attach, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.attach)
+        self.assertRaises(TypeError, pinktrace.trace.attach, 1, 2)
+        self.assertRaises(TypeError, pinktrace.trace.attach, 'pink')
 
     def test_19_trace_attach_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.attach, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.attach, 0)
 
     def test_20_trace_detach_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.detach)
-        self.assertRaises(TypeError, trace.detach, 1, 2, 3)
-        self.assertRaises(TypeError, trace.detach, 'pink')
-        self.assertRaises(TypeError, trace.detach, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.detach)
+        self.assertRaises(TypeError, pinktrace.trace.detach, 1, 2, 3)
+        self.assertRaises(TypeError, pinktrace.trace.detach, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.detach, 0, 'pink')
 
     def test_21_trace_detach_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.detach, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.detach, 0)
 
     def test_22_trace_detach_raises_value_error_for_invalid_signal(self):
-        self.assertRaises(ValueError, trace.detach, self.killPID, -1)
-        self.assertRaises(ValueError, trace.detach, self.killPID, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.trace.detach, self.killPID, -1)
+        self.assertRaises(ValueError, pinktrace.trace.detach, self.killPID, INT_MAX)
 
     def test_23_trace_seize_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.seize)
-        self.assertRaises(TypeError, trace.seize, 'pink')
-        self.assertRaises(TypeError, trace.seize, 0, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.seize)
+        self.assertRaises(TypeError, pinktrace.trace.seize, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.seize, 0, 'pink')
 
     def test_24_trace_seize_raises_os_error_with_einval_for_invalid_options(self):
-        self.assertRaises(ValueError, trace.seize, 0, -1)
-        self.assertRaises(ValueError, trace.seize, 0, INT_MAX)
+        self.assertRaises(ValueError, pinktrace.trace.seize, 0, -1)
+        self.assertRaises(ValueError, pinktrace.trace.seize, 0, INT_MAX)
 
     def test_25_trace_seize_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.seize, 0, trace.OPTION_SYSGOOD)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.seize, 0, pinktrace.trace.OPTION_SYSGOOD)
 
     def test_26_trace_interrupt_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.interrupt)
-        self.assertRaises(TypeError, trace.interrupt, 1, 2)
-        self.assertRaises(TypeError, trace.interrupt, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.interrupt)
+        self.assertRaises(TypeError, pinktrace.trace.interrupt, 1, 2)
+        self.assertRaises(TypeError, pinktrace.trace.interrupt, 'pink')
 
     def test_27_trace_interrupt_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.interrupt, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.interrupt, 0)
 
     def test_28_trace_listen_raises_type_error_for_invalid_arguments(self):
-        self.assertRaises(TypeError, trace.listen)
-        self.assertRaises(TypeError, trace.listen, 1, 2)
-        self.assertRaises(TypeError, trace.listen, 'pink')
+        self.assertRaises(TypeError, pinktrace.trace.listen)
+        self.assertRaises(TypeError, pinktrace.trace.listen, 1, 2)
+        self.assertRaises(TypeError, pinktrace.trace.listen, 'pink')
 
     def test_29_trace_listen_raises_os_error_with_esrch_for_invalid_process(self):
-        self.assertRaisesOSErrorWithErrno(ESRCH, trace.listen, 0)
+        self.assertRaisesOSErrorWithErrno(ESRCH, pinktrace.trace.listen, 0)
 
 def main():
     import sys

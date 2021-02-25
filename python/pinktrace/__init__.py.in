@@ -12,14 +12,22 @@ __license__ = "CNRI-Python-GPL-Compatible"
 __version__ = "#VERSION#"
 
 PACKAGE = "#PACKAGE#"
+""" The package name (eg pinktrace)"""
 VERSION = "#VERSION#"
+""" The major version (eg 0.4.1 -> 0)"""
 VERSION_MAJOR = #VERSION_MAJOR#
 VERSION_MINOR = #VERSION_MINOR#
+""" The minor version (eg 0.4.1 -> 4)"""
 VERSION_MICRO = #VERSION_MICRO#
+""" The micro version (eg 0.4.1 -> 1)"""
 VERSION_SUFFIX = "#VERSION_SUFFIX#"
+""" The version suffix (eg "_alpha1"), often an empty string"""
 GIT_HEAD = "#GIT_HEAD#"
+""" The Git head used to build this binary, if applicable (eg "deadbeef" or "1.0.0-40-f00-dirty" or "")"""
 PC_VERSION = "#PC_VERSION#"
+""" The so version used for pkg-config"""
 PC_SLOT = "#PC_SLOT#"
+""" The suffix used for so names (eg "0.30" or "0.31_15ece615")"""
 
 import pinktrace.system
 import pinktrace.abi
@@ -28,3 +36,5 @@ import pinktrace.name
 import pinktrace.regset
 import pinktrace.trace
 import pinktrace.test
+
+__all__ = ('system', 'abi', 'event', 'name', 'regset', 'trace', 'test')
