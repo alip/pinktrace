@@ -509,7 +509,7 @@ if test x"$enable_python" = x"yes" ; then
 	fi
 
 	PY_PREFIX=`$PYTHON -c 'import sys ; sys.stdout.write(sys.prefix)'`
-	PYTHON_ABIFLAGS=`$PYTHON -c 'import sys ; sys.stdout.write(getattr(sys, "abiflags", ''))'`
+	PYTHON_ABIFLAGS=`$PYTHON -c 'import sys ; sys.stdout.write(getattr(sys, "abiflags", ""))'`
 	PYTHON_LIBS="-lpython${PYTHON_VERSION}${PYTHON_ABIFLAGS}"
 	PYTHON_CFLAGS="-I$PY_PREFIX/include/python${PYTHON_VERSION}${PYTHON_ABIFLAGS}"
 
