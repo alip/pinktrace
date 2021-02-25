@@ -456,9 +456,7 @@ ssize_t pink_read_string_array(pid_t pid, struct pink_regset *regset,
 	pink_read_vm_data(pid, regset, arg, cp.data, wsize);
 	if (errno)
 		return 0;
-	if (wsize == 4)
-		cp.p64 = cp.p32;
-	if (cp.p64 == 0) {
+	if (!(wsize < sizeof(cp.p64) ? cp.p32 : cp.p64)) {
 		/* hit NULL, end of the array */
 		if (nullptr)
 			*nullptr = true;
@@ -466,5 +464,7 @@ ssize_t pink_read_string_array(pid_t pid, struct pink_regset *regset,
 	}
 	if (nullptr)
 		*nullptr = false;
-	return pink_read_vm_data_nul(pid, regset, cp.p64, dest, dest_len);
+	return pink_read_vm_data_nul(pid, regset,
+			wsize < sizeof(cp.p64) ? cp.p32 : cp.p64,
+			dest, dest_len);
 }
