@@ -151,6 +151,9 @@ static const struct xlat socket_subcalls[] = {
 };
 
 static const struct xlat addrfams[] = {
+#ifdef AF_ALG
+	{ "AF_ALG",		AF_ALG},
+#endif
 #ifdef AF_APPLETALK
 	{ "AF_APPLETALK",	AF_APPLETALK},
 #endif
@@ -172,6 +175,12 @@ static const struct xlat addrfams[] = {
 #ifdef AF_BRIDGE
 	{ "AF_BRIDGE",	AF_BRIDGE},
 #endif
+#ifdef AF_CAIF
+	{ "AF_CAIF",	AF_CAIF},
+#endif
+#ifdef AF_CAN
+	{ "AF_CAN",	AF_CAN},
+#endif
 #ifdef AF_DECnet
 	{ "AF_DECnet",	AF_DECnet},
 #endif
@@ -180,6 +189,12 @@ static const struct xlat addrfams[] = {
 #endif
 #ifdef AF_FILE
 	{ "AF_FILE",	AF_FILE},
+#endif
+#ifdef AF_IB
+	{ "AF_IB",	AF_IB},
+#endif
+#ifdef AF_IEEE802154
+	{ "AF_IEEE802154",	AF_IEEE802154},
 #endif
 #ifdef AF_IMPLINK
 	{ "AF_IMPLINK",	AF_IMPLINK},
@@ -196,17 +211,32 @@ static const struct xlat addrfams[] = {
 #ifdef AF_IRDA
 	{ "AF_IRDA",	AF_IRDA},
 #endif
+#ifdef AF_ISDN
+	{ "AF_ISDN",	AF_ISDN},
+#endif
 #ifdef AF_ISO
 	{ "AF_ISO",	AF_ISO},
+#endif
+#ifdef AF_IUCV
+	{ "AF_IUCV",	AF_IUCV},
+#endif
+#ifdef AF_KCM
+	{ "AF_KCM",	AF_KCM},
 #endif
 #ifdef AF_KEY
 	{ "AF_KEY",	AF_KEY},
 #endif
-#ifdef AF_UNIX
-	{ "AF_UNIX",	AF_UNIX},
+#ifdef AF_LLC
+	{ "AF_LLC",	AF_LLC},
 #endif
 #ifdef AF_LOCAL
 	{ "AF_LOCAL",	AF_LOCAL},
+#endif
+#ifdef AF_MAX
+	{ "AF_MAX",	AF_MAX},
+#endif
+#ifdef AF_MPLS
+	{ "AF_MPLS",	AF_MPLS},
 #endif
 #ifdef AF_NETBEUI
 	{ "AF_NETBEUI",	AF_NETBEUI},
@@ -217,11 +247,23 @@ static const struct xlat addrfams[] = {
 #ifdef AF_NETROM
 	{ "AF_NETROM",	AF_NETROM},
 #endif
+#ifdef AF_NFC
+	{ "AF_NFC",	AF_NFC},
+#endif
 #ifdef AF_PACKET
 	{ "AF_PACKET",	AF_PACKET},
 #endif
+#ifdef AF_PHONET
+	{ "AF_PHONET",	AF_PHONET},
+#endif
 #ifdef AF_PPPOX
 	{ "AF_PPPOX",	AF_PPPOX},
+#endif
+#ifdef AF_QIPCRTR
+	{ "AF_QIPCRTR",	AF_QIPCRTR},
+#endif
+#ifdef AF_RDS
+	{ "AF_RDS",	AF_RDS},
 #endif
 #ifdef AF_ROSE
 	{ "AF_ROSE",	AF_ROSE},
@@ -229,20 +271,38 @@ static const struct xlat addrfams[] = {
 #ifdef AF_ROUTE
 	{ "AF_ROUTE",	AF_ROUTE},
 #endif
+#ifdef AF_RXRPC
+	{ "AF_RXRPC",	AF_RXRPC},
+#endif
 #ifdef AF_SECURITY
 	{ "AF_SECURITY",	AF_SECURITY},
 #endif
 #ifdef AF_SNA
 	{ "AF_SNA",	AF_SNA},
 #endif
+#ifdef AF_SMC
+	{ "AF_SMC",	AF_SMC},
+#endif
+#ifdef AF_TIPC
+	{ "AF_TIPC",	AF_TIPC},
+#endif
+#ifdef AF_UNIX
+	{ "AF_UNIX",	AF_UNIX},
+#endif
 #ifdef AF_UNSPEC
 	{ "AF_UNSPEC",	AF_UNSPEC},
+#endif
+#ifdef AF_VSOCK
+	{ "AF_VSOCK",	AF_VSOCK},
 #endif
 #ifdef AF_WANPIPE
 	{ "AF_WANPIPE",	AF_WANPIPE},
 #endif
 #ifdef AF_X25
 	{ "AF_X25",	AF_X25},
+#endif
+#ifdef AF_XDP
+	{ "AF_XDP",	AF_XDP},
 #endif
 	{ NULL,		0},
 };
