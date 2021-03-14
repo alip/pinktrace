@@ -18,9 +18,10 @@ dist_doc_DATA= \
 	       COPYRIGHT \
 	       README.markdown
 
+# FIXME: --enable-python-doc requires epydoc which is no longer maintained.
 DISTCHECK_CONFIGURE_FLAGS= \
 			   --enable-doxygen \
-			   --enable-python --enable-python-doc \
+			   --enable-python \
 			   --enable-ipv6
 # "make distcheck" builds the dvi target, so use it to check that the
 # documentation is built correctly.

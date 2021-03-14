@@ -1,6 +1,7 @@
 SUBDIRS= .
 IF_PYTHON_FILES= \
 		 __init__.py.in \
+		 test.py \
 		 py-system.c \
 		 py-abi.c \
 		 py-event.c \
@@ -34,7 +35,7 @@ noinst_HEADERS= \
 		py-pink.h
 
 if ENABLE_PYTHON
-pkgpyexec_DATA= __init__.py
+pkgpyexec_DATA= __init__.py test.py
 CLEANFILES+= __init__.py
 __init__.py: __init__.py.in
 	$(AM_V_GEN)
