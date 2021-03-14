@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -190,8 +190,6 @@ struct i386_user_regs_struct {
 #endif
 
 struct pink_regset {
-	short abi;
-
 #if PINK_ARCH_ARM
 	struct pt_regs arm_regs;
 #elif PINK_ARCH_POWERPC
@@ -212,6 +210,7 @@ struct pink_regset {
 #else
 #error "unsupported architecture"
 #endif
+	short abi;
 };
 
 #endif
