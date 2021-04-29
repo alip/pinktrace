@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -48,7 +48,8 @@ int pink_write_word_data(pid_t pid, long off, long val)
 	return pink_ptrace(PTRACE_POKEDATA, pid, (void *)off, (void *)val, NULL);
 }
 
-int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
+PINK_GCC_ATTR((nonnull(2)))
+int pink_write_syscall(pid_t pid, const struct pink_regset *regset, long sysnum)
 {
 	int r;
 #if PINK_ARCH_ARM
@@ -74,7 +75,8 @@ int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
 	return r;
 }
 
-int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error)
+PINK_GCC_ATTR((nonnull(2)))
+int pink_write_retval(pid_t pid, const struct pink_regset *regset, long retval, int error)
 {
 #if PINK_ARCH_ARM
 	if (error)
@@ -126,7 +128,8 @@ int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int er
 #endif
 }
 
-int pink_write_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index, long argval)
+int pink_write_argument(pid_t pid, const struct pink_regset *regset,
+			unsigned arg_index, long argval)
 {
 	if (arg_index >= PINK_MAX_ARGS)
 		return -EINVAL;
@@ -214,8 +217,9 @@ int pink_write_argument(pid_t pid, struct pink_regset *regset, unsigned arg_inde
 #endif
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_write_vm_data(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_write_vm_data(pid_t pid, const struct pink_regset *regset,
+			   long addr, const char *src, size_t len)
 {
 	ssize_t r;
 

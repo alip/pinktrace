@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -166,9 +166,10 @@ enum pink_socket_subcall {
  * @param argval Pointer to store the value, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
+int pink_read_socket_argument(pid_t pid, const struct pink_regset *regset,
+			      bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)
-	PINK_GCC_ATTR((nonnull(5)));
+	PINK_GCC_ATTR((nonnull(2,5)));
 
 /**
  * Read the specified socket call address
@@ -188,10 +189,11 @@ int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode
  * @param sockaddr Pointer to store the socket address, must @b not be @e NULL
  * @return 0 on success, negated errno on failure
  **/
-int pink_read_socket_address(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
+int pink_read_socket_address(pid_t pid, const struct pink_regset *regset,
+			     bool decode_socketcall,
 			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
-	PINK_GCC_ATTR((nonnull(6)));
+	PINK_GCC_ATTR((nonnull(2,6)));
 
 /** @} */
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013, 2014 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2014, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -40,7 +40,9 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-static inline long setup_addr(pid_t pid, struct pink_regset *regset, long addr)
+PINK_GCC_ATTR((nonnull(2)))
+static inline long setup_addr(pid_t pid, const struct pink_regset *regset,
+			      long addr)
 {
 #if PINK_ABIS_SUPPORTED > 1 && SIZEOF_LONG > 4
 	size_t wsize;
@@ -52,8 +54,9 @@ static inline long setup_addr(pid_t pid, struct pink_regset *regset, long addr)
 	return addr;
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_vm_lread(pid_t pid, const struct pink_regset *regset,
+		      long addr, char *dest, size_t len)
 {
 	int n, m, r;
 	union {
@@ -96,8 +99,9 @@ ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *de
 	return count_read;
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_vm_lread_nul(pid_t pid, const struct pink_regset *regset,
+			  long addr, char *dest, size_t len)
 {
 #if SIZEOF_LONG == 4
 	const unsigned long x01010101 = 0x01010101ul;
@@ -175,8 +179,9 @@ ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char
 #undef return_readc
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_vm_lwrite(pid_t pid, const struct pink_regset *regset,
+		       long addr, const char *src, size_t len)
 {
 	int r;
 	int n, m;
@@ -251,8 +256,9 @@ static ssize_t _pink_process_vm_readv(pid_t pid,
 # define process_vm_readv(...) (errno = ENOSYS, -1)
 #endif
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_vm_cread(pid_t pid, const struct pink_regset *regset,
+		      long addr, char *dest, size_t len)
 {
 #if PINK_HAVE_PROCESS_VM_READV
 	struct iovec local[1], remote[1];
@@ -266,8 +272,9 @@ ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *de
 	return process_vm_readv(pid, local, 1, remote, 1, /*flags:*/0);
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_vm_cread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_vm_cread_nul(pid_t pid, const struct pink_regset *regset,
+			  long addr, char *dest, size_t len)
 {
 	ssize_t count_read;
 	struct iovec local[1], remote[1];
@@ -343,8 +350,9 @@ static ssize_t _pink_process_vm_writev(pid_t pid,
 # define process_vm_writev(...) (errno = ENOSYS, -1)
 #endif
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_vm_cwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_vm_cwrite(pid_t pid, const struct pink_regset *regset,
+		       long addr, const char *src, size_t len)
 {
 #if PINK_HAVE_PROCESS_VM_WRITEV
 	struct iovec local[1], remote[1];

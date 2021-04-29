@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -50,15 +50,15 @@ int pink_read_word_data(pid_t pid, long off, long *res)
 	return pink_ptrace(PTRACE_PEEKDATA, pid, (void *)off, NULL, res);
 }
 
-PINK_GCC_ATTR((nonnull(3)))
-int pink_read_abi(pid_t pid, struct pink_regset *regset, short *abi)
+PINK_GCC_ATTR((nonnull(2,3)))
+int pink_read_abi(pid_t pid, const struct pink_regset *regset, short *abi)
 {
 	*abi = regset->abi;
 	return 0;
 }
 
-PINK_GCC_ATTR((nonnull(3)))
-int pink_read_syscall(pid_t pid, struct pink_regset *regset, long *sysnum)
+PINK_GCC_ATTR((nonnull(2,3)))
+int pink_read_syscall(pid_t pid, const struct pink_regset *regset, long *sysnum)
 {
 #if PINK_ARCH_ARM
 	int r;
@@ -189,8 +189,9 @@ static inline int is_negated_errno_x32(unsigned long long val, short abi)
 }
 #endif
 
-PINK_GCC_ATTR((nonnull(3)))
-int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *error)
+PINK_GCC_ATTR((nonnull(2,3)))
+int pink_read_retval(pid_t pid, const struct pink_regset *regset,
+		     long *retval, int *error)
 {
 	long myrval;
 	int myerror = 0;
@@ -298,8 +299,9 @@ int pink_read_retval(pid_t pid, struct pink_regset *regset, long *retval, int *e
 	return 0;
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-int pink_read_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index, long *argval)
+PINK_GCC_ATTR((nonnull(2,4)))
+int pink_read_argument(pid_t pid, const struct pink_regset *regset,
+		       unsigned arg_index, long *argval)
 {
 	if (arg_index >= PINK_MAX_ARGS)
 		return -EINVAL;
@@ -398,8 +400,9 @@ int pink_read_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index
 #endif
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_read_vm_data(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_read_vm_data(pid_t pid, const struct pink_regset *regset,
+			  long addr, char *dest, size_t len)
 {
 	ssize_t r;
 
@@ -410,8 +413,9 @@ ssize_t pink_read_vm_data(pid_t pid, struct pink_regset *regset, long addr, char
 	return r;
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-int pink_read_vm_data_full(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+int pink_read_vm_data_full(pid_t pid, const struct pink_regset *regset,
+			   long addr, char *dest, size_t len)
 {
 	ssize_t l;
 
@@ -424,8 +428,9 @@ int pink_read_vm_data_full(pid_t pid, struct pink_regset *regset, long addr, cha
 	return 0;
 }
 
-PINK_GCC_ATTR((nonnull(4)))
-ssize_t pink_read_vm_data_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
+PINK_GCC_ATTR((nonnull(2,4)))
+ssize_t pink_read_vm_data_nul(pid_t pid, const struct pink_regset *regset,
+			      long addr, char *dest, size_t len)
 {
 	ssize_t r;
 
@@ -436,8 +441,8 @@ ssize_t pink_read_vm_data_nul(pid_t pid, struct pink_regset *regset, long addr, 
 	return r;
 }
 
-PINK_GCC_ATTR((nonnull(5)))
-ssize_t pink_read_string_array(pid_t pid, struct pink_regset *regset,
+PINK_GCC_ATTR((nonnull(2,5)))
+ssize_t pink_read_string_array(pid_t pid, const struct pink_regset *regset,
 			       long arg, unsigned arr_index,
 			       char *dest, size_t dest_len,
 			       bool *nullptr)

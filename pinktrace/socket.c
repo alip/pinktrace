@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -36,8 +36,9 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
-PINK_GCC_ATTR((nonnull(5)))
-int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
+PINK_GCC_ATTR((nonnull(2,5)))
+int pink_read_socket_argument(pid_t pid, const struct pink_regset *regset,
+			      bool decode_socketcall,
 			      unsigned arg_index, unsigned long *argval)
 {
 	int r;
@@ -82,8 +83,9 @@ int pink_read_socket_argument(pid_t pid, struct pink_regset *regset, bool decode
 	return 0;
 }
 
-PINK_GCC_ATTR((nonnull(6)))
-int pink_read_socket_address(pid_t pid, struct pink_regset *regset, bool decode_socketcall,
+PINK_GCC_ATTR((nonnull(2,6)))
+int pink_read_socket_address(pid_t pid, const struct pink_regset *regset,
+			     bool decode_socketcall,
 			     unsigned arg_index, int *fd,
 			     struct pink_sockaddr *sockaddr)
 {
@@ -92,14 +94,17 @@ int pink_read_socket_address(pid_t pid, struct pink_regset *regset, bool decode_
 	unsigned long addr, addrlen;
 
 	if (fd) {
-		r = pink_read_socket_argument(pid, regset, decode_socketcall, 0, &myfd);
+		r = pink_read_socket_argument(pid, regset, decode_socketcall,
+					      0, &myfd);
 		if (r < 0)
 			return r;
 		*fd = (int)myfd;
 	}
-	if ((r = pink_read_socket_argument(pid, regset, decode_socketcall, arg_index, &addr)) < 0)
+	if ((r = pink_read_socket_argument(pid, regset, decode_socketcall,
+					   arg_index, &addr)) < 0)
 		return r;
-	if ((r = pink_read_socket_argument(pid, regset, decode_socketcall, arg_index + 1, &addrlen)) < 0)
+	if ((r = pink_read_socket_argument(pid, regset, decode_socketcall,
+					   arg_index + 1, &addrlen)) < 0)
 		return r;
 
 	if (addr == 0) {

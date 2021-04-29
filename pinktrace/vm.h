@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -53,8 +53,9 @@
  *
  * @see pink_vm_read()
  **/
-ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_vm_lread(pid_t pid, const struct pink_regset *regset,
+		      long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Convenience macro to read an object (ptrace way, one long at a time)
@@ -68,8 +69,9 @@ ssize_t pink_vm_lread(pid_t pid, struct pink_regset *regset, long addr, char *de
  * Like pink_vm_lread() but make the additional effort of looking for a
  * terminating zero-byte
  **/
-ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_vm_lread_nul(pid_t pid, const struct pink_regset *regset,
+			  long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Synonym for pink_vm_lread_nul()
@@ -83,8 +85,9 @@ ssize_t pink_vm_lread_nul(pid_t pid, struct pink_regset *regset, long addr, char
  *
  * @see pink_vm_write()
  **/
-ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_vm_lwrite(pid_t pid, const struct pink_regset *regset,
+		       long addr, const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Convenience macro to write an object (ptrace way one long at a time)
@@ -105,8 +108,9 @@ ssize_t pink_vm_lwrite(pid_t pid, struct pink_regset *regset, long addr, const c
  * @see pink_vm_read()
  * @see pink_vm_lread()
  **/
-ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_vm_cread(pid_t pid, const struct pink_regset *regset,
+		      long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Convenience macro to read an object using cross memory attach
@@ -120,8 +124,9 @@ ssize_t pink_vm_cread(pid_t pid, struct pink_regset *regset, long addr, char *de
  * Like pink_vm_cread() but make the additional effort of looking for a
  * terminating zero-byte
  **/
-ssize_t pink_vm_cread_nul(pid_t pid, struct pink_regset *regset, long addr, char *dest, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_vm_cread_nul(pid_t pid, const struct pink_regset *regset,
+			  long addr, char *dest, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Synonym for pink_vm_cread_nul()
@@ -140,8 +145,9 @@ ssize_t pink_vm_cread_nul(pid_t pid, struct pink_regset *regset, long addr, char
  * @see pink_vm_lwrite()
  * @see pink_vm_write()
  **/
-ssize_t pink_vm_cwrite(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_vm_cwrite(pid_t pid, const struct pink_regset *regset,
+		       long addr, const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Convenience macro to write an object using cross memory attach

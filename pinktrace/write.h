@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2010, 2011, 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +74,8 @@ int pink_write_word_data(pid_t pid, long off, long val);
  * @param sysnum System call number
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum);
+int pink_write_syscall(pid_t pid, const struct pink_regset *regset, long sysnum)
+	PINK_GCC_ATTR((nonnull(2)));
 
 /**
  * Set the system call return value
@@ -85,7 +86,9 @@ int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum);
  * @param error Error condition (errno)
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error);
+int pink_write_retval(pid_t pid, const struct pink_regset *regset,
+		      long retval, int error)
+	PINK_GCC_ATTR((nonnull(2)));
 
 /**
  * Write the specified value to the specified system call argument
@@ -96,7 +99,9 @@ int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int er
  * @param argval Value of the argument
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_argument(pid_t pid, struct pink_regset *regset, unsigned arg_index, long argval);
+int pink_write_argument(pid_t pid, const struct pink_regset *regset,
+			unsigned arg_index, long argval)
+	PINK_GCC_ATTR((nonnull(2)));
 
 /**
  * Write the given data argument @b src to address @b addr
@@ -118,8 +123,9 @@ int pink_write_argument(pid_t pid, struct pink_regset *regset, unsigned arg_inde
  *         On error, -1 is returned and errno is set appropriately.
  *         Check the return value for partial writes.
  **/
-ssize_t pink_write_vm_data(pid_t pid, struct pink_regset *regset, long addr, const char *src, size_t len)
-	PINK_GCC_ATTR((nonnull(4)));
+ssize_t pink_write_vm_data(pid_t pid, const struct pink_regset *regset,
+			   long addr, const char *src, size_t len)
+	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**
  * Convenience macro to write an object
