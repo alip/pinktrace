@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2021 Ali Polatel <alip@exherbo.org>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,56 +25,40 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef PINK_PIPE_H
-#define PINK_PIPE_H
+#include "pinktrace-check.h"
 
-/**
- * @file pinktrace/pipe.h
- * @brief Pink's pipe() helpers
- *
- * Do not include this header directly, use pinktrace/pink.h instead.
- *
- * @defgroup pink_fork Pink's pipe() helpers
- * @ingroup pinktrace
- * @{
- **/
+static void test_read_write_int(void)
+{
+	int r;
+	int rint = 0, wint = 42;
+	int pipefd[2];
 
-/**
- * Create pipe
- *
- * @param pipefd Used to return two file descriptors referring to the ends of
- * the pipe. pipefd[0] refers to the read end of the pipe. pipefd[1] refers to
- * the write end of the pipe.
- * @return 0 on success, negated errno on failure
- **/
-int pink_pipe_init(int pipefd[2]);
+	if ((r = pink_pipe_init(pipefd)))
+		fail_verbose("pink_pipe_init failed: %d(%s)", -r, strerror(-r));
+	if ((r = pink_pipe_write_int(pipefd[1], wint)))
+		fail_verbose("pink_pipe_write_int failed: %d(%s)", -r,
+			     strerror(-r));
+	if ((r = pink_pipe_read_int(pipefd[0], &rint)))
+		fail_verbose("pink_pipe_read_int failed: %d(%s)", -r,
+			     strerror(-r));
+	if (rint != wint)
+		fail_verbose("pipe read: %d != pipe write: %d", rint, wint);
+	if ((r = pink_pipe_close(pipefd[0])))
+		fail_verbose("pink_pipe_close(0) failed: %d(%s)", -r,
+			     strerror(-r));
+	if ((r = pink_pipe_close(pipefd[1])))
+		fail_verbose("pink_pipe_close(1) failed: %d(%s)", -r,
+			     strerror(-r));
+}
 
-/**
- * Close pipe file descriptor
- *
- * @param fd Pipe file descriptor array
- * @return 0 on success, negated errno on failure
- **/
-int pink_pipe_close(int fd);
+static void test_fixture_pipe(void) {
+	test_fixture_start();
 
-/**
- * Read an integer from the read end of the pipe
- *
- * @param fd Pipe file descriptor
- * @param i Pointer to store the integer
- * @return 0 on success, negated errno on failure
- **/
-int pink_pipe_read_int(int fd, int *i)
-	PINK_GCC_ATTR((nonnull(2)));
+	run_test(test_read_write_int);
 
-/**
- * Write an integer to the write end of the pipe
- *
- * @param pipefd Pipe file descriptor
- * @param i Integer
- * @return 0 on success, negated errno on failure
- **/
-int pink_pipe_write_int(int fd, int i);
+	test_fixture_end();
+}
 
-/** @} */
-#endif
+void test_suite_pipe(void) {
+	test_fixture_pipe();
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -189,5 +189,6 @@ void test_suite_vm(void);
 void test_suite_read(void);
 void test_suite_write(void);
 void test_suite_socket(void);
+void test_suite_pipe(void);
 
 #endif

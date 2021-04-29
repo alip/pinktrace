@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -125,45 +125,29 @@ int pink_pipe_init(int pipefd[2])
 	return 0;
 }
 
-int pink_pipe_done(int pipefd[2])
+int pink_pipe_close(int fd)
 {
-	if (pink_pipe_close_rd(pipefd) < 0 ||
-	    pink_pipe_close_wr(pipefd) < 0)
-		return -errno;
-	return 0;
+	return close(fd) < 0 ? -errno : 0;
 }
 
-int pink_pipe_close(int pipefd[2], int fd_index)
-{
-	if (fd_index != PINK_PIPE_RD && fd_index != PINK_PIPE_WR)
-		return -EINVAL;
-
-	if (pipefd[fd_index] >= 0) {
-		if (close(pipefd[fd_index]) < 0)
-			return -errno;
-		pipefd[fd_index] = -1;
-	}
-
-	return 0;
-}
-
-int pink_pipe_read_int(int pipefd[2], int *i)
+PINK_GCC_ATTR((nonnull(2)))
+int pink_pipe_read_int(int fd, int *i)
 {
 	ssize_t count;
 
 	errno = 0;
-	count = atomic_read(pipefd[0], i, sizeof(int));
+	count = atomic_read(fd, i, sizeof(int));
 	if (count != sizeof(int))
 		return errno ? -errno : -EINVAL;
 	return 0;
 }
 
-int pink_pipe_write_int(int pipefd[2], int i)
+int pink_pipe_write_int(int fd, int i)
 {
 	ssize_t count;
 
 	errno = 0;
-	count = atomic_write(pipefd[1], &i, sizeof(int));
+	count = atomic_write(fd, &i, sizeof(int));
 	if (count != sizeof(int))
 		return errno ? -errno : -EINVAL;
 	return 0;

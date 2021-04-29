@@ -58,6 +58,7 @@ IF_CHECK_SRCS= \
 	       read-TEST.c \
 	       write-TEST.c \
 	       socket-TEST.c \
+	       pipe-TEST.c \
 	       pinktrace-check.c
 
 noinst_HEADERS+= seatest.h pinktrace-check.h

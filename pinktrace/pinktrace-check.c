@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -915,6 +915,8 @@ static void all_tests(void)
 		test_suite_write();
 	if (!skip || !strstr(skip, "socket"))
 		test_suite_socket();
+	if (!skip || !strstr(skip, "pipe"))
+		test_suite_pipe();
 }
 
 int main(int argc, char *argv[])
