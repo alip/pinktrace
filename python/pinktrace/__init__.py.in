@@ -28,6 +28,3 @@ import pinktrace.name
 import pinktrace.regset
 import pinktrace.trace
 import pinktrace.test
-
-if __name__ == '__main__':
-    pinktrace.test.main()

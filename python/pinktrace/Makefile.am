@@ -1,7 +1,7 @@
 SUBDIRS= .
 IF_PYTHON_FILES= \
 		 __init__.py.in \
-		 test.py \
+		 test.py.in \
 		 py-system.c \
 		 py-abi.c \
 		 py-event.c \
@@ -36,7 +36,7 @@ noinst_HEADERS= \
 
 if ENABLE_PYTHON
 pkgpyexec_DATA= __init__.py test.py
-CLEANFILES+= __init__.py
+CLEANFILES+= __init__.py test.py
 __init__.py: __init__.py.in
 	$(AM_V_GEN)
 	$(AM_V_at)$(SED) \
@@ -50,6 +50,11 @@ __init__.py: __init__.py.in
 		-e "s,#PC_VERSION#,$(PINKTRACE_PC_VERSION)," \
 		-e "s,#PC_SLOT#,$(PINKTRACE_PC_SLOT)," \
 		$< > $@
+
+# FIXME: This is a hack to fix make distcheck.
+test.py: test.py.in
+	$(AM_V_GEN)
+	$(AM_V_at)cat $< > $@
 
 pkgpyexec_LTLIBRARIES= \
 		       system.la \
@@ -92,8 +97,12 @@ noinst_DATA= \
 # Remove the .la files - *.la is never linked against (pinktrace is a module)
 # and Python doesn't use libltdl. Note that the library gets installed by
 # install-data, so that's where we need to hook.
-# XXX: This breaks distcheck!
-#install-data-hook:
-#	rm -f $(DESTDIR)$(pkgpyexecdir)/*.la
+install-data-hook:
+	$(RM) -f $(DESTDIR)$(pkgpyexecdir)/*.la
+
+# For some reason make uninstall does not clean up *.so files under Python
+# library directory. Let's do this manually.
+uninstall-hook:
+	$(RM) -f $(DESTDIR)$(pkgpyexecdir)/*.so
 
 endif # ENABLE_PYTHON

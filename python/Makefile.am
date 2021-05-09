@@ -4,6 +4,8 @@ AM_MAKEFLAGS= --no-print-directory
 CLEANFILES= *.pyc *.pyo
 SUBDIRS= pinktrace .
 
+if ENABLE_PYTHON
 .PHONY:
 check-local:
-	$(PYTHON) -m pinktrace
+	env PYTHONPATH=$(builddir) $(PYTHON) -m pinktrace.test
+endif
