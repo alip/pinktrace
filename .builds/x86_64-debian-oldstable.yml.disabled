@@ -1,0 +1,43 @@
+image: debian/oldstable
+arch: x86_64
+packages:
+- libtool
+- m4
+- autoconf
+- automake
+sources:
+- https://git.sr.ht/~alip/pinktrace
+tasks:
+- clean: |
+    cd pinktrace
+    git clean -dfx
+- init: |
+    grep CONFIG_CROSS_MEMORY_ATTACH /proc/config || true
+    zgrep CONFIG_CROSS_MEMORY_ATTACH /proc/config.gz || true
+    uname -a
+    gcc --version
+    bash --version
+    perl --version
+    libtoolize --version
+    autoconf --version
+    automake --version
+    m4 --version
+- configure: |
+    mkdir root
+    cd pinktrace
+    ./autogen.sh
+    ./configure --prefix=$(readlink -f ../root)
+- make: |
+    cd pinktrace
+    make -j V=1
+- check: |
+    cd pinktrace
+    make -j V=1 check && touch .check_ok
+    cat pinktrace/test-suite.log || true
+    test -e .check_ok
+- install: |
+    cd pinktrace
+    make -j V=1 install
+- uninstall: |
+    cd pinktrace
+    make -j V=1 uninstall

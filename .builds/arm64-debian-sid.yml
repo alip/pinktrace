@@ -1,0 +1,83 @@
+image: debian/sid
+arch: arm64
+packages:
+- libtool
+- m4
+- autoconf
+- automake
+- doxygen
+- bzip2
+- python2
+- python
+- python2-dev
+- python3-dev
+- tmux
+- cgdb
+- bash
+- vim
+sources:
+- https://git.sr.ht/~alip/pinktrace
+tasks:
+- init: |
+    grep CONFIG_CROSS_MEMORY_ATTACH /proc/config || true
+    zgrep CONFIG_CROSS_MEMORY_ATTACH /proc/config.gz || true
+    uname -a
+    gcc --version
+    bash --version
+    perl --version
+    libtoolize --version
+    autoconf --version
+    automake --version
+    m4 --version
+    doxygen --version
+    bzip2 --version || true
+    python2 --version
+    python3 --version
+- configure: |
+    cd pinktrace
+    ./autogen.sh
+    ./configure --enable-maintainer-mode --enable-ipv6 --disable-python
+- make: |
+    cd pinktrace
+    make -j V=1
+- check: |
+    cd pinktrace
+    make -j V=1 check && touch .check_ok
+    cat pinktrace/test-suite.log || true
+    test -e .check_ok
+- distcheck: |
+    cd pinktrace
+    make -j V=1 DISTCHECK_CONFIGURE_FLAGS="--enable-doxygen --enable-ipv6 --disable-python" distcheck
+- configure_py3: |
+    cd pinktrace
+    sudo make -j distclean
+    ./autogen.sh
+    rm -f .check_ok
+    env PYTHON=python3 ./configure --enable-maintainer-mode --enable-python
+- make_py3: |
+    cd pinktrace
+    make -j V=1
+- check_py3: |
+    cd pinktrace
+    make -j V=1 check && touch .check_ok
+    cat pinktrace/test-suite.log || true
+    test -e .check_ok
+- distcheck_py3: |
+    cd pinktrace
+    env PYTHON=python3 make -j V=1 DISTCHECK_CONFIGURE_FLAGS="--enable-doxygen --enable-ipv6 --enable-python" distcheck
+- configure_py2: |
+    cd pinktrace
+    sudo make -j distclean
+    rm -f .check_ok
+    env PYTHON=python2 ./configure --enable-maintainer-mode --enable-python
+- make_py2: |
+    cd pinktrace
+    make -j V=1
+- check_py2: |
+    cd pinktrace
+    make -j V=1 check && touch .check_ok
+    cat pinktrace/test-suite.log || true
+    test -e .check_ok
+- distcheck_py2: |
+    cd pinktrace
+    env PYTHON=python2 make -j V=1 DISTCHECK_CONFIGURE_FLAGS="--enable-doxygen --enable-ipv6 --enable-python" distcheck
