@@ -1,0 +1,21 @@
+The primary author of pinktrace is:
+
+	Ali Polatel <alip@exherbo.org>
+
+pinktrace borrows code from strace whose primary authors were:
+	Paul Kranenburg <pk@cs.few.eur.nl>
+	Branko Lankester <branko@hacktic.nl>
+	Rick Sladkey <jrs@world.std.com>
+
+These people have contributed to pinktrace. Some have reported problems, others
+have contributed improvements to the documentation, actual code, provided
+information, provided resources, or helped to port pinktrace to new systems.
+Those contributions are described in the version control logs. If your name has
+been left out, if you'd rather not be listed, or if you'd prefer a different
+address be used, please send a note to the mail address alip@exherbo.org.
+
+##<
+## There is no need to list here any name that appears as an Author in
+## "git log" output.  Those are automatically added when this template
+## is used to generate the CREDITS file.
+##>
