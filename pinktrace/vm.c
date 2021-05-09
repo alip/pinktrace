@@ -58,39 +58,27 @@ PINK_GCC_ATTR((nonnull(2,4)))
 ssize_t pink_vm_lread(pid_t pid, const struct pink_regset *regset,
 		      long addr, char *dest, size_t len)
 {
-	int n, m, r;
-	union {
-		long val;
-		char x[sizeof(long)];
-	} u;
-	ssize_t count_read;
+	int r;
+	unsigned int count_read = 0;
+	unsigned int residue = addr & (sizeof(long) - 1);
 
-	addr = setup_addr(pid, regset, addr);
-	count_read = 0;
-	if (addr & (sizeof(long) - 1)) {
-		/* addr not a multiple of sizeof(long) */
-		n = addr - (addr & -sizeof(long)); /* residue */
-		addr &= -sizeof(long); /* residue */
+	while (len) {
+		addr &= -sizeof(long); /* aligned address */
+
+		union {
+			long val;
+			char x[sizeof(long)];
+		} u;
 		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
 			/* Not started yet: process is gone or address space is
 			 * inacessible. */
 			errno = -r;
 			return -1;
 		}
-		m = MIN(sizeof(long) - n, len);
-		memcpy(dest, &u.x[n], m);
-		addr += sizeof(long);
-		dest += m;
-		count_read += m;
-		len -= m;
-	}
-	while (len > 0) {
-		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
-			errno = -r;
-			return count_read > 0 ? count_read : -1;
-		}
-		m = MIN(sizeof(long), len);
-		memcpy(dest, u.x, m);
+
+		unsigned int m = MIN(sizeof(long) - residue, len);
+		memcpy(dest, &u.x[residue], m);
+		residue = 0;
 		addr += sizeof(long);
 		dest += m;
 		count_read += m;
@@ -103,80 +91,37 @@ PINK_GCC_ATTR((nonnull(2,4)))
 ssize_t pink_vm_lread_nul(pid_t pid, const struct pink_regset *regset,
 			  long addr, char *dest, size_t len)
 {
-#if SIZEOF_LONG == 4
-	const unsigned long x01010101 = 0x01010101ul;
-	const unsigned long x80808080 = 0x80808080ul;
-# define return_readc(c, t) \
-	do { \
-		switch ((t)) { \
-		case 1ul <<  7: default: return (c); \
-		case 1ul << 15: return (c)+1; \
-		case 1ul << 23: return (c)+2; case 1ul << 31: return (c)+3; } \
-	} while (0)
-#elif SIZEOF_LONG == 8
-	const unsigned long x01010101 = 0x0101010101010101ul;
-	const unsigned long x80808080 = 0x8080808080808080ul;
-# define return_readc(c, t) \
-	do { \
-		switch ((t)) { \
-		case 1ul <<  7: default: return (c); \
-		case 1ul << 15: return (c)+1; \
-		case 1ul << 23: return (c)+2; case 1ul << 31: return (c)+3; \
-		case 1ul << 39: return (c)+4; case 1ul << 47: return (c)+5; \
-		case 1ul << 55: return (c)+6; case 1ul << 63: return (c)+7; } \
-	} while (0)
-#else
-# error SIZEOF_LONG > 8
-#endif
+	int r;
+	unsigned int count_read = 0;
+	unsigned int residue = addr & (sizeof(long) - 1);
+	const char *orig_dest = dest;
 
-	int n, m, r;
-	unsigned long x;
-	union {
-		long val;
-		char x[sizeof(long)];
-	} u;
-	ssize_t count_read;
+	while (len) {
+		addr &= -sizeof(long); /* aligned address */
 
-	addr = setup_addr(pid, regset, addr);
-	count_read = 0;
-	if (addr & (sizeof(long) - 1)) {
-		/* addr not a multiple of sizeof(long) */
-		n = addr - (addr & -sizeof(long)); /* residue */
-		addr &= -sizeof(long); /* residue */
+		union {
+			long val;
+			char x[sizeof(long)];
+		} u;
 		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
 			/* Not started yet: process is gone or address space is
 			 * inacessible. */
 			errno = -r;
 			return -1;
 		}
-		m = MIN(sizeof(long) - n, len);
-		memcpy(dest, &u.x[n], m);
-		while (n & (sizeof(long) - 1)) {
-			if (u.x[n++] == '\0')
-				return count_read + m + 1; /* +1 is for NUL */
-		}
-		addr += sizeof(long);
-		dest += m;
-		count_read += m;
-		len -= m;
-	}
-	while (len > 0) {
-		if ((r = pink_read_word_data(pid, addr, &u.val)) < 0) {
-			errno = -r;
-			return count_read > 0 ? count_read : -1;
-		}
-		m = MIN(sizeof(long), len);
-		memcpy(dest, u.x, m);
-		/* "If a NUL char exists in this word" */
-		if ((x = ((u.val - x01010101) & ~u.val & x80808080)))
-			return_readc(count_read + 1, x); /* +1 is for NUL */
+
+		unsigned int m = MIN(sizeof(long) - residue, len);
+		memcpy(dest, &u.x[residue], m);
+		while (residue < sizeof(long))
+			if (u.x[residue++] == '\0')
+				return (dest - orig_dest) + residue - 1;
+		residue = 0;
 		addr += sizeof(long);
 		dest += m;
 		count_read += m;
 		len -= m;
 	}
 	return count_read;
-#undef return_readc
 }
 
 PINK_GCC_ATTR((nonnull(2,4)))
@@ -184,35 +129,19 @@ ssize_t pink_vm_lwrite(pid_t pid, const struct pink_regset *regset,
 		       long addr, const char *src, size_t len)
 {
 	int r;
-	int n, m;
-	union {
-		long val;
-		char x[sizeof(long)];
-	} u;
-	ssize_t count_written;
+	unsigned int count_written = 0;
+	unsigned int residue = addr & (sizeof(long) - 1);
 
-	addr = setup_addr(pid, regset, addr);
-	count_written = 0;
-	if (addr & (sizeof(long) - 1)) {
-		/* addr not a multiple of sizeof(long) */
-		n = addr - (addr & - sizeof(long)); /* residue */
-		addr &= -sizeof(long); /* residue */
-		m = MIN(sizeof(long) - n, len);
-		memcpy(u.x, &src[n], m);
-		if ((r = pink_write_word_data(pid, addr, u.val)) < 0) {
-			/* Not started yet: process is gone or address space is
-			 * inacessible. */
-			errno = -r;
-			return -1;
-		}
-		addr += sizeof(long);
-		src += m;
-		count_written += m;
-		len -= m;
-	}
-	while (len > 0) {
-		m = MIN(sizeof(long), len);
-		memcpy(u.x, src, m);
+	while (len) {
+		addr &= -sizeof(long); /* aligned address */
+
+		union {
+			long val;
+			char x[sizeof(long)];
+		} u;
+		unsigned int m = MIN(sizeof(long) - residue, len);
+		memcpy(u.x, &src[residue], m);
+		residue = 0;
 		if ((r = pink_write_word_data(pid, addr, u.val)) < 0) {
 			errno = -r;
 			return count_written > 0 ? count_written : -1;
