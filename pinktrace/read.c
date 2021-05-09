@@ -408,7 +408,7 @@ ssize_t pink_read_vm_data(pid_t pid, const struct pink_regset *regset,
 
 	errno = 0;
 	r = pink_vm_cread(pid, regset, addr, dest, len);
-	if (errno == ENOSYS)
+	if (errno == ENOSYS || errno == EPERM)
 		return pink_vm_lread(pid, regset, addr, dest, len);
 	return r;
 }
@@ -436,7 +436,7 @@ ssize_t pink_read_vm_data_nul(pid_t pid, const struct pink_regset *regset,
 
 	errno = 0;
 	r = pink_vm_cread_nul(pid, regset, addr, dest, len);
-	if (errno == ENOSYS)
+	if (errno == ENOSYS || errno == EPERM)
 		return pink_vm_lread_nul(pid, regset, addr, dest, len);
 	return r;
 }

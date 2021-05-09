@@ -225,7 +225,7 @@ ssize_t pink_write_vm_data(pid_t pid, const struct pink_regset *regset,
 
 	errno = 0;
 	r = pink_vm_cwrite(pid, regset, addr, src, len);
-	if (errno == ENOSYS)
+	if (errno == ENOSYS || errno == EPERM)
 		return pink_vm_lwrite(pid, regset, addr, src, len);
 	return r;
 }
