@@ -74,7 +74,7 @@ int pink_write_word_data(pid_t pid, long off, long val);
  * @param sysnum System call number
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_syscall(pid_t pid, const struct pink_regset *regset, long sysnum)
+int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
 	PINK_GCC_ATTR((nonnull(2)));
 
 /**
@@ -86,8 +86,7 @@ int pink_write_syscall(pid_t pid, const struct pink_regset *regset, long sysnum)
  * @param error Error condition (errno)
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_retval(pid_t pid, const struct pink_regset *regset,
-		      long retval, int error)
+int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error)
 	PINK_GCC_ATTR((nonnull(2)));
 
 /**
@@ -99,9 +98,9 @@ int pink_write_retval(pid_t pid, const struct pink_regset *regset,
  * @param argval Value of the argument
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_argument(pid_t pid, const struct pink_regset *regset,
+int pink_write_argument(pid_t pid, struct pink_regset *regset,
 			unsigned arg_index, long argval)
-	PINK_GCC_ATTR((nonnull(2)));
+	PINK_GCC_ATTR((nonnull((2))));
 
 /**
  * Write the given data argument @b src to address @b addr
@@ -123,8 +122,7 @@ int pink_write_argument(pid_t pid, const struct pink_regset *regset,
  *         On error, -1 is returned and errno is set appropriately.
  *         Check the return value for partial writes.
  **/
-ssize_t pink_write_vm_data(pid_t pid, const struct pink_regset *regset,
-			   long addr, const char *src, size_t len)
+ssize_t pink_write_vm_data(pid_t pid, const struct pink_regset *regset, long addr, const char *src, size_t len)
 	PINK_GCC_ATTR((nonnull(2,4)));
 
 /**

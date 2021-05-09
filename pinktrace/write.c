@@ -49,7 +49,7 @@ int pink_write_word_data(pid_t pid, long off, long val)
 }
 
 PINK_GCC_ATTR((nonnull(2)))
-int pink_write_syscall(pid_t pid, const struct pink_regset *regset, long sysnum)
+int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
 {
 	int r;
 #if PINK_ARCH_ARM
@@ -76,7 +76,7 @@ int pink_write_syscall(pid_t pid, const struct pink_regset *regset, long sysnum)
 }
 
 PINK_GCC_ATTR((nonnull(2)))
-int pink_write_retval(pid_t pid, const struct pink_regset *regset, long retval, int error)
+int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error)
 {
 #if PINK_ARCH_ARM
 	if (error)
@@ -128,7 +128,8 @@ int pink_write_retval(pid_t pid, const struct pink_regset *regset, long retval, 
 #endif
 }
 
-int pink_write_argument(pid_t pid, const struct pink_regset *regset,
+PINK_GCC_ATTR((nonnull(2)))
+int pink_write_argument(pid_t pid, struct pink_regset *regset,
 			unsigned arg_index, long argval)
 {
 	if (arg_index >= PINK_MAX_ARGS)
