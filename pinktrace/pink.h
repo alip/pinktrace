@@ -16,8 +16,6 @@
  * pinktrace is a wrapper around @c ptrace(2) system call.
  * It provides a robust API for tracing processes.
  *
- * @attention This is a work in progress and the API is @b not stable.
- *
  * @author Ali Polatel <alip@exherbo.org>
  **/
 

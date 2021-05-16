@@ -17,7 +17,9 @@ EXTRA_DIST= \
 dist_doc_DATA= \
 	       COPYING \
 	       LGPL-2.1-or-later \
-	       README.markdown
+	       README.md \
+	       README-configure \
+	       INSTALL-git.md
 
 # FIXME: --enable-python-doc requires epydoc which is no longer maintained.
 DISTCHECK_CONFIGURE_FLAGS= \
