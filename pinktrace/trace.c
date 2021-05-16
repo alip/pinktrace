@@ -80,7 +80,11 @@ int pink_trace_geteventmsg(pid_t pid, unsigned long *data)
 
 int pink_trace_get_regs(pid_t pid, void *regs)
 {
+#if PINK_HAVE_GETREGS
 	return pink_ptrace(PTRACE_GETREGS, pid, NULL, regs, NULL);
+#else
+	return -ENOSYS;
+#endif
 }
 
 int pink_trace_get_regset(pid_t pid, void *regset, int n_type)
@@ -94,7 +98,11 @@ int pink_trace_get_regset(pid_t pid, void *regset, int n_type)
 
 int pink_trace_set_regs(pid_t pid, const void *regs)
 {
+#if PINK_HAVE_SETREGS
 	return pink_ptrace(PTRACE_SETREGS, pid, NULL, (void *)regs, NULL);
+#else
+	return -ENOSYS;
+#endif
 }
 
 int pink_trace_set_regset(pid_t pid, const void *regset, int n_type)

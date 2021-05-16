@@ -95,6 +95,11 @@
 		abort();						\
 	} while (0)
 
+#if PINK_ARCH_AARCH64
+# define ABI0_WORDSIZE 8
+# define ABI1_WORDSIZE 4
+#endif
+
 #if PINK_ARCH_X86_64
 # define ABI0_WORDSIZE 8
 # define ABI1_WORDSIZE 4
@@ -139,7 +144,11 @@ extern const size_t nsyscalls2;
 # endif
 #endif
 
-#if PINK_ARCH_X86_64 || PINK_ARCH_X32
+#if PINK_ARCH_AARCH64
+struct arm_pt_regs {
+	uint32_t uregs[18];
+};
+#elif PINK_ARCH_X86_64 || PINK_ARCH_X32
 /*
  * On i386, pt_regs and user_regs_struct are the same,
  * but on 64 bit x86, user_regs_struct has six more fields:
@@ -168,7 +177,13 @@ struct i386_user_regs_struct {
 #endif
 
 struct pink_regset {
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	struct iovec aarch64_io;
+	union {
+		struct user_pt_regs aarch64_r;
+		struct arm_pt_regs arm_r;
+	} arm_regs_union;
+#elif PINK_ARCH_ARM
 	struct pt_regs arm_regs;
 #elif PINK_ARCH_POWERPC
 	struct pt_regs ppc_regs;

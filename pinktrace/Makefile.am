@@ -7,7 +7,7 @@ EXTRA_DIST= TODO
 MAINTAINERCLEANFILES=
 
 OS	= linux
-# ARCH is `arm', `i386', 'x86_64', etc.
+# ARCH is `aarch64', `arm', `i386', 'x86_64', etc.
 ARCH	= @arch@
 
 AM_CFLAGS= @PINKTRACE_CFLAGS@ \

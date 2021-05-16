@@ -122,7 +122,9 @@ static void dump_regset(const struct pink_regset *regset)
 #if PINK_ABIS_SUPPORTED > 1
 	debug("\t\tregset->abi = %d\n", regset->abi);
 #endif
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	debug("\t\tregs = TODO\n");
+#elif PINK_ARCH_ARM
 	struct pt_regs regs = regset->arm_regs;
 	debug("\t\tregs.ARM_cpsr = %#lx\n", regs.ARM_cpsr);
 	debug("\t\tregs.ARM_pc = %#lx\n", regs.ARM_pc);

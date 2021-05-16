@@ -64,7 +64,8 @@ int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
  * @param error Error condition (errno)
  * @return 0 on success, negated errno on failure
  **/
-int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error)
+int pink_write_retval(pid_t pid, struct pink_regset *regset,
+		      long retval, int error)
 	PINK_GCC_ATTR((nonnull(2)));
 
 /**

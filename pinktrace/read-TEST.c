@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -153,16 +153,16 @@ static void test_read_retval_fail(void)
 	struct pink_regset *regset;
 	bool it_worked = false;
 	bool insyscall = false;
-	long sys_open;
+	long sys_openat;
 
-	sys_open = pink_lookup_syscall("open", PINK_ABI_DEFAULT);
-	if (sys_open == -1)
-		fail_verbose("don't know the syscall number of open()");
+	sys_openat = pink_lookup_syscall("openat", PINK_ABI_DEFAULT);
+	if (sys_openat == -1)
+		fail_verbose("don't know the syscall number of openat()");
 
 	pid = fork_assert();
 	if (pid == 0) {
 		trace_me_and_stop();
-		syscall(sys_open, 0, 0);
+		syscall(sys_openat, 0, 0, 0);
 		_exit(0);
 	}
 	regset_alloc_or_kill(pid, &regset);
@@ -186,7 +186,7 @@ static void test_read_retval_fail(void)
 			if (!insyscall) {
 				regset_fill_or_kill(pid, regset);
 				read_syscall_or_kill(pid, regset, &sysnum);
-				check_syscall_equal_or_kill(pid, sysnum, sys_open);
+				check_syscall_equal_or_kill(pid, sysnum, sys_openat);
 				insyscall = true;
 			} else {
 				regset_fill_or_kill(pid, regset);

@@ -136,6 +136,13 @@ esac
 dnl check for supported architecture
 AC_MSG_CHECKING([for supported architecture])
 case "$host_cpu" in
+aarch64*)
+	arch=aarch64
+	karch=arm64
+	arch_m32=arm
+	cc_flags_m32=
+	AC_DEFINE([AARCH64], 1, [Define for the AArch64 architecture.])
+	;;
 i[[3456]]86|pentium)
 	arch=i386
 	AC_DEFINE([I386], 1, [Define for the i386 architecture.])
@@ -177,6 +184,11 @@ esac
 AC_MSG_RESULT([$arch])
 AC_SUBST([arch])
 
+if test x"$arch" = x"aarch64"; then
+	PINK_ARCH_AARCH64=1
+else
+	PINK_ARCH_AARCH64=0
+fi
 if test x"$arch" = x"i386"; then
 	PINK_ARCH_I386=1
 else
@@ -212,6 +224,7 @@ if test x"$arch" = x"arm"; then
 else
 	PINK_ARCH_ARM=0
 fi
+AC_SUBST([PINK_ARCH_AARCH64])
 AC_SUBST([PINK_ARCH_I386])
 AC_SUBST([PINK_ARCH_X86_64])
 AC_SUBST([PINK_ARCH_X32])
@@ -319,9 +332,9 @@ AC_CHECK_DECL([PTRACE_DETACH],     [], [AC_MSG_ERROR([I need PTRACE_DETACH])],  
 AC_CHECK_DECL([PTRACE_PEEKUSER],   [], [AC_MSG_ERROR([I need PTRACE_PEEKUSER])],   [include_ptrace_h])
 AC_CHECK_DECL([PTRACE_PEEKDATA],   [], [AC_MSG_ERROR([I need PTRACE_PEEKDATA])],   [include_ptrace_h])
 AC_CHECK_DECL([PTRACE_POKEUSER],   [], [AC_MSG_ERROR([I need PTRACE_POKEUSER])],   [include_ptrace_h])
-AC_CHECK_DECL([PTRACE_GETREGS],    [], [AC_MSG_ERROR([I need PTRACE_GETREGS])],    [include_ptrace_h])
-AC_CHECK_DECL([PTRACE_SETREGS],    [], [AC_MSG_ERROR([I need PTRACE_SETREGS])],    [include_ptrace_h])
 
+AC_CHECK_DECL([PTRACE_GETREGS],           [PINK_HAVE_GETREGS=1], [PINK_HAVE_GETREGS=0],   [include_ptrace_h])
+AC_CHECK_DECL([PTRACE_SETREGS],           [PINK_HAVE_SETREGS=1], [PINK_HAVE_SETREGS=0],   [include_ptrace_h])
 AC_CHECK_DECL([PTRACE_GETREGSET],         [PINK_HAVE_GETREGSET=1],         [PINK_HAVE_GETREGSET=0],         [include_ptrace_h])
 AC_CHECK_DECL([PTRACE_SETREGSET],         [PINK_HAVE_SETREGSET=1],         [PINK_HAVE_SETREGSET=0],         [include_ptrace_h])
 AC_CHECK_DECL([PTRACE_SETOPTIONS],        [PINK_HAVE_SETUP=1],             [PINK_HAVE_SETUP=0],             [include_ptrace_h])
@@ -371,6 +384,8 @@ esac
 AC_SUBST([PTRACE_SUPPORTS_SEIZE])
 AC_DEFINE_UNQUOTED([PTRACE_SUPPORTS_SEIZE], [$PTRACE_SUPPORTS_SEIZE], [ptrace() seize support])
 
+AC_SUBST([PINK_HAVE_GETREGS])
+AC_SUBST([PINK_HAVE_SETREGS])
 AC_SUBST([PINK_HAVE_GETREGSET])
 AC_SUBST([PINK_HAVE_SETREGSET])
 AC_SUBST([PINK_HAVE_SETUP])
@@ -574,6 +589,7 @@ AC_CONFIG_FILES([Makefile
 		 pinktrace/linux/ia64/Makefile
 		 pinktrace/linux/powerpc/Makefile
 		 pinktrace/linux/arm/Makefile
+		 pinktrace/linux/aarch64/Makefile
 		 python/Makefile
 		 python/pinktrace/Makefile])
 AC_OUTPUT

@@ -16,6 +16,14 @@
 #include <pinktrace/private.h>
 #include <pinktrace/pink.h>
 
+#ifndef NT_ARM_SYSTEM_CALL
+# define NT_ARM_SYSTEM_CALL 0x404
+#endif
+/*
+ * NT_ARM_SYSTEM_CALL regset is supported by linux kernel
+ * starting with commit v3.19-rc1~59^2~16.
+ */
+
 int pink_write_word_user(pid_t pid, long off, long val)
 {
 	return pink_ptrace(PTRACE_POKEUSER, pid, (void *)off, (void *)val, NULL);
@@ -30,7 +38,14 @@ PINK_GCC_ATTR((nonnull(2)))
 int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
 {
 	int r;
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	unsigned int n = (uint16_t) sysnum;
+	const struct iovec io = {
+		.iov_base = &n,
+		.iov_len = sizeof(n)
+	};
+	r = pink_trace_set_regset(pid, &io, NT_ARM_SYSTEM_CALL);
+#elif PINK_ARCH_ARM
 # ifndef PTRACE_SET_SYSCALL
 #  define PTRACE_SET_SYSCALL 23
 # endif
@@ -56,10 +71,15 @@ int pink_write_syscall(pid_t pid, struct pink_regset *regset, long sysnum)
 PINK_GCC_ATTR((nonnull(2)))
 int pink_write_retval(pid_t pid, struct pink_regset *regset, long retval, int error)
 {
-#if PINK_ARCH_ARM
-	if (error)
-		retval = (long)-error;
-	return pink_write_word_user(pid, 0, retval);
+#if PINK_ARCH_AARCH64 || PINK_ARCH_ARM
+	if (regset->abi == PINK_ABI_ARM) {
+		if (error)
+			retval = (long)-error;
+		return pink_write_word_user(pid, 0, retval);
+	} else {
+		regset->arm_regs_union.aarch64_r.regs[0] = error? -error : retval;
+		return pink_trace_set_regset(pid, &regset->aarch64_io, NT_PRSTATUS);
+	}
 #elif PINK_ARCH_IA64
 	int r;
 	long r8, r10;
@@ -112,8 +132,13 @@ int pink_write_argument(pid_t pid, struct pink_regset *regset,
 {
 	if (arg_index >= PINK_MAX_ARGS)
 		return -EINVAL;
-
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	if (regset->abi == PINK_ABI_AARCH64)
+		regset->arm_regs_union.aarch64_r.regs[arg_index] = argval;
+	else
+		regset->arm_regs_union.arm_r.uregs[arg_index] = argval;
+	return pink_trace_set_regset(pid, &regset->aarch64_io, NT_PRSTATUS);
+#elif PINK_ARCH_ARM
 	if (arg_index == 0)
 		return pink_write_word_user(pid, sizeof(long) * 17, argval); /* ARM_ORIG_r0 */
 	else

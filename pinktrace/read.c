@@ -38,7 +38,19 @@ int pink_read_abi(pid_t pid, const struct pink_regset *regset, short *abi)
 PINK_GCC_ATTR((nonnull(2,3)))
 int pink_read_syscall(pid_t pid, const struct pink_regset *regset, long *sysnum)
 {
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	switch (regset->abi) {
+	case PINK_ABI_AARCH64:
+		*sysnum = regset->arm_regs_union.aarch64_r.regs[8];
+		return 0;
+	case PINK_ABI_ARM:
+		/* Note: we don't support OABI, unlike 32-bit ARM build */
+		*sysnum = regset->arm_regs_union.arm_r.uregs[7];
+		return 0;
+	default:
+		return -EINVAL;
+	}
+#elif PINK_ARCH_ARM
 	int r;
 	long sysval;
 	struct pt_regs regs = regset->arm_regs;
@@ -174,7 +186,22 @@ int pink_read_retval(pid_t pid, const struct pink_regset *regset,
 	long myrval;
 	int myerror = 0;
 
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	if (regset->abi == PINK_ABI_ARM) {
+		if (is_negated_errno(regset->arm_regs_union.arm_r.uregs[0], regset->abi)) {
+			myrval = -1;
+			myerror = -regset->arm_regs_union.arm_r.uregs[0];
+		} else {
+			myrval = regset->arm_regs_union.arm_r.uregs[0];
+		}
+	} else if (is_negated_errno(regset->arm_regs_union.aarch64_r.regs[0],
+				    regset->abi)) {
+		myrval = -1;
+		myerror = -regset->arm_regs_union.aarch64_r.regs[0];
+	} else {
+		myrval = regset->arm_regs_union.aarch64_r.regs[0];
+	}
+#elif PINK_ARCH_ARM
 	struct pt_regs regs = regset->arm_regs;
 
 	if (is_negated_errno(regs.ARM_r0, regset->abi)) {
@@ -284,7 +311,14 @@ int pink_read_argument(pid_t pid, const struct pink_regset *regset,
 	if (arg_index >= PINK_MAX_ARGS)
 		return -EINVAL;
 
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+	if (regset->abi == PINK_ABI_AARCH64)
+		*argval = regset->arm_regs_union.aarch64_r.regs[arg_index];
+	else
+		*argval = regset->arm_regs_union.arm_r.uregs[arg_index];
+
+	return 0;
+#elif PINK_ARCH_ARM
 	struct pt_regs r = regset->arm_regs;
 
 	if (arg_index == 0)

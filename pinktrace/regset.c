@@ -38,7 +38,29 @@ int pink_regset_fill(pid_t pid, struct pink_regset *regset)
 	regset->abi = PINK_ABI_DEFAULT;
 #endif
 
-#if PINK_ARCH_ARM
+#if PINK_ARCH_AARCH64
+# define aarch64_regs	(regset->arm_regs_union.aarch64_r)
+# define arm_regs	(regset->arm_regs_union.arm_r)
+# if PINK_HAVE_GETREGSET
+	regset->aarch64_io.iov_base = &regset->arm_regs_union;
+	regset->aarch64_io.iov_len = sizeof(regset->arm_regs_union);
+	if ((r = pink_trace_get_regset(pid, &regset->aarch64_io, NT_PRSTATUS)) < 0)
+		return r;
+	switch (regset->aarch64_io.iov_len) {
+	case sizeof(aarch64_regs):
+		/* We are in 64-bit mode. */
+		regset->abi = PINK_ABI_AARCH64;
+		break;
+	case sizeof(arm_regs):
+		regset->abi = PINK_ABI_ARM;
+		break;
+	default:
+		abort();
+	}
+# else
+	return -ENOSYS;
+# endif
+#elif PINK_ARCH_ARM
 	if ((r = pink_trace_get_regs(pid, &regset->arm_regs)) < 0)
 		return r;
 #elif PINK_ARCH_POWERPC

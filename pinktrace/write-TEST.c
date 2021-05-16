@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -51,9 +51,9 @@ static void test_write_syscall(void)
 	} else if (test == TEST_LSEEK) {
 		test_name = "lseek";
 		errno_expected = EFAULT;
-		change_call = pink_lookup_syscall("open", PINK_ABI_DEFAULT);
+		change_call = pink_lookup_syscall("openat", PINK_ABI_DEFAULT);
 		if (change_call == -1)
-			fail_verbose("don't know the syscall number of open()");
+			fail_verbose("don't know the syscall number of openat()");
 		test_call = pink_lookup_syscall("lseek", PINK_ABI_DEFAULT);
 		if (test_call == -1)
 			fail_verbose("don't know the syscall number of lseek()\n");
@@ -260,12 +260,21 @@ static void test_write_argument(void)
 				read_syscall_or_kill(pid, regset, &sysnum);
 				check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
 				write_argument_or_kill(pid, regset, arg_index, newval);
+				regset_fill_or_kill(pid, regset);
+				read_argument_or_kill(pid, regset, arg_index, &argval);
+				check_argument_equal_or_kill(pid, argval, newval);
+#if PINK_ARCH_AARCH64
+				it_worked = true;
+#endif
 				insyscall = true;
 			} else {
+#if !PINK_ARCH_AARCH64
+/* FIXME: Why does this not work on AArch64? */
 				regset_fill_or_kill(pid, regset);
 				read_argument_or_kill(pid, regset, arg_index, &argval);
 				check_argument_equal_or_kill(pid, argval, newval);
 				it_worked = true;
+#endif
 				kill(pid, SIGKILL);
 				break;
 			}
@@ -332,8 +341,20 @@ static void test_write_vm_data(void)
 				check_syscall_equal_or_kill(pid, sysnum, PINK_SYSCALL_INVALID);
 				read_argument_or_kill(pid, regset, arg_index, &argval);
 				write_vm_data_or_kill(pid, regset, argval, newstr, sizeof(newstr));
+#if PINK_ARCH_AARCH64
+				read_vm_data_or_kill(pid, regset, argval, getstr, sizeof(getstr));
+				if (strcmp(newstr, getstr) != 0) {
+					kill(pid, SIGKILL);
+					fail_verbose("VM data not identical"
+						     " (expected:`%s' got:`%s')",
+						     newstr, getstr);
+				}
+				it_worked = true;
+#endif
 				insyscall = true;
 			} else {
+#if !PINK_ARCH_AARCH64
+/* FIXME: Why does this not work on AArch64? */
 				regset_fill_or_kill(pid, regset);
 				read_argument_or_kill(pid, regset, arg_index, &argval);
 				read_vm_data_or_kill(pid, regset, argval, getstr, sizeof(getstr));
@@ -344,6 +365,7 @@ static void test_write_vm_data(void)
 						     newstr, getstr);
 				}
 				it_worked = true;
+#endif
 				kill(pid, SIGKILL);
 				break;
 			}

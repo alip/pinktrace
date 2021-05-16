@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013 Ali Polatel <alip@exherbo.org>
+ * Copyright (c) 2012, 2013, 2021 Ali Polatel <alip@exherbo.org>
  * Based in part upon strace which is:
  *   Copyright (c) 1991, 1992 Paul Kranenburg <pk@cs.few.eur.nl>
  *   Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
@@ -22,6 +22,12 @@
  **/
 
 #ifndef DOXYGEN
+
+# if PINK_ARCH_AARCH64
+#  define PINK_ABIS_SUPPORTED 2
+#  define PINK_ABI_AARCH64 0
+#  define PINK_ABI_ARM 1
+# endif
 
 # if PINK_ARCH_X86_64
 #  define PINK_ABIS_SUPPORTED 3
