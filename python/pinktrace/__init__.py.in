@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Copyright 2010, 2013 Ali Polatel <alip@exherbo.org>
-# Distributed under the same terms as Python itself.
+# Copyright 2010, 2013, 2021 Ali Polatel <alip@exherbo.org>
+# SPDX-License-Identifier: CNRI-Python-GPL-Compatible
 
 """\
 pinktrace Python bindings
 """
 
 __author__ = "Ali Polatel <alip@exherbo.org>"
-__license__ = "BSD-3"
+__license__ = "CNRI-Python-GPL-Compatible"
 __version__ = "#VERSION#"
 
 PACKAGE = "#PACKAGE#"

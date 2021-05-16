@@ -15,7 +15,8 @@ EXTRA_DIST= \
 	    autogen.sh
 
 dist_doc_DATA= \
-	       COPYRIGHT \
+	       COPYING \
+	       LGPL-2.1-or-later \
 	       README.markdown
 
 # FIXME: --enable-python-doc requires epydoc which is no longer maintained.

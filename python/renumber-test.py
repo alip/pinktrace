@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-# Copyright 2013 Ali Polatel <alip@exherbo.org>
-# Distributed under the same terms as Python itself.
+# Copyright 2013, 2021 Ali Polatel <alip@exherbo.org>
+# SPDX-License-Identifier: CNRI-Python-GPL-Compatible
 
 from __future__ import print_function, with_statement
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 # Copyright 2010, 2013 Ali Polatel <alip@exherbo.org>
-# Distributed under the same terms as Python itself.
+# SPDX-License-Identifier: CNRI-Python-GPL-Compatible
 
 """\
 pinktrace Python bindings (__main__ module declaration)

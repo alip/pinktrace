@@ -4,6 +4,9 @@ AM_MAKEFLAGS= --no-print-directory
 CLEANFILES= *.pyc *.pyo
 SUBDIRS= pinktrace .
 
+dist_doc_data= \
+	       COPYING
+
 if ENABLE_PYTHON
 .PHONY:
 check-local:
