@@ -3,6 +3,7 @@ SUBDIRS= c python .
 .PHONY: upload
 upload:
 	$(MAKE) -C c $@
+	$(MAKE) -C python $@
 
 .PHONY: doxygen
 doxygen:

@@ -1,7 +1,7 @@
 SUBDIRS= .
 PYDOCTOR_FLAGS= \
 	      --verbose \
-	      --project-name "pinktrace" \
+	      --project-name "PinkTrace" \
 	      --project-url "$(SITE_URI_HOME)api/python"
 
 if ENABLE_PYTHON_DOC
@@ -24,11 +24,15 @@ python:
 install-data-local:
 	mkdir -p $(DESTDIR)$(htmldir)/api
 	cp -R python $(DESTDIR)$(htmldir)/api
-
+upload: pydoctor
+	rsync --partial --progress --delete -ave ssh python/ dev.exherbo.org:public_html/pinktrace/api/python/
 else
 pydoctor:
 	@echo "Can not build Python API docs"
 	exit 0
+upload:
+	@echo "You haven't enabled Python API doc generation!"
+	exit 1
 endif # ENABLE_PYTHON_DOC
 
 clean-local:
@@ -37,4 +41,4 @@ clean-local:
 uninstall-local:
 	rm -fr $(DESTDIR)$(htmldir)/api/python
 
-.PHONY: pydoctor
+.PHONY: pydoctor upload
