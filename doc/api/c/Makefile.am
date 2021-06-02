@@ -24,8 +24,13 @@ c-with-dot:
 install-data-local:
 	mkdir -p $(DESTDIR)/$(htmldir)/api
 	cp -R c $(DESTDIR)/$(htmldir)/api
+upload: c-with-dot
+	rsync --partial --progress --delete -ave ssh c/ dev.exherbo.org:public_html/pinktrace/api/c/
 else
 doxygen:
+	@echo "You don't have doxygen installed!"
+	exit 1
+upload:
 	@echo "You don't have doxygen installed!"
 	exit 1
 endif # HAVE_DOXYGEN
@@ -36,4 +41,4 @@ clean-local:
 uninstall-local:
 	rm -fr $(DESTDIR)/$(htmldir)/api/c
 
-.PHONY: doxygen
+.PHONY: doxygen upload

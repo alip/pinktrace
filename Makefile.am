@@ -100,7 +100,8 @@ upload:
 	$(MAKE) -C doc upload
 
 .PHONY: upload-release
-upload-release: $(SHA1_FILE) $(GPG_FILE)
-	rsync --partial --progress -ave ssh $(TAR_FILE) $(SHA1_FILE) $(GPG_FILE) dev.exherbo.org:public_html/pinktrace/release
+upload-release: $(TAR_FILE) $(SHA1_FILE) $(GPG_FILE)
+	rsync --partial --progress -ave ssh $^ dev.exherbo.org:public_html/pinktrace/release
+	rsync --partial --progress -ave ssh $^ dev.exherbo.org:/srv/www/dev.exherbo.org/distfiles/pinktrace
 
 SUBDIRS= pinktrace python doc pkg-config .
