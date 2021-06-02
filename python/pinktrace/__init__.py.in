@@ -35,6 +35,5 @@ import pinktrace.event
 import pinktrace.name
 import pinktrace.regset
 import pinktrace.trace
-import pinktrace.test
 
-__all__ = ('system', 'abi', 'event', 'name', 'regset', 'trace', 'test')
+__all__ = ('system', 'abi', 'event', 'name', 'regset', 'trace')
