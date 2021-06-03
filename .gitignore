@@ -91,6 +91,8 @@ Makefile
 /m4/lt*.m4
 
 # Specific ignores
+/doc/config.toml
+/doc/public
 /docs/_build
 /doc/api/c/doxygen.conf
 /doc/api/c/pinktrace.tag

@@ -87,6 +87,14 @@ doxygen: all
 pydoctor: all
 	$(MAKE) -C doc $@
 
+.PHONY: site
+site-check:
+	$(MAKE) -C doc $@
+
+.PHONY: site
+site: doxygen pydoctor
+	$(MAKE) -C doc $@
+
 $(SHA1_FILE): dist
 	@echo "SHA1 $(TAR_FILE)"
 	sha1sum $(TAR_FILE) > $(SHA1_FILE)
@@ -103,5 +111,9 @@ upload:
 upload-release: $(TAR_FILE) $(SHA1_FILE) $(GPG_FILE)
 	rsync --partial --progress -ave ssh $^ dev.exherbo.org:public_html/pinktrace/release
 	rsync --partial --progress -ave ssh $^ dev.exherbo.org:/srv/www/dev.exherbo.org/distfiles/pinktrace
+
+.PHONY: upload-site
+upload-site: pinktrace-www.tar.gz
+	scp $< dev.exherbo.org:www
 
 SUBDIRS= pinktrace python doc pkg-config .

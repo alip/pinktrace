@@ -1,0 +1,9 @@
+baseURL = "https://exherbo.org/pinktrace"
+languageCode = "en-us"
+title = "PinkTrace-#VERSION#"
+theme = "kraiklyn"
+pygmentsUseClasses=true
+customCss = ["css/style.css"]
+
+[params]
+externalTitle = "Pink's Tracing Library"

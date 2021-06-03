@@ -571,6 +571,9 @@ if test x"$enable_python_doc" = x"yes" ; then
 fi
 AM_CONDITIONAL([ENABLE_PYTHON_DOC], test x"$enable_python_doc" = x"yes")
 
+dnl Webpage
+AC_ARG_VAR([HUGO], [Path to the hugo static site genertion tool])
+
 dnl output
 AC_CONFIG_FILES([Makefile
 		 doc/Makefile
