@@ -32,7 +32,7 @@ pydoctor:
 	exit 0
 upload:
 	@echo "You haven't enabled Python API doc generation!"
-	exit 1
+	exit 0
 endif # ENABLE_PYTHON_DOC
 
 clean-local:
