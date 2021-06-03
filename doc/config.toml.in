@@ -1,4 +1,4 @@
-baseURL = "https://exherbo.org/pinktrace"
+baseURL = "https://exherbo.org/pinktrace/"
 languageCode = "en-us"
 title = "PinkTrace-#VERSION#"
 theme = "kraiklyn"
